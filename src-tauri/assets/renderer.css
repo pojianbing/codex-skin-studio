@@ -1,0 +1,82 @@
+:root.codex-skin-studio {
+  --skin-accent: #237a57;
+  --skin-art-position: 68% 45%;
+  --skin-canvas: color-mix(in oklab, #f5f7f5 94%, var(--skin-accent));
+  --skin-surface: color-mix(in oklab, #fff 92%, var(--skin-accent));
+  --skin-sidebar: color-mix(in oklab, #edf1ee 90%, var(--skin-accent));
+  --skin-text: #202522;
+  --skin-line: color-mix(in oklab, #97a29b 72%, var(--skin-accent));
+  --skin-wash: color-mix(in oklab, var(--skin-surface) 86%, transparent);
+}
+:root.codex-skin-studio.skin-theme-dark {
+  --skin-canvas: color-mix(in oklab, #151a17 93%, var(--skin-accent));
+  --skin-surface: color-mix(in oklab, #202622 91%, var(--skin-accent));
+  --skin-sidebar: color-mix(in oklab, #171d19 90%, var(--skin-accent));
+  --skin-text: #edf2ee;
+  --skin-line: color-mix(in oklab, #68746c 72%, var(--skin-accent));
+  --skin-wash: color-mix(in oklab, var(--skin-surface) 82%, transparent);
+}
+html.codex-skin-studio body {
+  color: var(--skin-text) !important;
+  background-color: var(--skin-canvas) !important;
+  background-image: var(--skin-art) !important;
+  background-position: var(--skin-art-position) !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+html.codex-skin-studio aside.app-shell-left-panel {
+  color: var(--skin-text) !important;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--skin-sidebar) 76%, transparent), color-mix(in oklab, var(--skin-surface) 38%, transparent)) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+html.codex-skin-studio main.main-surface {
+  color: var(--skin-text) !important;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--skin-surface) 64%, transparent), color-mix(in oklab, var(--skin-surface) 30%, transparent)) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+html.codex-skin-studio.skin-safe-right main.main-surface {
+  background: linear-gradient(270deg, color-mix(in oklab, var(--skin-surface) 72%, transparent), color-mix(in oklab, var(--skin-surface) 26%, transparent)) !important;
+}
+html.codex-skin-studio main.main-surface > header.app-header-tint,
+html.codex-skin-studio main.main-surface [role="main"] {
+  color: var(--skin-text) !important;
+  background: transparent !important;
+}
+html.codex-skin-studio .composer-surface-chrome {
+  color: var(--skin-text) !important;
+  border-color: color-mix(in oklab, var(--skin-line) 65%, transparent) !important;
+  background: color-mix(in oklab, var(--skin-surface) 88%, transparent) !important;
+  box-shadow: 0 10px 28px color-mix(in oklab, #101411 22%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 55%, transparent) !important;
+  backdrop-filter: blur(12px) saturate(1.06) !important;
+}
+html.codex-skin-studio .ProseMirror { color: var(--skin-text) !important; caret-color: var(--skin-accent) !important; }
+html.codex-skin-studio aside.app-shell-left-panel button:hover,
+html.codex-skin-studio aside.app-shell-left-panel [aria-current="page"] {
+  background: color-mix(in oklab, var(--skin-accent) 18%, transparent) !important;
+}
+html.codex-skin-studio .skin-home .group\/home-suggestions button {
+  color: var(--skin-text) !important;
+  border-color: color-mix(in oklab, var(--skin-line) 58%, transparent) !important;
+  background: color-mix(in oklab, var(--skin-surface) 72%, transparent) !important;
+  backdrop-filter: blur(8px) !important;
+}
+html.codex-skin-studio .skin-task { position: relative; isolation: isolate; background: transparent !important; }
+html.codex-skin-studio .skin-task::before {
+  content: ""; position: absolute; z-index: -1; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom, color-mix(in oklab, var(--skin-surface) 42%, transparent), var(--skin-wash));
+}
+html.codex-skin-studio.skin-task-banner .skin-task::before {
+  background-image: linear-gradient(to bottom, transparent, var(--skin-wash)), var(--skin-art);
+  background-size: 100% 46vh, 100% auto; background-repeat: no-repeat; background-position: center top;
+}
+html.codex-skin-studio.skin-task-off .skin-task::before { background: var(--skin-surface); }
+html.codex-skin-studio [data-message-author-role], html.codex-skin-studio article { color: var(--skin-text); }
+@media (max-width: 760px) {
+  html.codex-skin-studio main.main-surface { background: color-mix(in oklab, var(--skin-surface) 78%, transparent) !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.codex-skin-studio *, html.codex-skin-studio *::before, html.codex-skin-studio *::after { transition: none !important; animation: none !important; }
+}
