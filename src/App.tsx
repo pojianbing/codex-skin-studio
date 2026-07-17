@@ -144,36 +144,36 @@ function App() {
       : dashboard.mode === 'error' ? '需要处理' : '官方主题'
 
   return (
-    <div className="flex w-full h-full min-h-0 overflow-hidden bg-[#f4f6f4] text-[#1c211d] font-sans selection:bg-primary/20">
+    <div className="flex w-full h-full min-h-0 overflow-hidden bg-[#f8fafc] text-[#0f172a] font-sans selection:bg-primary/20">
       {/* Sidebar */}
-      <aside className="w-[218px] flex-none flex flex-col p-5 bg-[#141815] text-[#e3e8e4] border-r border-[#262d28]">
+      <aside className="w-[218px] flex-none flex flex-col p-5 bg-[#0b0f19] text-[#e2e8f0] border-r border-[#1e293b]">
         {/* Brand mark */}
-        <div className="flex gap-3 align-middle items-center px-2 pb-6 border-b border-[#222a24] mb-4" aria-label="Codex Skin Studio">
-          <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#539775] text-[#141815] font-extrabold text-sm tracking-wider shadow-inner select-none">
+        <div className="flex gap-3 align-middle items-center px-2 pb-6 border-b border-[#1e293b] mb-4" aria-label="Codex Skin Studio">
+          <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 text-white font-extrabold text-sm tracking-wider shadow-inner select-none">
             CS
           </span>
           <div className="flex flex-col leading-none">
-            <span className="font-bold text-sm text-[#f0f4f1]">Skin Studio</span>
-            <span className="text-[10px] text-[#718276] uppercase tracking-wider font-semibold mt-1">Codex themes</span>
+            <span className="font-bold text-sm text-[#f8fafc]">Skin Studio</span>
+            <span className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold mt-1">Codex themes</span>
           </div>
         </div>
 
         {/* Navigation list */}
         <nav className="flex-1 flex flex-col gap-1" aria-label="主导航">
-          <button className="flex items-center gap-3 w-full h-10 px-3 rounded-lg text-sm font-medium transition-all text-white bg-[#222a24] shadow-sm border border-[#2a352c] cursor-pointer">
+          <button className="flex items-center gap-3 w-full h-10 px-3 rounded-lg text-sm font-medium transition-all text-white bg-indigo-600/15 shadow-sm border border-indigo-500/30 cursor-pointer">
             <Library size={16} />
             <span>主题库</span>
           </button>
-          <button className="flex items-center gap-3 w-full h-10 px-3 rounded-lg text-sm font-medium transition-all text-[#6b7b70] bg-transparent cursor-not-allowed opacity-50" disabled>
+          <button className="flex items-center gap-3 w-full h-10 px-3 rounded-lg text-sm font-medium transition-all text-[#475569] bg-transparent cursor-not-allowed opacity-50" disabled>
             <Download size={16} />
             <span>主题商店</span>
-            <span className="ml-auto px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#1d231f] text-[#4d5a50]">稍后</span>
+            <span className="ml-auto px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#1e293b] text-[#64748b]">稍后</span>
           </button>
         </nav>
 
         {/* Runtime info block */}
-        <div className="mt-auto pt-4 border-t border-[#222a24]">
-          <div className="flex gap-3 items-center p-3 rounded-lg bg-[#19201b] border border-[#222a24] mb-3">
+        <div className="mt-auto pt-4 border-t border-[#1e293b]">
+          <div className="flex gap-3 items-center p-3 rounded-lg bg-[#0f172a]/60 border border-[#1e293b] mb-3">
             <span className={cn(
               "w-2 h-2 rounded-full ring-4 flex-none",
               dashboard.mode === 'active' ? "bg-emerald-400 ring-emerald-950/40"
@@ -182,26 +182,26 @@ function App() {
                     : "bg-zinc-400 ring-zinc-950/40"
             )} />
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-semibold text-[#f0f4f1] truncate">{modeLabel}</span>
-              <span className="text-[10px] text-[#718276] truncate mt-0.5">
+              <span className="text-xs font-semibold text-[#f8fafc] truncate">{modeLabel}</span>
+              <span className="text-[10px] text-[#94a3b8] truncate mt-0.5">
                 {dashboard.codexFound ? `Codex ${dashboard.codexVersion ?? ''}` : '未找到 Codex'}
               </span>
             </div>
           </div>
-          <div className="flex gap-2 items-center px-2 text-[10px] text-[#556359] font-medium tracking-wide uppercase">
-            <MonitorCog size={13} className="text-[#3c473f]" />
+          <div className="flex gap-2 items-center px-2 text-[10px] text-[#64748b] font-medium tracking-wide uppercase">
+            <MonitorCog size={13} className="text-[#475569]" />
             <span>{dashboard.platform}</span>
           </div>
         </div>
       </aside>
 
       {/* Main Workspace */}
-      <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[#f6f8f6]">
+      <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[#f8fafc]">
         {/* Topbar */}
-        <header className="h-[68px] border-b border-[#e1e6e2] bg-white/80 backdrop-blur-md px-6 flex items-center justify-between flex-none">
+        <header className="h-[68px] border-b border-[#e2e8f0] bg-white/80 backdrop-blur-md px-6 flex items-center justify-between flex-none">
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-[#141815]">主题库</h1>
-            <p className="text-xs text-[#5f6e62] mt-0.5">{dashboard.themes.length} 个本地主题</p>
+            <h1 className="text-lg font-bold tracking-tight text-[#0f172a]">主题库</h1>
+            <p className="text-xs text-[#64748b] mt-0.5">{dashboard.themes.length} 个本地主题</p>
           </div>
           <div className="flex gap-2 items-center">
             <Button
@@ -210,7 +210,7 @@ function App() {
               title="刷新"
               onClick={() => void refresh()}
               disabled={Boolean(working)}
-              className="text-[#3c473f] hover:text-[#141815] bg-white cursor-pointer"
+              className="text-[#475569] hover:text-[#0f172a] bg-white cursor-pointer"
             >
               <RefreshCw size={15} />
             </Button>
@@ -233,8 +233,8 @@ function App() {
         {/* Content grid */}
         <section className="flex-1 grid grid-cols-[minmax(430px,1.15fr)_minmax(360px,0.85fr)] min-h-0 overflow-hidden">
           {/* Left panel: Theme browser */}
-          <div className="overflow-y-auto p-6 border-r border-[#e1e6e2] bg-[#f8faf8]">
-            <div className="flex justify-between items-center mb-4 text-xs font-semibold uppercase tracking-wider text-[#5f6e62]">
+          <div className="overflow-y-auto p-6 border-r border-[#e2e8f0] bg-[#f8fafc]">
+            <div className="flex justify-between items-center mb-4 text-xs font-semibold uppercase tracking-wider text-[#64748b]">
               <span>已安装</span>
               <span>选择主题</span>
             </div>
@@ -246,12 +246,12 @@ function App() {
                     "flex flex-col overflow-hidden text-left border rounded-lg bg-white transition-all cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5",
                     selected?.id === theme.id
                       ? "border-primary ring-1 ring-primary"
-                      : "border-[#d8ded9] hover:border-[#b9c4bb]"
+                      : "border-[#e2e8f0] hover:border-[#cbd5e1]"
                   )}
                   onClick={() => setSelectedId(theme.id)}
                 >
                   <span
-                    className="relative block w-full aspect-video bg-[#d7ddd8] bg-center bg-cover"
+                    className="relative block w-full aspect-video bg-[#f1f5f9] bg-center bg-cover"
                     style={{ backgroundImage: `url(${theme.previewDataUrl})` }}
                   >
                     {/* Shadow overlay */}
@@ -263,8 +263,8 @@ function App() {
                     )}
                   </span>
                   <span className="flex flex-col p-3.5">
-                    <b className="text-sm font-semibold text-[#141815] truncate">{theme.name}</b>
-                    <small className="text-[10px] text-[#6d7c71] mt-1.5 flex items-center gap-1.5">
+                    <b className="text-sm font-semibold text-[#0f172a] truncate">{theme.name}</b>
+                    <small className="text-[10px] text-[#64748b] mt-1.5 flex items-center gap-1.5">
                       <span>{theme.builtIn ? '内置主题' : '本地主题'}</span>
                       <span>·</span>
                       <span>{theme.version}</span>
@@ -273,7 +273,7 @@ function App() {
                 </button>
               ))}
               <button
-                className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-[#b9c4bb] rounded-lg bg-white/40 hover:bg-[#e4ece5]/50 hover:border-primary/60 transition-all cursor-pointer text-[#4e5c52] hover:text-primary"
+                className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-[#cbd5e1] rounded-lg bg-white/40 hover:bg-[#f1f5f9]/50 hover:border-primary/60 transition-all cursor-pointer text-[#64748b] hover:text-primary"
                 onClick={() => void importWallpaper()}
               >
                 <ImagePlus size={20} />
@@ -288,7 +288,7 @@ function App() {
               <>
                 {/* Live Preview */}
                 <div
-                  className="relative overflow-hidden w-full aspect-[16/10] border border-[#cbd2cd] rounded-lg bg-[#2a312c] bg-center bg-cover shadow-md"
+                  className="relative overflow-hidden w-full aspect-[16/10] border border-[#cbd5e1] rounded-lg bg-[#1e1b4b] bg-center bg-cover shadow-md"
                   style={{ backgroundImage: `url(${selected.previewDataUrl})` }}
                 >
                   {/* Overlay Gradient depending on safeArea */}
@@ -320,10 +320,10 @@ function App() {
                 </div>
 
                 {/* Theme Title Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-[#eef1ef]">
+                <div className="flex items-center justify-between pb-4 border-b border-[#f1f5f9]">
                   <div>
-                    <h2 className="text-base font-bold text-[#141815]">{selected.name}</h2>
-                    <p className="text-[10px] text-[#6d7c71] font-mono mt-1 select-all">{selected.id}</p>
+                    <h2 className="text-base font-bold text-[#0f172a]">{selected.name}</h2>
+                    <p className="text-[10px] text-[#64748b] font-mono mt-1 select-all">{selected.id}</p>
                   </div>
                   {!selected.builtIn && (
                     <Button
@@ -339,13 +339,13 @@ function App() {
                 </div>
 
                 {/* Appearance Settings */}
-                <div className="flex flex-col gap-2.5 pb-4 border-b border-[#eef1ef]">
-                  <label className="flex gap-2 items-center text-xs font-bold text-[#3c473f] tracking-wide uppercase">
-                    <Settings2 size={13} className="text-[#6d7c71]" />
+                <div className="flex flex-col gap-2.5 pb-4 border-b border-[#f1f5f9]">
+                  <label className="flex gap-2 items-center text-xs font-bold text-[#475569] tracking-wide uppercase">
+                    <Settings2 size={13} className="text-[#64748b]" />
                     <span>外观</span>
                   </label>
                   {/* Segmented control */}
-                  <div className="flex rounded-lg bg-[#eef1ef] p-1 gap-1 w-full">
+                  <div className="flex rounded-lg bg-[#f1f5f9] p-1 gap-1 w-full">
                     {(['auto', 'light', 'dark'] as const).map((value) => (
                       <button
                         key={value}
@@ -353,7 +353,7 @@ function App() {
                           "flex-1 text-center py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer",
                           selected.appearance === value
                             ? "bg-white text-primary shadow-sm"
-                            : "text-[#5f6e62] hover:text-[#141815]"
+                            : "text-[#64748b] hover:text-[#0f172a]"
                         )}
                         onClick={() => void updateSelected({ appearance: value })}
                       >
@@ -364,9 +364,9 @@ function App() {
                 </div>
 
                 {/* Select dropdown fields */}
-                <div className="grid grid-cols-2 gap-4 pb-4 border-b border-[#eef1ef]">
+                <div className="grid grid-cols-2 gap-4 pb-4 border-b border-[#f1f5f9]">
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-bold text-[#3c473f] tracking-wide uppercase">
+                    <label className="text-xs font-bold text-[#475569] tracking-wide uppercase">
                       内容安全区
                     </label>
                     <Select
@@ -387,7 +387,7 @@ function App() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-bold text-[#3c473f] tracking-wide uppercase">
+                    <label className="text-xs font-bold text-[#475569] tracking-wide uppercase">
                       任务页背景
                     </label>
                     <Select
@@ -408,12 +408,12 @@ function App() {
                 </div>
 
                 {/* Sliders */}
-                <div className="flex flex-col gap-3 pb-4 border-b border-[#eef1ef]">
+                <div className="flex flex-col gap-3 pb-4 border-b border-[#f1f5f9]">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-[#3c473f] tracking-wide uppercase">
+                    <label className="text-xs font-bold text-[#475569] tracking-wide uppercase">
                       水平焦点
                     </label>
-                    <output className="text-xs font-mono text-[#5f6e62] font-semibold">
+                    <output className="text-xs font-mono text-[#64748b] font-semibold">
                       {Math.round(selected.art.focusX * 100)}%
                     </output>
                   </div>
@@ -431,8 +431,8 @@ function App() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-center text-[#6d7c71]">
-                <Library size={32} strokeWidth={1.5} className="text-[#aebcb1]" />
+              <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-center text-[#64748b]">
+                <Library size={32} strokeWidth={1.5} className="text-[#cbd5e1]" />
                 <span className="text-xs font-semibold">主题库为空</span>
               </div>
             )}
@@ -440,12 +440,12 @@ function App() {
         </section>
 
         {/* Footer actions */}
-        <footer className="h-[76px] px-6 border-t border-[#e1e6e2] bg-white flex items-center justify-between flex-none">
+        <footer className="h-[76px] px-6 border-t border-[#e2e8f0] bg-white flex items-center justify-between flex-none">
           <div className="flex gap-2.5 items-center text-primary">
-            <ShieldCheck size={18} strokeWidth={2.5} className="text-[#3c9f6e]" />
+            <ShieldCheck size={18} strokeWidth={2.5} className="text-emerald-500" />
             <div className="flex flex-col">
-              <span className="text-xs font-bold text-[#141815]">{modeLabel}</span>
-              <small className="text-[10px] text-[#5f6e62] mt-0.5 max-w-[360px] truncate">
+              <span className="text-xs font-bold text-[#0f172a]">{modeLabel}</span>
+              <small className="text-[10px] text-[#64748b] mt-0.5 max-w-[360px] truncate">
                 {dashboard.message}
               </small>
             </div>
@@ -457,7 +457,7 @@ function App() {
                 size="sm"
                 onClick={() => void run('pause', () => invoke('pause_skin'), '主题已暂停')}
                 disabled={Boolean(working)}
-                className="text-[#3c473f] bg-white cursor-pointer"
+                className="text-[#475569] bg-white cursor-pointer"
               >
                 <Pause size={15} />
                 暂停
