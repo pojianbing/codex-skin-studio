@@ -5,6 +5,7 @@
   --skin-surface: color-mix(in oklab, #fff 92%, var(--skin-accent));
   --skin-sidebar: color-mix(in oklab, #f1f5f9 90%, var(--skin-accent));
   --skin-text: #0f172a;
+  --skin-muted-text: #475569;
   --skin-line: color-mix(in oklab, #cbd5e1 72%, var(--skin-accent));
   --skin-wash: color-mix(in oklab, var(--skin-surface) 86%, transparent);
   --skin-composer-color: var(--skin-surface);
@@ -59,13 +60,40 @@
   --skin-table-radius: 8px;
   --skin-image-radius: 8px;
 }
+:root.codex-skin-studio.skin-theme-light {
+  --color-token-foreground: var(--skin-text) !important;
+  --color-token-text-primary: var(--skin-text) !important;
+  --color-token-text-secondary: #334155 !important;
+  --color-token-text-tertiary: var(--skin-muted-text) !important;
+  --color-token-description-foreground: var(--skin-muted-text) !important;
+  --color-token-muted-foreground: var(--skin-muted-text) !important;
+  --color-token-input-placeholder-foreground: var(--skin-muted-text) !important;
+  --color-token-conversation-body: #1e293b !important;
+  --color-token-conversation-summary-leading: #334155 !important;
+  --color-token-conversation-summary-trailing: var(--skin-muted-text) !important;
+  --color-token-text-link-foreground: var(--skin-accent) !important;
+  --vscode-foreground: #1f2937 !important;
+}
 :root.codex-skin-studio.skin-theme-dark {
   --skin-canvas: color-mix(in oklab, #090d16 93%, var(--skin-accent));
   --skin-surface: color-mix(in oklab, #121620 91%, var(--skin-accent));
   --skin-sidebar: color-mix(in oklab, #0e121c 90%, var(--skin-accent));
-  --skin-text: #e2e8f0;
+  --skin-text: #f4f4f5;
+  --skin-muted-text: #b8c0ca;
   --skin-line: color-mix(in oklab, #334155 72%, var(--skin-accent));
-  --skin-wash: color-mix(in oklab, var(--skin-surface) 82%, transparent);
+  --skin-wash: color-mix(in oklab, var(--skin-surface) 68%, transparent);
+  --color-token-foreground: var(--skin-text) !important;
+  --color-token-text-primary: var(--skin-text) !important;
+  --color-token-text-secondary: #d4d4d8 !important;
+  --color-token-text-tertiary: var(--skin-muted-text) !important;
+  --color-token-description-foreground: var(--skin-muted-text) !important;
+  --color-token-muted-foreground: var(--skin-muted-text) !important;
+  --color-token-input-placeholder-foreground: var(--skin-muted-text) !important;
+  --color-token-conversation-body: #e4e4e7 !important;
+  --color-token-conversation-summary-leading: #d4d4d8 !important;
+  --color-token-conversation-summary-trailing: var(--skin-muted-text) !important;
+  --color-token-text-link-foreground: var(--skin-accent) !important;
+  --vscode-foreground: #e5e7eb !important;
 }
 html.codex-skin-studio body {
   color: var(--skin-text) !important;
