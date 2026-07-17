@@ -117,4 +117,5 @@ pub struct CodexInstall {
     pub executable: String,
     pub bundle: Option<String>,
     pub version: Option<String>,
+    pub app_user_model_id: Option<String>,
 }

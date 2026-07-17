@@ -32,7 +32,7 @@ pub fn platform_label() -> String {
 
 #[cfg(target_os = "windows")]
 pub fn find_codex() -> Result<Option<CodexInstall>> {
-    let script = r#"[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); $p=Get-AppxPackage -Name OpenAI.Codex | Sort-Object Version -Descending | Select-Object -First 1; if($p -and $p.SignatureKind -eq 'Store' -and -not $p.IsDevelopmentMode){ $exe=Join-Path $p.InstallLocation 'app\ChatGPT.exe'; if(Test-Path -LiteralPath $exe){ [pscustomobject]@{executable=$exe;version="$($p.Version)"} | ConvertTo-Json -Compress } }"#;
+    let script = r#"[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); $p=Get-AppxPackage -Name OpenAI.Codex | Sort-Object Version -Descending | Select-Object -First 1; if($p -and $p.SignatureKind -eq 'Store' -and -not $p.IsDevelopmentMode){ $exe=Join-Path $p.InstallLocation 'app\ChatGPT.exe'; $app=@((Get-AppxPackageManifest -Package $p).Package.Applications.Application) | Where-Object { (($_.Executable -replace '/', '\') -ieq 'app\ChatGPT.exe') } | Select-Object -First 1; if((Test-Path -LiteralPath $exe) -and $app){ [pscustomobject]@{executable=$exe;version="$($p.Version)";appUserModelId="$($p.PackageFamilyName)!$($app.Id)"} | ConvertTo-Json -Compress } }"#;
     let output = Command::new("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .output()?;
@@ -50,6 +50,10 @@ pub fn find_codex() -> Result<Option<CodexInstall>> {
         .get("executable")
         .and_then(|item| item.as_str())
         .ok_or_else(|| StudioError::from("Codex 安装信息缺少可执行文件"))?;
+    let app_user_model_id = value
+        .get("appUserModelId")
+        .and_then(|item| item.as_str())
+        .ok_or_else(|| StudioError::from("Codex 安装信息缺少应用标识"))?;
     Ok(Some(CodexInstall {
         executable: executable.into(),
         bundle: None,
@@ -57,6 +61,7 @@ pub fn find_codex() -> Result<Option<CodexInstall>> {
             .get("version")
             .and_then(|item| item.as_str())
             .map(str::to_owned),
+        app_user_model_id: Some(app_user_model_id.into()),
     }))
 }
 
@@ -133,6 +138,7 @@ pub fn find_codex() -> Result<Option<CodexInstall>> {
             executable,
             bundle: Some(bundle),
             version,
+            app_user_model_id: None,
         }));
     }
     Ok(None)
@@ -392,17 +398,66 @@ pub fn stop_codex(install: &CodexInstall) -> Result<()> {
 }
 
 #[cfg(target_os = "windows")]
+fn activate_windows_app(install: &CodexInstall, arguments: &str) -> Result<()> {
+    use windows::{
+        Win32::{
+            Foundation::RPC_E_CHANGED_MODE,
+            System::Com::{
+                CLSCTX_LOCAL_SERVER, COINIT_APARTMENTTHREADED, CoCreateInstance, CoInitializeEx,
+                CoUninitialize,
+            },
+            UI::Shell::{AO_NONE, ApplicationActivationManager, IApplicationActivationManager},
+        },
+        core::HSTRING,
+    };
+
+    let app_user_model_id = install
+        .app_user_model_id
+        .as_deref()
+        .ok_or_else(|| StudioError::from("Codex 安装信息缺少应用标识"))?;
+
+    unsafe {
+        let initialization = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+        let uninitialize = if initialization.is_ok() {
+            true
+        } else if initialization == RPC_E_CHANGED_MODE {
+            false
+        } else {
+            return Err(StudioError::from(format!(
+                "无法初始化 Windows 应用激活：{}",
+                initialization.message()
+            )));
+        };
+
+        let result = (|| {
+            let manager: IApplicationActivationManager =
+                CoCreateInstance(&ApplicationActivationManager, None, CLSCTX_LOCAL_SERVER)
+                    .map_err(|error| {
+                        StudioError::from(format!("无法创建 Windows 应用激活器：{error}"))
+                    })?;
+            manager
+                .ActivateApplication(
+                    &HSTRING::from(app_user_model_id),
+                    &HSTRING::from(arguments),
+                    AO_NONE,
+                )
+                .map_err(|error| StudioError::from(format!("无法激活 Codex：{error}")))?;
+            Ok(())
+        })();
+
+        if uninitialize {
+            CoUninitialize();
+        }
+        result
+    }
+}
+
+#[cfg(target_os = "windows")]
 pub fn launch_with_cdp(install: &CodexInstall, port: u16) -> Result<()> {
-    Command::new(&install.executable)
-        .args([
-            "--remote-debugging-address=127.0.0.1",
-            &format!("--remote-debugging-port={port}"),
-        ])
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()?;
-    Ok(())
+    activate_windows_app(
+        install,
+        &format!("--remote-debugging-address=127.0.0.1 --remote-debugging-port={port}"),
+    )
 }
 
 #[cfg(target_os = "macos")]
@@ -430,12 +485,7 @@ pub fn launch_with_cdp(_install: &CodexInstall, _port: u16) -> Result<()> {
 
 #[cfg(target_os = "windows")]
 pub fn launch_normal(install: &CodexInstall) -> Result<()> {
-    Command::new(&install.executable)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()?;
-    Ok(())
+    activate_windows_app(install, "")
 }
 
 #[cfg(target_os = "macos")]

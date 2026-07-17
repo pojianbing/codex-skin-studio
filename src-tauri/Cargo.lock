@@ -528,6 +528,7 @@ dependencies = [
  "tungstenite",
  "url",
  "uuid",
+ "windows",
  "zip",
 ]
 
