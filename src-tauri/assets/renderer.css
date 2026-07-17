@@ -1,19 +1,19 @@
 :root.codex-skin-studio {
-  --skin-accent: #237a57;
+  --skin-accent: #3b82f6;
   --skin-art-position: 68% 45%;
-  --skin-canvas: color-mix(in oklab, #f5f7f5 94%, var(--skin-accent));
+  --skin-canvas: color-mix(in oklab, #f8fafc 94%, var(--skin-accent));
   --skin-surface: color-mix(in oklab, #fff 92%, var(--skin-accent));
-  --skin-sidebar: color-mix(in oklab, #edf1ee 90%, var(--skin-accent));
-  --skin-text: #202522;
-  --skin-line: color-mix(in oklab, #97a29b 72%, var(--skin-accent));
+  --skin-sidebar: color-mix(in oklab, #f1f5f9 90%, var(--skin-accent));
+  --skin-text: #0f172a;
+  --skin-line: color-mix(in oklab, #cbd5e1 72%, var(--skin-accent));
   --skin-wash: color-mix(in oklab, var(--skin-surface) 86%, transparent);
 }
 :root.codex-skin-studio.skin-theme-dark {
-  --skin-canvas: color-mix(in oklab, #151a17 93%, var(--skin-accent));
-  --skin-surface: color-mix(in oklab, #202622 91%, var(--skin-accent));
-  --skin-sidebar: color-mix(in oklab, #171d19 90%, var(--skin-accent));
-  --skin-text: #edf2ee;
-  --skin-line: color-mix(in oklab, #68746c 72%, var(--skin-accent));
+  --skin-canvas: color-mix(in oklab, #090d16 93%, var(--skin-accent));
+  --skin-surface: color-mix(in oklab, #121620 91%, var(--skin-accent));
+  --skin-sidebar: color-mix(in oklab, #0e121c 90%, var(--skin-accent));
+  --skin-text: #e2e8f0;
+  --skin-line: color-mix(in oklab, #334155 72%, var(--skin-accent));
   --skin-wash: color-mix(in oklab, var(--skin-surface) 82%, transparent);
 }
 html.codex-skin-studio body {

@@ -49,7 +49,7 @@
     for (const value of ['ambient', 'banner', 'off']) root.classList.toggle(`skin-task-${value}`, theme.art.taskMode === value);
     root.style.setProperty('--skin-art', `url("${artUrl}")`);
     root.style.setProperty('--skin-art-position', `${Math.round(theme.art.focusX * 100)}% ${Math.round(theme.art.focusY * 100)}%`);
-    root.style.setProperty('--skin-accent', theme.palette.accent || '#237a57');
+    root.style.setProperty('--skin-accent', theme.palette.accent || '#3b82f6');
     const home = document.querySelector('[role="main"]:has([data-testid="home-icon"])');
     for (const candidate of document.querySelectorAll('[role="main"]')) {
       candidate.classList.toggle('skin-home', candidate === home);
