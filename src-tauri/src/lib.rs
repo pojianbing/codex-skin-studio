@@ -7,15 +7,54 @@ mod storage;
 mod themes;
 
 use engine::AppRuntime;
-use models::{ArtConfig, Dashboard, ThemeRecord};
+use models::{ApplyPlan, ArtConfig, Dashboard, ThemeRecord};
+use tauri::Manager;
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+use tauri_plugin_autostart::ManagerExt;
+
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+fn autostart_enabled(app: &tauri::AppHandle) -> std::result::Result<bool, String> {
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    {
+        app.autolaunch()
+            .is_enabled()
+            .map_err(|error| error.to_string())
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        let _ = app;
+        Ok(false)
+    }
+}
 
 #[tauri::command]
-async fn get_dashboard() -> std::result::Result<Dashboard, String> {
-    tauri::async_runtime::spawn_blocking(|| {
+async fn get_dashboard(app: tauri::AppHandle) -> std::result::Result<Dashboard, String> {
+    let autostart_enabled = autostart_enabled(&app)?;
+    tauri::async_runtime::spawn_blocking(move || {
         themes::ensure_library().map_err(|error| error.to_string())?;
         let themes = themes::list_themes().map_err(|error| error.to_string())?;
         let state = engine::read_state();
         let install = platform::find_codex().map_err(|error| error.to_string())?;
+        let message = if state.mode == "active"
+            && install
+                .as_ref()
+                .map(|install| platform::main_pids(install).map(|pids| pids.is_empty()))
+                .transpose()
+                .map_err(|error| error.to_string())?
+                .unwrap_or(true)
+        {
+            "后台守护已就绪，等待 Codex 启动".into()
+        } else {
+            state.message
+        };
         Ok(Dashboard {
             platform: platform::platform_label(),
             codex_found: install.is_some(),
@@ -23,12 +62,41 @@ async fn get_dashboard() -> std::result::Result<Dashboard, String> {
             mode: state.mode,
             active_theme_id: state.active_theme_id,
             port: state.port,
-            message: state.message,
+            message,
+            autostart_enabled,
             themes,
         })
     })
     .await
     .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn get_apply_plan(theme_id: String) -> std::result::Result<ApplyPlan, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        engine::apply_plan(&theme_id).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+fn set_autostart(app: tauri::AppHandle, enabled: bool) -> std::result::Result<bool, String> {
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    {
+        let manager = app.autolaunch();
+        if enabled {
+            manager.enable().map_err(|error| error.to_string())?;
+        } else {
+            manager.disable().map_err(|error| error.to_string())?;
+        }
+        manager.is_enabled().map_err(|error| error.to_string())
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        let _ = (app, enabled);
+        Err("当前平台不支持登录时后台运行".into())
+    }
 }
 
 #[tauri::command]
@@ -99,18 +167,105 @@ async fn restore_official(
     .map_err(|error| error.to_string())?
 }
 
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {
+    use tauri::{
+        menu::{Menu, MenuItem},
+        tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    };
+
+    let open = MenuItem::with_id(app, "open", "打开 Skin Studio", true, None::<&str>)?;
+    let toggle = MenuItem::with_id(app, "toggle", "暂停/恢复主题", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "退出后台", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&open, &toggle, &quit])?;
+    let mut tray = TrayIconBuilder::with_id("skin-studio")
+        .tooltip("Codex Skin Studio")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "open" => show_main_window(app),
+            "toggle" => {
+                let runtime = app.state::<AppRuntime>().inner().clone();
+                std::thread::spawn(move || {
+                    let state = engine::read_state();
+                    let result = if state.mode == "active" {
+                        engine::pause(&runtime)
+                    } else if state.mode == "paused" {
+                        state
+                            .active_theme_id
+                            .ok_or_else(|| "没有可恢复的主题".into())
+                            .and_then(|theme_id| engine::apply(&runtime, &theme_id, false))
+                    } else {
+                        Ok(())
+                    };
+                    if let Err(error) = result {
+                        eprintln!("[skin-studio] 托盘主题操作失败：{error}");
+                    }
+                });
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_main_window(tray.app_handle());
+            }
+        });
+    if let Some(icon) = app.default_window_icon() {
+        tray = tray.icon(icon.clone());
+    }
+    tray.build(app)?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+        if !args.iter().any(|argument| argument == "--background") {
+            show_main_window(app);
+        }
+    }));
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    let builder = builder.plugin(tauri_plugin_autostart::init(
+        tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+        Some(vec!["--background"]),
+    ));
+
+    builder
         .plugin(tauri_plugin_dialog::init())
         .manage(AppRuntime::new())
-        .setup(|_| {
+        .setup(|app| {
             themes::ensure_library()
                 .map_err(|error| Box::<dyn std::error::Error>::from(error.to_string()))?;
+            let runtime = app.state::<AppRuntime>().inner().clone();
+            runtime.start_supervisor();
+            #[cfg(any(target_os = "windows", target_os = "macos"))]
+            setup_tray(app)?;
+            let background = std::env::args_os().any(|argument| argument == "--background");
+            if !background {
+                show_main_window(app.handle());
+            }
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() == "main"
+                && let tauri::WindowEvent::CloseRequested { api, .. } = event
+            {
+                api.prevent_close();
+                let _ = window.hide();
+            }
         })
         .invoke_handler(tauri::generate_handler![
             get_dashboard,
+            get_apply_plan,
+            set_autostart,
             import_wallpaper,
             update_theme,
             delete_theme,

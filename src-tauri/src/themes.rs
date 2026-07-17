@@ -15,12 +15,23 @@ use uuid::Uuid;
 const MAX_IMAGE_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_DIMENSION: u32 = 16_384;
 const MAX_PIXELS: u64 = 50_000_000;
+const ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-alpine-lake.jpg");
 const AMBER: &[u8] = include_bytes!("../assets/preset-amber-dusk.jpg");
 const AURORA: &[u8] = include_bytes!("../assets/preset-midnight-aurora.jpg");
+const CODEX_OBSERVATORY: &[u8] = include_bytes!("../assets/preset-codex-observatory.jpg");
 const CYBER: &[u8] = include_bytes!("../assets/preset-cyber-neon.jpg");
 const FOREST: &[u8] = include_bytes!("../assets/preset-forest-mist.jpg");
+const HARBOR_CITY: &[u8] = include_bytes!("../assets/preset-harbor-city.jpg");
+const MIDNIGHT_PAPER_OBSERVATORY: &[u8] =
+    include_bytes!("../assets/preset-midnight-paper-observatory.jpg");
+const MOONLIT_ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-moonlit-alpine-lake.jpg");
+const PAPER_SKY_WORKSHOP: &[u8] = include_bytes!("../assets/preset-paper-sky-workshop.jpg");
+const RAINY_HARBOR: &[u8] = include_bytes!("../assets/preset-rainy-harbor.jpg");
 const ROMANTIC: &[u8] = include_bytes!("../assets/preset-romantic-rose.jpg");
 const SAKURA: &[u8] = include_bytes!("../assets/preset-sakura-dawn.jpg");
+const SKY_LIGHT_STUDY: &[u8] = include_bytes!("../assets/preset-sky-light-study.jpg");
+const SUNLIT_SHORE: &[u8] = include_bytes!("../assets/preset-sunlit-shore.jpg");
+const YELLOW_GADGETEERS: &[u8] = include_bytes!("../assets/preset-yellow-gadgeteers.jpg");
 
 fn valid_id(id: &str) -> bool {
     !id.is_empty()
@@ -154,6 +165,14 @@ fn seed_one(
 
 pub fn ensure_library() -> Result<()> {
     seed_one(
+        "preset-alpine-lake",
+        "云岭晨湖",
+        "#69aebc",
+        ALPINE_LAKE,
+        0.8,
+        "left",
+    )?;
+    seed_one(
         "preset-amber-dusk",
         "琥珀黄昏",
         "#ffb347",
@@ -168,6 +187,14 @@ pub fn ensure_library() -> Result<()> {
         CYBER,
         0.5,
         "center",
+    )?;
+    seed_one(
+        "preset-codex-observatory",
+        "代码观测站",
+        "#8ed8d5",
+        CODEX_OBSERVATORY,
+        0.82,
+        "left",
     )?;
     seed_one(
         "preset-midnight-aurora",
@@ -186,6 +213,46 @@ pub fn ensure_library() -> Result<()> {
         "left",
     )?;
     seed_one(
+        "preset-harbor-city",
+        "晨光海湾",
+        "#49aeb5",
+        HARBOR_CITY,
+        0.78,
+        "left",
+    )?;
+    seed_one(
+        "preset-midnight-paper-observatory",
+        "纸艺夜航",
+        "#c89a4b",
+        MIDNIGHT_PAPER_OBSERVATORY,
+        0.8,
+        "left",
+    )?;
+    seed_one(
+        "preset-moonlit-alpine-lake",
+        "月下云岭",
+        "#7897b2",
+        MOONLIT_ALPINE_LAKE,
+        0.79,
+        "left",
+    )?;
+    seed_one(
+        "preset-paper-sky-workshop",
+        "纸艺云端",
+        "#4aa4b7",
+        PAPER_SKY_WORKSHOP,
+        0.79,
+        "left",
+    )?;
+    seed_one(
+        "preset-rainy-harbor",
+        "雨夜海湾",
+        "#438b96",
+        RAINY_HARBOR,
+        0.79,
+        "left",
+    )?;
+    seed_one(
         "preset-romantic-rose",
         "桥本有菜",
         "#d86482",
@@ -199,6 +266,30 @@ pub fn ensure_library() -> Result<()> {
         "#f0607a",
         SAKURA,
         0.65,
+        "left",
+    )?;
+    seed_one(
+        "preset-sky-light-study",
+        "天光书房",
+        "#6fbfca",
+        SKY_LIGHT_STUDY,
+        0.79,
+        "left",
+    )?;
+    seed_one(
+        "preset-sunlit-shore",
+        "晴日海岸",
+        "#5baed1",
+        SUNLIT_SHORE,
+        0.79,
+        "left",
+    )?;
+    seed_one(
+        "preset-yellow-gadgeteers",
+        "小黄人工坊",
+        "#f2c94c",
+        YELLOW_GADGETEERS,
+        0.78,
         "left",
     )?;
     Ok(())
@@ -324,11 +415,32 @@ pub fn image_bytes(manifest: &ThemeManifest, directory: &Path) -> Result<Vec<u8>
 
 #[cfg(test)]
 mod tests {
-    use super::{AMBER, AURORA, CYBER, FOREST, MAX_IMAGE_BYTES, ROMANTIC, SAKURA, image_info};
+    use super::{
+        ALPINE_LAKE, AMBER, AURORA, CODEX_OBSERVATORY, CYBER, FOREST, HARBOR_CITY, MAX_IMAGE_BYTES,
+        MIDNIGHT_PAPER_OBSERVATORY, MOONLIT_ALPINE_LAKE, PAPER_SKY_WORKSHOP, RAINY_HARBOR,
+        ROMANTIC, SAKURA, SKY_LIGHT_STUDY, SUNLIT_SHORE, YELLOW_GADGETEERS, image_info,
+    };
 
     #[test]
     fn validates_bundled_image_and_rejects_invalid_payloads() {
-        for bytes in [AMBER, AURORA, CYBER, FOREST, ROMANTIC, SAKURA] {
+        for bytes in [
+            ALPINE_LAKE,
+            AMBER,
+            AURORA,
+            CODEX_OBSERVATORY,
+            CYBER,
+            FOREST,
+            HARBOR_CITY,
+            MIDNIGHT_PAPER_OBSERVATORY,
+            MOONLIT_ALPINE_LAKE,
+            PAPER_SKY_WORKSHOP,
+            RAINY_HARBOR,
+            ROMANTIC,
+            SAKURA,
+            SKY_LIGHT_STUDY,
+            SUNLIT_SHORE,
+            YELLOW_GADGETEERS,
+        ] {
             let (_, width, height) = image_info(bytes).expect("bundled image should validate");
             assert!(width > 0 && height > 0);
         }

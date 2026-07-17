@@ -102,7 +102,14 @@ pub struct Dashboard {
     pub active_theme_id: Option<String>,
     pub port: Option<u16>,
     pub message: String,
+    pub autostart_enabled: bool,
     pub themes: Vec<ThemeRecord>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplyPlan {
+    pub action: String,
 }
 
 #[derive(Clone, Debug)]

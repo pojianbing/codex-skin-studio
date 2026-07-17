@@ -9,6 +9,12 @@ use std::{
     time::{Duration, Instant},
 };
 
+fn is_main_codex_command(command: &str) -> bool {
+    !command
+        .split_ascii_whitespace()
+        .any(|argument| argument == "--type" || argument.starts_with("--type="))
+}
+
 pub fn platform_label() -> String {
     #[cfg(target_os = "windows")]
     {
@@ -147,8 +153,8 @@ pub fn select_port(preferred: u16) -> Result<u16> {
 }
 
 #[cfg(target_os = "windows")]
-pub fn running_pids(install: &CodexInstall) -> Result<Vec<u32>> {
-    let script = r#"[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); @(Get-CimInstance Win32_Process -Filter "Name='ChatGPT.exe'" | Select-Object ProcessId,ExecutablePath) | ConvertTo-Json -Compress"#;
+fn windows_processes(install: &CodexInstall) -> Result<Vec<(u32, String)>> {
+    let script = r#"[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); @(Get-CimInstance Win32_Process -Filter "Name='ChatGPT.exe'" | Select-Object ProcessId,ExecutablePath,CommandLine) | ConvertTo-Json -Compress"#;
     let output = Command::new("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .output()?;
@@ -173,14 +179,38 @@ pub fn running_pids(install: &CodexInstall) -> Result<Vec<u32>> {
                 .or_else(|| item.get("executablePath"))?
                 .as_str()?;
             if path.eq_ignore_ascii_case(&install.executable) {
-                item.get("ProcessId")
+                let pid = item
+                    .get("ProcessId")
                     .or_else(|| item.get("processId"))?
                     .as_u64()
-                    .and_then(|pid| u32::try_from(pid).ok())
+                    .and_then(|pid| u32::try_from(pid).ok())?;
+                let command = item
+                    .get("CommandLine")
+                    .or_else(|| item.get("commandLine"))
+                    .and_then(|value| value.as_str())
+                    .unwrap_or_default()
+                    .to_owned();
+                Some((pid, command))
             } else {
                 None
             }
         })
+        .collect())
+}
+
+#[cfg(target_os = "windows")]
+pub fn running_pids(install: &CodexInstall) -> Result<Vec<u32>> {
+    Ok(windows_processes(install)?
+        .into_iter()
+        .map(|(pid, _)| pid)
+        .collect())
+}
+
+#[cfg(target_os = "windows")]
+pub fn main_pids(install: &CodexInstall) -> Result<Vec<u32>> {
+    Ok(windows_processes(install)?
+        .into_iter()
+        .filter_map(|(pid, command)| is_main_codex_command(&command).then_some(pid))
         .collect())
 }
 
@@ -202,8 +232,32 @@ pub fn running_pids(install: &CodexInstall) -> Result<Vec<u32>> {
         .collect())
 }
 
+#[cfg(target_os = "macos")]
+pub fn main_pids(install: &CodexInstall) -> Result<Vec<u32>> {
+    let output = Command::new("/bin/ps")
+        .args(["-axo", "pid=,command="])
+        .output()?;
+    let text = String::from_utf8_lossy(&output.stdout);
+    Ok(text
+        .lines()
+        .filter_map(|line| {
+            let line = line.trim();
+            let split = line.find(char::is_whitespace)?;
+            let pid = line[..split].parse().ok()?;
+            let command = line[split..].trim_start();
+            (command.starts_with(&install.executable) && is_main_codex_command(command))
+                .then_some(pid)
+        })
+        .collect())
+}
+
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn running_pids(_install: &CodexInstall) -> Result<Vec<u32>> {
+    Ok(Vec::new())
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn main_pids(_install: &CodexInstall) -> Result<Vec<u32>> {
     Ok(Vec::new())
 }
 
@@ -399,4 +453,22 @@ pub fn launch_normal(install: &CodexInstall) -> Result<()> {
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn launch_normal(_install: &CodexInstall) -> Result<()> {
     Err(StudioError::from("当前平台不支持 Codex Desktop"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_main_codex_command;
+
+    #[test]
+    fn distinguishes_electron_main_and_helper_processes() {
+        assert!(is_main_codex_command(
+            r#"C:\Program Files\Codex\ChatGPT.exe --remote-debugging-port=9335"#
+        ));
+        assert!(!is_main_codex_command(
+            r#"C:\Program Files\Codex\ChatGPT.exe --type=renderer --lang=zh-CN"#
+        ));
+        assert!(!is_main_codex_command(
+            r#"C:\Program Files\Codex\ChatGPT.exe --type crashpad-handler"#
+        ));
+    }
 }

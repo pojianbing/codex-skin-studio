@@ -51,12 +51,14 @@ type Dashboard = {
   activeThemeId?: string
   port?: number
   message: string
+  autostartEnabled: boolean
   themes: ThemeRecord[]
 }
+type ApplyPlan = { action: 'hotSwitch' | 'launch' | 'restart' }
 
 const fallbackDashboard: Dashboard = {
   platform: 'desktop', codexFound: false, mode: 'official',
-  message: '正在连接本地引擎', themes: [],
+  message: '正在连接本地引擎', autostartEnabled: false, themes: [],
 }
 
 function App() {
@@ -70,6 +72,26 @@ function App() {
     () => dashboard.themes.find((theme) => theme.id === selectedId) ?? dashboard.themes[0],
     [dashboard.themes, selectedId],
   )
+
+  const resolvedSafeArea = useMemo(() => {
+    if (!selected) return 'left'
+    if (selected.art.safeArea === 'auto') {
+      return selected.art.focusX > 0.6 ? 'left' : (selected.art.focusX < 0.4 ? 'right' : 'left')
+    }
+    return selected.art.safeArea
+  }, [selected])
+
+  const resolvedAppearance = useMemo(() => {
+    if (!selected) return 'dark'
+    if (selected.appearance === 'auto') {
+      try {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      } catch {
+        return 'dark'
+      }
+    }
+    return selected.appearance
+  }, [selected])
 
   const refresh = async () => {
     try {
@@ -119,9 +141,40 @@ function App() {
     }), `${selected.name} 已应用`)
   }
 
+  const requestApply = async () => {
+    if (!selected) return
+    setWorking('plan')
+    try {
+      const plan = await invoke<ApplyPlan>('get_apply_plan', { themeId: selected.id })
+      if (plan.action === 'restart') {
+        setConfirmRestart(true)
+        return
+      }
+    } catch (error) {
+      toast.error(String(error))
+      return
+    } finally {
+      setWorking(undefined)
+    }
+    await applySelected(false)
+  }
+
+  const toggleAutostart = async () => {
+    const enabled = !dashboard.autostartEnabled
+    await run(
+      'autostart',
+      () => invoke('set_autostart', { enabled }),
+      enabled ? '已启用登录时后台运行' : '已关闭登录时后台运行',
+    )
+  }
+
   const updateSelected = async (patch: Partial<Pick<ThemeRecord, 'appearance' | 'art'>>) => {
     if (!selected) return
-    const next = { ...selected, ...patch, art: patch.art ?? selected.art }
+    const next = {
+      ...selected,
+      ...patch,
+      art: patch.art ? { ...selected.art, ...patch.art } : selected.art,
+    }
     setDashboard((current) => ({
       ...current,
       themes: current.themes.map((theme) => (theme.id === next.id ? next : theme)),
@@ -198,12 +251,32 @@ function App() {
       {/* Main Workspace */}
       <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-zinc-950">
         {/* Topbar */}
-        <header className="h-[68px] border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md px-6 flex items-center justify-between flex-none">
+        <header className="h-[68px] border-b border-zinc-800 bg-zinc-900 px-6 flex items-center justify-between flex-none">
           <div>
             <h1 className="text-lg font-bold tracking-tight text-zinc-50">主题库</h1>
             <p className="text-xs text-zinc-400 mt-0.5">{dashboard.themes.length} 个本地主题</p>
           </div>
           <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={dashboard.autostartEnabled}
+              title="登录时后台运行"
+              onClick={() => void toggleAutostart()}
+              disabled={Boolean(working)}
+              className="flex h-8 items-center gap-2 px-2.5 rounded-md border border-zinc-800 bg-zinc-900 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
+            >
+              <span className={cn(
+                "relative h-4 w-7 rounded-full transition-colors",
+                dashboard.autostartEnabled ? "bg-emerald-500" : "bg-zinc-700",
+              )}>
+                <span className={cn(
+                  "absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
+                  dashboard.autostartEnabled ? "translate-x-3.5" : "translate-x-0.5",
+                )} />
+              </span>
+              <span>登录时后台运行</span>
+            </button>
             <Button
               variant="outline"
               size="icon-sm"
@@ -293,28 +366,42 @@ function App() {
                 >
                   {/* Overlay Gradient depending on safeArea */}
                   <div className={cn(
-                    "absolute inset-0 bg-gradient-to-r from-black/60 via-zinc-900/10 to-transparent pointer-events-none transition-all duration-300",
-                    selected.art.safeArea === 'right' && "bg-gradient-to-l"
+                    "absolute inset-0 pointer-events-none transition-all duration-300",
+                    resolvedSafeArea === 'left' && "bg-gradient-to-r from-black/60 via-zinc-900/10 to-transparent",
+                    resolvedSafeArea === 'right' && "bg-gradient-to-l from-black/60 via-zinc-900/10 to-transparent",
+                    resolvedSafeArea === 'center' && "bg-black/40",
+                    resolvedSafeArea === 'none' && "bg-transparent opacity-0"
                   )} />
 
                   {/* Preview Sidebar */}
-                  <div className="absolute z-10 inset-y-0 left-0 flex w-[22%] flex-col gap-2.5 pt-[12%] px-2 bg-black/45 backdrop-blur-[1px]">
-                    <i className="w-[70%] h-1 ml-[12%] rounded-full bg-white/60" />
-                    <i className="w-[50%] h-1 ml-[12%] rounded-full bg-white/60" />
-                    <i className="w-[60%] h-1 ml-[12%] rounded-full bg-white/60" />
-                    <i className="w-[45%] h-1 ml-[12%] rounded-full bg-white/60" />
+                  <div className={cn(
+                    "absolute z-10 inset-y-0 left-0 flex w-[22%] flex-col gap-2.5 pt-[12%] px-2 backdrop-blur-[1px] transition-colors duration-300",
+                    resolvedAppearance === 'light' ? "bg-white/45" : "bg-black/45"
+                  )}>
+                    <i className={cn("w-[70%] h-1 ml-[12%] rounded-full transition-colors duration-300", resolvedAppearance === 'light' ? "bg-zinc-800/60" : "bg-white/60")} />
+                    <i className={cn("w-[50%] h-1 ml-[12%] rounded-full transition-colors duration-300", resolvedAppearance === 'light' ? "bg-zinc-800/60" : "bg-white/60")} />
+                    <i className={cn("w-[60%] h-1 ml-[12%] rounded-full transition-colors duration-300", resolvedAppearance === 'light' ? "bg-zinc-800/60" : "bg-white/60")} />
+                    <i className={cn("w-[45%] h-1 ml-[12%] rounded-full transition-colors duration-300", resolvedAppearance === 'light' ? "bg-zinc-800/60" : "bg-white/60")} />
                   </div>
 
                   {/* Preview Main */}
                   <div className="absolute z-10 inset-y-0 left-[22%] right-0 flex items-center justify-center">
-                    <div className="text-white text-base font-bold tracking-wide drop-shadow-md select-none opacity-90">
+                    <div className={cn(
+                      "text-base font-bold tracking-wide drop-shadow-md select-none opacity-90 transition-colors duration-300",
+                      resolvedAppearance === 'light' ? "text-zinc-900" : "text-white"
+                    )}>
                       Codex
                     </div>
                   </div>
 
                   {/* Preview Composer */}
-                  <div className="absolute right-[11%] bottom-[10%] left-[11%] flex h-[18%] items-center justify-between px-3 border border-white/20 rounded-md bg-white/85 shadow-sm backdrop-blur-[2px]">
-                    <span className="w-[42%] h-1 rounded-full bg-zinc-400" />
+                  <div className={cn(
+                    "absolute right-[11%] bottom-[10%] left-[11%] flex h-[18%] items-center justify-between px-3 border rounded-md shadow-sm backdrop-blur-[2px] transition-all duration-300",
+                    resolvedAppearance === 'light'
+                      ? "bg-white/90 border-zinc-300/80 text-zinc-900"
+                      : "bg-zinc-950/85 border-white/20 text-white"
+                  )}>
+                    <span className={cn("w-[42%] h-1 rounded-full", resolvedAppearance === 'light' ? "bg-zinc-400" : "bg-zinc-600")} />
                     <b className="w-2 h-2 rounded-full" style={{ backgroundColor: selected?.accent }} />
                   </div>
                 </div>
@@ -474,17 +561,21 @@ function App() {
               恢复官方主题
             </Button>
             <Button
-              onClick={() => setConfirmRestart(true)}
+              onClick={() => void requestApply()}
               disabled={!selected || Boolean(working)}
               size="sm"
               className="bg-zinc-50 text-zinc-950 hover:bg-zinc-200 font-semibold cursor-pointer shadow-md"
             >
-              {working === 'apply' ? (
+              {working === 'apply' || working === 'plan' ? (
                 <LoaderCircle className="animate-spin" size={15} />
               ) : (
                 <Play size={15} />
               )}
-              应用主题
+              {dashboard.mode === 'active' && dashboard.activeThemeId !== selected?.id
+                ? '切换主题'
+                : dashboard.mode === 'paused' && dashboard.activeThemeId === selected?.id
+                  ? '恢复主题'
+                  : '应用主题'}
             </Button>
           </div>
         </footer>

@@ -45,8 +45,22 @@
     const appearance = theme.appearance === 'auto' ? nativeAppearance() : theme.appearance;
     root.classList.toggle('skin-theme-light', appearance === 'light');
     root.classList.toggle('skin-theme-dark', appearance === 'dark');
-    for (const value of ['left', 'right', 'center', 'none']) root.classList.toggle(`skin-safe-${value}`, theme.art.safeArea === value);
-    for (const value of ['ambient', 'banner', 'off']) root.classList.toggle(`skin-task-${value}`, theme.art.taskMode === value);
+
+    let safeArea = theme.art.safeArea;
+    if (safeArea === 'auto') {
+      safeArea = theme.art.focusX > 0.6 ? 'left' : (theme.art.focusX < 0.4 ? 'right' : 'left');
+    }
+    for (const value of ['left', 'right', 'center', 'none']) {
+      root.classList.toggle(`skin-safe-${value}`, safeArea === value);
+    }
+
+    let taskMode = theme.art.taskMode;
+    if (taskMode === 'auto') {
+      taskMode = 'ambient';
+    }
+    for (const value of ['ambient', 'banner', 'off']) {
+      root.classList.toggle(`skin-task-${value}`, taskMode === value);
+    }
     root.style.setProperty('--skin-art', `url("${artUrl}")`);
     root.style.setProperty('--skin-art-position', `${Math.round(theme.art.focusX * 100)}% ${Math.round(theme.art.focusY * 100)}%`);
     root.style.setProperty('--skin-accent', theme.palette.accent || '#3b82f6');

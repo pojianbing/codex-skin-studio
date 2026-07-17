@@ -37,8 +37,17 @@ html.codex-skin-studio main.main-surface {
   border: 0 !important;
   box-shadow: none !important;
 }
+html.codex-skin-studio.skin-safe-left main.main-surface {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--skin-surface) 64%, transparent), color-mix(in oklab, var(--skin-surface) 30%, transparent)) !important;
+}
 html.codex-skin-studio.skin-safe-right main.main-surface {
   background: linear-gradient(270deg, color-mix(in oklab, var(--skin-surface) 72%, transparent), color-mix(in oklab, var(--skin-surface) 26%, transparent)) !important;
+}
+html.codex-skin-studio.skin-safe-center main.main-surface {
+  background: color-mix(in oklab, var(--skin-surface) 48%, transparent) !important;
+}
+html.codex-skin-studio.skin-safe-none main.main-surface {
+  background: transparent !important;
 }
 html.codex-skin-studio main.main-surface > header.app-header-tint,
 html.codex-skin-studio main.main-surface [role="main"] {

@@ -20,7 +20,8 @@
         "resizable": true,
         "fullscreen": false,
         "center": true,
-        "theme": "dark"
+        "visible": false,
+        "theme": "Dark"
       }
     ],
     "security": {
@@ -30,6 +31,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "icon": ["icons/icon.ico", "icons/icon.png"],
     "category": "Utility",
     "shortDescription": "Codex desktop theme manager",
     "longDescription": "Apply local wallpaper themes to Codex Desktop and restore the official appearance.",

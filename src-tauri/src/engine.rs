@@ -1,7 +1,7 @@
 use crate::{
     cdp,
     error::{Result, StudioError},
-    models::{CodexInstall, EngineState, ThemeManifest},
+    models::{ApplyPlan, CodexInstall, EngineState, ThemeManifest},
     platform,
     storage::{atomic_write, state_path},
     themes,
@@ -39,6 +39,7 @@ impl WatcherHandle {
 pub struct AppRuntime {
     watcher: Arc<Mutex<Option<WatcherHandle>>>,
     operation: Arc<Mutex<()>>,
+    supervisor_started: Arc<AtomicBool>,
 }
 
 impl AppRuntime {
@@ -46,6 +47,7 @@ impl AppRuntime {
         Self {
             watcher: Arc::new(Mutex::new(None)),
             operation: Arc::new(Mutex::new(())),
+            supervisor_started: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -61,11 +63,18 @@ impl AppRuntime {
         let stop = Arc::new(AtomicBool::new(false));
         let thread_stop = stop.clone();
         let thread = thread::spawn(move || {
+            let mut consecutive_failures = 0;
             while !thread_stop.load(Ordering::SeqCst) {
-                if let Err(error) = cdp::inject(port, &browser_id, &payload, &revision) {
-                    eprintln!("[skin-studio] {error}");
-                    if error.to_string().contains("Browser ID 已变化") {
-                        break;
+                match cdp::inject(port, &browser_id, &payload, &revision) {
+                    Ok(_) => consecutive_failures = 0,
+                    Err(error) => {
+                        consecutive_failures += 1;
+                        eprintln!("[skin-studio] {error}");
+                        if error.to_string().contains("Browser ID 已变化")
+                            || consecutive_failures >= 5
+                        {
+                            break;
+                        }
                     }
                 }
                 for _ in 0..12 {
@@ -82,6 +91,39 @@ impl AppRuntime {
                 thread: Some(thread),
             });
         }
+    }
+
+    fn watcher_running(&self) -> bool {
+        self.watcher
+            .lock()
+            .ok()
+            .and_then(|guard| {
+                guard
+                    .as_ref()
+                    .and_then(|handle| handle.thread.as_ref())
+                    .map(|thread| !thread.is_finished())
+            })
+            .unwrap_or(false)
+    }
+
+    pub fn start_supervisor(&self) {
+        if self
+            .supervisor_started
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return;
+        }
+
+        let runtime = self.clone();
+        thread::spawn(move || {
+            loop {
+                if let Err(error) = recover_active_session(&runtime) {
+                    eprintln!("[skin-studio] 自动恢复主题失败：{error}");
+                }
+                thread::sleep(Duration::from_millis(1500));
+            }
+        });
     }
 }
 
@@ -148,13 +190,51 @@ fn install_from_state_or_current(state: &EngineState) -> Result<CodexInstall> {
         } else {
             saved == &current.executable
         };
-        if !same && !platform::running_pids(&current)?.is_empty() {
+        if !same && !platform::main_pids(&current)?.is_empty() {
             return Err(StudioError::from(
                 "检测到与保存状态不同的 Codex 版本，请先关闭 Codex",
             ));
         }
     }
     Ok(current)
+}
+
+pub fn apply_plan(theme_id: &str) -> Result<ApplyPlan> {
+    themes::load_manifest(theme_id)?;
+    let state = read_state();
+    let install = install_from_state_or_current(&state)?;
+    let port = state.port.unwrap_or_else(preferred_port);
+    let action = if platform::verify_cdp_owner(&install, port)? && cdp::browser_id(port).is_ok() {
+        "hotSwitch"
+    } else if platform::main_pids(&install)?.is_empty() {
+        "launch"
+    } else {
+        "restart"
+    };
+    Ok(ApplyPlan {
+        action: action.into(),
+    })
+}
+
+fn recover_active_session(runtime: &AppRuntime) -> Result<()> {
+    if runtime.watcher_running() {
+        return Ok(());
+    }
+    let state = read_state();
+    if state.mode != "active" {
+        return Ok(());
+    }
+    let Some(theme_id) = state.active_theme_id.as_deref() else {
+        return Ok(());
+    };
+    let install = install_from_state_or_current(&state)?;
+    if platform::main_pids(&install)?.is_empty() {
+        return Ok(());
+    }
+
+    // A normal Codex launch cannot be attached to after startup. Re-establish the
+    // previously approved themed session as soon as the process is detected.
+    apply(runtime, theme_id, true)
 }
 
 pub fn apply(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) -> Result<()> {
@@ -174,13 +254,15 @@ pub fn apply(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) -> Re
         None
     };
     if browser.is_none() {
-        let running = platform::running_pids(&install)?;
+        let running = platform::main_pids(&install)?;
         if !running.is_empty() {
             if !restart_existing {
                 return Err(StudioError::from(
                     "Codex 正在普通模式运行，请确认重启后再应用主题",
                 ));
             }
+            platform::stop_codex(&install)?;
+        } else if !platform::running_pids(&install)?.is_empty() {
             platform::stop_codex(&install)?;
         }
         port = platform::select_port(preferred_port())?;
@@ -214,12 +296,16 @@ pub fn pause(runtime: &AppRuntime) -> Result<()> {
         .map_err(|_| StudioError::from("主题操作锁已损坏"))?;
     runtime.stop_watcher();
     let mut state = read_state();
-    let port = state
-        .port
-        .ok_or_else(|| StudioError::from("没有可暂停的主题会话"))?;
-    cdp::cleanup(port, state.browser_id.as_deref())?;
+    if state.active_theme_id.is_none() {
+        return Err(StudioError::from("没有可暂停的主题会话"));
+    }
+    if let Some(port) = state.port
+        && cdp::browser_id(port).ok().as_deref() == state.browser_id.as_deref()
+    {
+        let _ = cdp::cleanup(port, state.browser_id.as_deref());
+    }
     state.mode = "paused".into();
-    state.message = "皮肤已从当前 Codex 窗口移除".into();
+    state.message = "主题已暂停，后台自动接管已停止".into();
     write_state(&state)
 }
 
