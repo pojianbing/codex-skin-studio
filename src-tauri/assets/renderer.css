@@ -7,6 +7,57 @@
   --skin-text: #0f172a;
   --skin-line: color-mix(in oklab, #cbd5e1 72%, var(--skin-accent));
   --skin-wash: color-mix(in oklab, var(--skin-surface) 86%, transparent);
+  --skin-composer-color: var(--skin-surface);
+  --skin-composer-opacity: 88%;
+  --skin-composer-border-opacity: 65%;
+  --skin-composer-blur: 12px;
+  --skin-composer-shadow: 0 10px 28px color-mix(in oklab, #101411 22%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 55%, transparent);
+  --skin-environment-color: var(--skin-surface);
+  --skin-environment-opacity: 92%;
+  --skin-environment-border-opacity: 55%;
+  --skin-environment-blur: 12px;
+  --skin-environment-radius: 24px;
+  --skin-environment-shadow: 0 14px 36px color-mix(in oklab, #101411 24%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 45%, transparent);
+  --skin-change-summary-color: var(--skin-surface);
+  --skin-change-summary-opacity: 72%;
+  --skin-change-summary-border-opacity: 45%;
+  --skin-change-summary-blur: 8px;
+  --skin-change-summary-radius: 12px;
+  --skin-change-summary-shadow: 0 10px 28px color-mix(in oklab, #101411 20%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 38%, transparent);
+  --skin-thread-row-color: var(--skin-accent);
+  --skin-thread-row-opacity: 0%;
+  --skin-thread-row-hover-opacity: 10%;
+  --skin-thread-row-selected-opacity: 18%;
+  --skin-thread-row-radius: 8px;
+  --skin-summary-row-color: var(--skin-accent);
+  --skin-summary-row-opacity: 0%;
+  --skin-summary-row-hover-opacity: 12%;
+  --skin-summary-row-selected-opacity: 16%;
+  --skin-summary-row-radius: 8px;
+  --skin-navigation-rail-opacity: 0.7;
+  --skin-scrollbar-color: var(--skin-line);
+  --skin-scrollbar-opacity: 45%;
+  --skin-scrollbar-width: 8px;
+  --skin-scrollbar-radius: 8px;
+  --skin-diff-color: var(--skin-surface);
+  --skin-diff-opacity: 12%;
+  --skin-diff-added: #22c55e;
+  --skin-diff-deleted: #ef4444;
+  --skin-diff-radius: 6px;
+  --skin-content-font-scale: 1;
+  --skin-message-gap: 16px;
+  --skin-link-color: var(--skin-accent);
+  --skin-inline-code-color: var(--skin-surface);
+  --skin-inline-code-opacity: 65%;
+  --skin-inline-code-radius: 6px;
+  --skin-quote-accent: var(--skin-accent);
+  --skin-quote-color: var(--skin-surface);
+  --skin-quote-opacity: 24%;
+  --skin-table-border: var(--skin-line);
+  --skin-table-color: var(--skin-surface);
+  --skin-table-opacity: 40%;
+  --skin-table-radius: 8px;
+  --skin-image-radius: 8px;
 }
 :root.codex-skin-studio.skin-theme-dark {
   --skin-canvas: color-mix(in oklab, #090d16 93%, var(--skin-accent));
@@ -25,11 +76,19 @@ html.codex-skin-studio body {
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
 }
+html.codex-skin-studio .skin-configurable-hidden {
+  display: none !important;
+}
+html.codex-skin-studio .skin-configurable-surface {
+  color: var(--skin-text) !important;
+  border: 1px solid color-mix(in oklab, var(--skin-line) var(--skin-region-border-opacity), transparent) !important;
+  border-radius: var(--skin-region-radius) !important;
+  background: color-mix(in oklab, var(--skin-region-color) var(--skin-region-opacity), transparent) !important;
+  box-shadow: var(--skin-region-shadow) !important;
+  backdrop-filter: blur(var(--skin-region-blur)) saturate(1.05) !important;
+}
 html.codex-skin-studio aside.app-shell-left-panel {
   color: var(--skin-text) !important;
-  background: linear-gradient(90deg, color-mix(in oklab, var(--skin-sidebar) 76%, transparent), color-mix(in oklab, var(--skin-surface) 38%, transparent)) !important;
-  border: 0 !important;
-  box-shadow: none !important;
 }
 html.codex-skin-studio main.main-surface {
   color: var(--skin-text) !important;
@@ -49,20 +108,140 @@ html.codex-skin-studio.skin-safe-center main.main-surface {
 html.codex-skin-studio.skin-safe-none main.main-surface {
   background: transparent !important;
 }
-html.codex-skin-studio main.main-surface > header.app-header-tint,
+html.codex-skin-studio main.main-surface > header.app-header-tint {
+  color: var(--skin-text) !important;
+}
 html.codex-skin-studio main.main-surface [role="main"] {
   color: var(--skin-text) !important;
   background: transparent !important;
 }
 html.codex-skin-studio .composer-surface-chrome {
   color: var(--skin-text) !important;
-  border-color: color-mix(in oklab, var(--skin-line) 65%, transparent) !important;
-  background: color-mix(in oklab, var(--skin-surface) 88%, transparent) !important;
-  box-shadow: 0 10px 28px color-mix(in oklab, #101411 22%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 55%, transparent) !important;
-  backdrop-filter: blur(12px) saturate(1.06) !important;
+  border-color: color-mix(in oklab, var(--skin-line) var(--skin-composer-border-opacity), transparent) !important;
+  background: color-mix(in oklab, var(--skin-composer-color) var(--skin-composer-opacity), transparent) !important;
+  box-shadow: var(--skin-composer-shadow) !important;
+  backdrop-filter: blur(var(--skin-composer-blur)) saturate(1.06) !important;
+}
+html.codex-skin-studio .skin-composer-footer-backdrop {
+  display: none !important;
+}
+html.codex-skin-studio .skin-environment-panel-hidden {
+  display: none !important;
+}
+html.codex-skin-studio .skin-environment-panel-surface {
+  color: var(--skin-text) !important;
+  border: 1px solid color-mix(in oklab, var(--skin-line) var(--skin-environment-border-opacity), transparent) !important;
+  border-radius: var(--skin-environment-radius) !important;
+  background: color-mix(in oklab, var(--skin-environment-color) var(--skin-environment-opacity), transparent) !important;
+  box-shadow: var(--skin-environment-shadow) !important;
+  backdrop-filter: blur(var(--skin-environment-blur)) saturate(1.06) !important;
+}
+html.codex-skin-studio .skin-environment-panel-surface header {
+  background: transparent !important;
+}
+html.codex-skin-studio .skin-change-summary-hidden {
+  display: none !important;
+}
+html.codex-skin-studio .skin-change-summary-card {
+  color: var(--skin-text) !important;
+  border: 1px solid color-mix(in oklab, var(--skin-line) var(--skin-change-summary-border-opacity), transparent) !important;
+  border-radius: var(--skin-change-summary-radius) !important;
+  background: color-mix(in oklab, var(--skin-change-summary-color) var(--skin-change-summary-opacity), transparent) !important;
+  box-shadow: var(--skin-change-summary-shadow) !important;
+  backdrop-filter: blur(var(--skin-change-summary-blur)) saturate(1.04) !important;
+}
+html.codex-skin-studio .skin-code-block-surface pre,
+html.codex-skin-studio .skin-code-block-surface [class*="bg-token-text-code-block-background"] {
+  background: transparent !important;
+}
+html.codex-skin-studio .skin-thread-row-hidden,
+html.codex-skin-studio .skin-summary-row-hidden,
+html.codex-skin-studio .skin-navigation-rail-hidden,
+html.codex-skin-studio .skin-diff-row-hidden {
+  display: none !important;
+}
+html.codex-skin-studio .skin-thread-row {
+  border-radius: var(--skin-thread-row-radius) !important;
+  background: color-mix(in oklab, var(--skin-thread-row-color) var(--skin-thread-row-opacity), transparent) !important;
+}
+html.codex-skin-studio .skin-thread-row:hover {
+  background: color-mix(in oklab, var(--skin-thread-row-color) var(--skin-thread-row-hover-opacity), transparent) !important;
+}
+html.codex-skin-studio .skin-thread-row[data-app-action-sidebar-thread-active="true"] {
+  background: color-mix(in oklab, var(--skin-thread-row-color) var(--skin-thread-row-selected-opacity), transparent) !important;
+}
+html.codex-skin-studio .skin-summary-row {
+  border-radius: var(--skin-summary-row-radius) !important;
+  background: color-mix(in oklab, var(--skin-summary-row-color) var(--skin-summary-row-opacity), transparent) !important;
+}
+html.codex-skin-studio .skin-summary-row:hover {
+  background: color-mix(in oklab, var(--skin-summary-row-color) var(--skin-summary-row-hover-opacity), transparent) !important;
+}
+html.codex-skin-studio .skin-summary-row[aria-expanded="true"],
+html.codex-skin-studio .skin-summary-row[aria-current="true"] {
+  background: color-mix(in oklab, var(--skin-summary-row-color) var(--skin-summary-row-selected-opacity), transparent) !important;
+}
+html.codex-skin-studio .skin-navigation-rail {
+  opacity: var(--skin-navigation-rail-opacity) !important;
+}
+html.codex-skin-studio *::-webkit-scrollbar {
+  width: var(--skin-scrollbar-width);
+  height: var(--skin-scrollbar-width);
+}
+html.codex-skin-studio *::-webkit-scrollbar-track {
+  background: transparent;
+}
+html.codex-skin-studio *::-webkit-scrollbar-thumb {
+  border-radius: var(--skin-scrollbar-radius);
+  background: color-mix(in oklab, var(--skin-scrollbar-color) var(--skin-scrollbar-opacity), transparent);
+}
+html.codex-skin-studio.skin-scrollbars-hidden *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+html.codex-skin-studio .skin-diff-row {
+  border-radius: var(--skin-diff-radius) !important;
+  background: color-mix(in oklab, var(--skin-diff-color) var(--skin-diff-opacity), transparent) !important;
+}
+html.codex-skin-studio .skin-diff-row .text-token-git-decoration-added-resource-foreground,
+html.codex-skin-studio .text-token-git-decoration-added-resource-foreground {
+  color: var(--skin-diff-added) !important;
+}
+html.codex-skin-studio .skin-diff-row .text-token-git-decoration-deleted-resource-foreground,
+html.codex-skin-studio .text-token-git-decoration-deleted-resource-foreground {
+  color: var(--skin-diff-deleted) !important;
+}
+html.codex-skin-studio .skin-message-stack {
+  gap: var(--skin-message-gap) !important;
+}
+html.codex-skin-studio [data-content-search-unit-key] {
+  font-size: calc(1rem * var(--skin-content-font-scale));
+}
+html.codex-skin-studio [data-content-search-unit-key$=":assistant"] a {
+  color: var(--skin-link-color) !important;
+}
+html.codex-skin-studio [data-content-search-unit-key$=":assistant"] :not(pre) > code {
+  border-radius: var(--skin-inline-code-radius) !important;
+  background: color-mix(in oklab, var(--skin-inline-code-color) var(--skin-inline-code-opacity), transparent) !important;
+}
+html.codex-skin-studio [data-content-search-unit-key$=":assistant"] blockquote {
+  border-left-color: var(--skin-quote-accent) !important;
+  background: color-mix(in oklab, var(--skin-quote-color) var(--skin-quote-opacity), transparent) !important;
+}
+html.codex-skin-studio [data-content-search-unit-key$=":assistant"] table {
+  overflow: hidden;
+  border-radius: var(--skin-table-radius) !important;
+  background: color-mix(in oklab, var(--skin-table-color) var(--skin-table-opacity), transparent) !important;
+}
+html.codex-skin-studio [data-content-search-unit-key$=":assistant"] :is(table, th, td) {
+  border-color: var(--skin-table-border) !important;
+}
+html.codex-skin-studio [data-content-search-unit-key$=":assistant"] img {
+  border-radius: var(--skin-image-radius) !important;
 }
 html.codex-skin-studio .ProseMirror { color: var(--skin-text) !important; caret-color: var(--skin-accent) !important; }
-html.codex-skin-studio aside.app-shell-left-panel button:hover,
+html.codex-skin-studio aside.app-shell-left-panel button:not([data-app-action-sidebar-thread-row]):hover,
 html.codex-skin-studio aside.app-shell-left-panel [aria-current="page"] {
   background: color-mix(in oklab, var(--skin-accent) 18%, transparent) !important;
 }

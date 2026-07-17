@@ -336,7 +336,10 @@ pub fn restore_official(runtime: &AppRuntime, restart_codex: bool) -> Result<()>
 #[cfg(test)]
 mod tests {
     use super::payload_for;
-    use crate::models::{ArtConfig, Palette, ThemeManifest};
+    use crate::models::{
+        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, Palette, ThemeManifest,
+        UiConfig,
+    };
     use std::fs;
     use uuid::Uuid;
 
@@ -360,6 +363,10 @@ mod tests {
             appearance: "auto".into(),
             art: ArtConfig::default(),
             palette: Palette::default(),
+            composer: ComposerConfig::default(),
+            environment: EnvironmentConfig::default(),
+            change_summary: ChangeSummaryConfig::default(),
+            ui: UiConfig::default(),
             built_in: false,
         };
         let (payload, revision) = payload_for(&manifest, &directory).unwrap();

@@ -1,6 +1,9 @@
 use crate::{
     error::{Result, StudioError},
-    models::{ArtConfig, Palette, ThemeManifest, ThemeRecord},
+    models::{
+        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, Palette, ThemeManifest,
+        ThemeRecord, UiConfig,
+    },
     storage::{atomic_write, themes_root},
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD};
@@ -61,6 +64,168 @@ fn validate_art(art: &ArtConfig) -> Result<()> {
     Ok(())
 }
 
+fn valid_hex_color(value: &str) -> bool {
+    value.len() == 7
+        && value.starts_with('#')
+        && value[1..].bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn validate_composer(composer: &ComposerConfig) -> Result<()> {
+    if composer.background != "auto" && !valid_hex_color(&composer.background) {
+        return Err(StudioError::from("输入框背景色必须为自动或十六进制颜色"));
+    }
+    if !(0.0..=1.0).contains(&composer.opacity) || !(0.0..=1.0).contains(&composer.border_opacity) {
+        return Err(StudioError::from("输入框透明度必须位于 0 到 1 之间"));
+    }
+    if composer.blur > 32 {
+        return Err(StudioError::from("输入框模糊强度不能超过 32px"));
+    }
+    if !["none", "soft", "strong"].contains(&composer.shadow.as_str()) {
+        return Err(StudioError::from("输入框阴影设置无效"));
+    }
+    Ok(())
+}
+
+fn validate_environment(environment: &EnvironmentConfig) -> Result<()> {
+    if environment.background != "auto" && !valid_hex_color(&environment.background) {
+        return Err(StudioError::from("环境面板背景色必须为自动或十六进制颜色"));
+    }
+    if !(0.0..=1.0).contains(&environment.opacity)
+        || !(0.0..=1.0).contains(&environment.border_opacity)
+    {
+        return Err(StudioError::from("环境面板透明度必须位于 0 到 1 之间"));
+    }
+    if environment.blur > 32 {
+        return Err(StudioError::from("环境面板模糊强度不能超过 32px"));
+    }
+    if !(8..=32).contains(&environment.radius) {
+        return Err(StudioError::from("环境面板圆角必须位于 8px 到 32px 之间"));
+    }
+    if !["none", "soft", "strong"].contains(&environment.shadow.as_str()) {
+        return Err(StudioError::from("环境面板阴影设置无效"));
+    }
+    Ok(())
+}
+
+fn validate_change_summary(change_summary: &ChangeSummaryConfig) -> Result<()> {
+    if change_summary.background != "auto" && !valid_hex_color(&change_summary.background) {
+        return Err(StudioError::from("变更摘要背景色必须为自动或十六进制颜色"));
+    }
+    if !(0.0..=1.0).contains(&change_summary.opacity)
+        || !(0.0..=1.0).contains(&change_summary.border_opacity)
+    {
+        return Err(StudioError::from("变更摘要透明度必须位于 0 到 1 之间"));
+    }
+    if change_summary.blur > 32 {
+        return Err(StudioError::from("变更摘要模糊强度不能超过 32px"));
+    }
+    if !(8..=32).contains(&change_summary.radius) {
+        return Err(StudioError::from("变更摘要圆角必须位于 8px 到 32px 之间"));
+    }
+    if !["none", "soft", "strong"].contains(&change_summary.shadow.as_str()) {
+        return Err(StudioError::from("变更摘要阴影设置无效"));
+    }
+    Ok(())
+}
+
+fn validate_ui(ui: &UiConfig) -> Result<()> {
+    for (label, surface) in [
+        ("侧边栏", &ui.sidebar),
+        ("标题栏", &ui.header),
+        ("用户消息", &ui.user_bubble),
+        ("代码块", &ui.code_block),
+        ("活动卡片", &ui.activity_card),
+    ] {
+        if surface.background != "auto" && !valid_hex_color(&surface.background) {
+            return Err(StudioError::from(format!(
+                "{label}背景色必须为自动或十六进制颜色"
+            )));
+        }
+        if !(0.0..=1.0).contains(&surface.opacity) || !(0.0..=1.0).contains(&surface.border_opacity)
+        {
+            return Err(StudioError::from(format!(
+                "{label}透明度必须位于 0 到 1 之间"
+            )));
+        }
+        if surface.blur > 32 || surface.radius > 32 {
+            return Err(StudioError::from(format!("{label}模糊和圆角不能超过 32px")));
+        }
+        if !["none", "soft", "strong"].contains(&surface.shadow.as_str()) {
+            return Err(StudioError::from(format!("{label}阴影设置无效")));
+        }
+    }
+
+    for (label, rows) in [
+        ("任务列表", &ui.thread_rows),
+        ("环境面板项目", &ui.summary_rows),
+    ] {
+        if rows.background != "auto" && !valid_hex_color(&rows.background) {
+            return Err(StudioError::from(format!(
+                "{label}背景色必须为自动或十六进制颜色"
+            )));
+        }
+        if !(0.0..=1.0).contains(&rows.opacity)
+            || !(0.0..=1.0).contains(&rows.hover_opacity)
+            || !(0.0..=1.0).contains(&rows.selected_opacity)
+            || rows.radius > 24
+        {
+            return Err(StudioError::from(format!("{label}样式参数超出范围")));
+        }
+    }
+
+    if !(0.0..=1.0).contains(&ui.navigation_rail_opacity) {
+        return Err(StudioError::from("消息导航轨透明度必须位于 0 到 1 之间"));
+    }
+    if ui.scrollbar.color != "auto" && !valid_hex_color(&ui.scrollbar.color) {
+        return Err(StudioError::from("滚动条颜色必须为自动或十六进制颜色"));
+    }
+    if !(0.0..=1.0).contains(&ui.scrollbar.opacity)
+        || !(4..=16).contains(&ui.scrollbar.width)
+        || ui.scrollbar.radius > 16
+    {
+        return Err(StudioError::from("滚动条样式参数超出范围"));
+    }
+    if ui.diff.background != "auto" && !valid_hex_color(&ui.diff.background)
+        || !valid_hex_color(&ui.diff.added_color)
+        || !valid_hex_color(&ui.diff.deleted_color)
+        || !(0.0..=1.0).contains(&ui.diff.opacity)
+        || ui.diff.radius > 24
+    {
+        return Err(StudioError::from("Diff 样式参数无效"));
+    }
+    if !(560..=1200).contains(&ui.content.max_width)
+        || !(0.8..=1.3).contains(&ui.content.font_scale)
+        || !(4..=32).contains(&ui.content.message_gap)
+    {
+        return Err(StudioError::from("正文布局参数超出范围"));
+    }
+
+    for (label, color) in [
+        ("链接", &ui.rich_text.link_color),
+        ("行内代码背景", &ui.rich_text.inline_code_background),
+        ("引用强调", &ui.rich_text.quote_accent),
+        ("引用背景", &ui.rich_text.quote_background),
+        ("表格边框", &ui.rich_text.table_border),
+        ("表格背景", &ui.rich_text.table_background),
+    ] {
+        if color != "auto" && !valid_hex_color(color) {
+            return Err(StudioError::from(format!(
+                "{label}颜色必须为自动或十六进制颜色"
+            )));
+        }
+    }
+    if !(0.0..=1.0).contains(&ui.rich_text.inline_code_opacity)
+        || !(0.0..=1.0).contains(&ui.rich_text.quote_opacity)
+        || !(0.0..=1.0).contains(&ui.rich_text.table_opacity)
+        || ui.rich_text.inline_code_radius > 24
+        || ui.rich_text.table_radius > 24
+        || ui.rich_text.image_radius > 32
+    {
+        return Err(StudioError::from("富文本样式参数超出范围"));
+    }
+    Ok(())
+}
+
 fn validate_manifest(manifest: &ThemeManifest) -> Result<()> {
     if manifest.schema_version != 1 || !valid_id(&manifest.id) {
         return Err(StudioError::from("主题清单版本或 ID 无效"));
@@ -71,7 +236,11 @@ fn validate_manifest(manifest: &ThemeManifest) -> Result<()> {
     if !["auto", "light", "dark"].contains(&manifest.appearance.as_str()) {
         return Err(StudioError::from("主题外观设置无效"));
     }
-    validate_art(&manifest.art)
+    validate_art(&manifest.art)?;
+    validate_composer(&manifest.composer)?;
+    validate_environment(&manifest.environment)?;
+    validate_change_summary(&manifest.change_summary)?;
+    validate_ui(&manifest.ui)
 }
 
 fn image_info(bytes: &[u8]) -> Result<(ImageFormat, u32, u32)> {
@@ -158,6 +327,10 @@ fn seed_one(
             palette: Palette {
                 accent: accent.into(),
             },
+            composer: ComposerConfig::default(),
+            environment: EnvironmentConfig::default(),
+            change_summary: ChangeSummaryConfig::default(),
+            ui: UiConfig::default(),
             built_in: true,
         },
     )
@@ -323,6 +496,10 @@ fn record_from(manifest: ThemeManifest, directory: &Path) -> Result<ThemeRecord>
         appearance: manifest.appearance,
         accent: manifest.palette.accent,
         art: manifest.art,
+        composer: manifest.composer,
+        environment: manifest.environment,
+        change_summary: manifest.change_summary,
+        ui: manifest.ui,
         preview_data_url: format!("data:image/jpeg;base64,{}", STANDARD.encode(thumbnail)),
         built_in: manifest.built_in,
     })
@@ -385,16 +562,32 @@ pub fn import_wallpaper(path: &str) -> Result<ThemeRecord> {
         appearance: "auto".into(),
         art: ArtConfig::default(),
         palette: Palette::default(),
+        composer: ComposerConfig::default(),
+        environment: EnvironmentConfig::default(),
+        change_summary: ChangeSummaryConfig::default(),
+        ui: UiConfig::default(),
         built_in: false,
     };
     write_manifest(&directory, &manifest)?;
     record_from(manifest, &directory)
 }
 
-pub fn update_theme(id: &str, appearance: &str, art: ArtConfig) -> Result<()> {
+pub fn update_theme(
+    id: &str,
+    appearance: &str,
+    art: ArtConfig,
+    composer: ComposerConfig,
+    environment: EnvironmentConfig,
+    change_summary: ChangeSummaryConfig,
+    ui: UiConfig,
+) -> Result<()> {
     let (mut manifest, directory) = load_manifest(id)?;
     manifest.appearance = appearance.into();
     manifest.art = art;
+    manifest.composer = composer;
+    manifest.environment = environment;
+    manifest.change_summary = change_summary;
+    manifest.ui = ui;
     write_manifest(&directory, &manifest)
 }
 

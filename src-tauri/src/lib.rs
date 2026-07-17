@@ -7,7 +7,10 @@ mod storage;
 mod themes;
 
 use engine::AppRuntime;
-use models::{ApplyPlan, ArtConfig, Dashboard, ThemeRecord};
+use models::{
+    ApplyPlan, ArtConfig, ChangeSummaryConfig, ComposerConfig, Dashboard, EnvironmentConfig,
+    ThemeRecord, UiConfig,
+};
 use tauri::Manager;
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
@@ -95,7 +98,7 @@ fn set_autostart(app: tauri::AppHandle, enabled: bool) -> std::result::Result<bo
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = (app, enabled);
-        Err("当前平台不支持登录时后台运行".into())
+        Err("当前平台不支持开机启动".into())
     }
 }
 
@@ -113,9 +116,22 @@ async fn update_theme(
     theme_id: String,
     appearance: String,
     art: ArtConfig,
+    composer: ComposerConfig,
+    environment: EnvironmentConfig,
+    change_summary: ChangeSummaryConfig,
+    ui: UiConfig,
 ) -> std::result::Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        themes::update_theme(&theme_id, &appearance, art).map_err(|error| error.to_string())
+        themes::update_theme(
+            &theme_id,
+            &appearance,
+            art,
+            composer,
+            environment,
+            change_summary,
+            ui,
+        )
+        .map_err(|error| error.to_string())
     })
     .await
     .map_err(|error| error.to_string())?

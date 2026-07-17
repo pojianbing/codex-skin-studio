@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import {
-  Check, Download, ImagePlus, Library, LoaderCircle, MonitorCog,
-  Pause, Play, RefreshCw, RotateCcw, Settings2, ShieldCheck, Trash2,
+  Check, ChevronDown, Download, Files, ImagePlus, Library, LoaderCircle, MonitorCog,
+  PanelBottom, PanelRight, Pause, Play, RefreshCw, RotateCcw, Settings2, ShieldCheck, Trash2,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -33,6 +34,98 @@ type ArtConfig = {
   safeArea: 'auto' | 'left' | 'right' | 'center' | 'none'
   taskMode: 'auto' | 'ambient' | 'banner' | 'off'
 }
+type ComposerConfig = {
+  background: string
+  opacity: number
+  blur: number
+  borderOpacity: number
+  shadow: 'none' | 'soft' | 'strong'
+  showFooterBackdrop: boolean
+}
+type EnvironmentConfig = {
+  visible: boolean
+  background: string
+  opacity: number
+  blur: number
+  borderOpacity: number
+  shadow: 'none' | 'soft' | 'strong'
+  radius: number
+}
+type ChangeSummaryConfig = {
+  visible: boolean
+  background: string
+  opacity: number
+  blur: number
+  borderOpacity: number
+  shadow: 'none' | 'soft' | 'strong'
+  radius: number
+}
+type SurfaceStyle = {
+  visible: boolean
+  background: string
+  opacity: number
+  blur: number
+  borderOpacity: number
+  shadow: 'none' | 'soft' | 'strong'
+  radius: number
+}
+type RowStyle = {
+  visible: boolean
+  background: string
+  opacity: number
+  hoverOpacity: number
+  selectedOpacity: number
+  radius: number
+}
+type ScrollbarStyle = {
+  visible: boolean
+  color: string
+  opacity: number
+  width: number
+  radius: number
+}
+type DiffStyle = {
+  visible: boolean
+  background: string
+  opacity: number
+  addedColor: string
+  deletedColor: string
+  radius: number
+}
+type ContentLayoutStyle = {
+  maxWidth: number
+  fontScale: number
+  messageGap: number
+}
+type RichTextStyle = {
+  linkColor: string
+  inlineCodeBackground: string
+  inlineCodeOpacity: number
+  inlineCodeRadius: number
+  quoteAccent: string
+  quoteBackground: string
+  quoteOpacity: number
+  tableBorder: string
+  tableBackground: string
+  tableOpacity: number
+  tableRadius: number
+  imageRadius: number
+}
+type UiConfig = {
+  sidebar: SurfaceStyle
+  header: SurfaceStyle
+  userBubble: SurfaceStyle
+  codeBlock: SurfaceStyle
+  activityCard: SurfaceStyle
+  threadRows: RowStyle
+  summaryRows: RowStyle
+  navigationRailVisible: boolean
+  navigationRailOpacity: number
+  scrollbar: ScrollbarStyle
+  diff: DiffStyle
+  content: ContentLayoutStyle
+  richText: RichTextStyle
+}
 type ThemeRecord = {
   id: string
   name: string
@@ -40,6 +133,10 @@ type ThemeRecord = {
   appearance: 'auto' | 'light' | 'dark'
   accent: string
   art: ArtConfig
+  composer: ComposerConfig
+  environment: EnvironmentConfig
+  changeSummary: ChangeSummaryConfig
+  ui: UiConfig
   previewDataUrl: string
   builtIn: boolean
 }
@@ -59,6 +156,225 @@ type ApplyPlan = { action: 'hotSwitch' | 'launch' | 'restart' }
 const fallbackDashboard: Dashboard = {
   platform: 'desktop', codexFound: false, mode: 'official',
   message: '正在连接本地引擎', autostartEnabled: false, themes: [],
+}
+
+const sliderValue = (value: number | readonly number[]) => (
+  typeof value === 'number' ? value : value[0]
+)
+
+function ToggleSetting({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-xs font-semibold text-zinc-300">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "relative h-5 w-9 flex-none rounded-full border transition-colors cursor-pointer",
+          checked ? "border-emerald-400/40 bg-emerald-500" : "border-zinc-700 bg-zinc-800"
+        )}
+      >
+        <span className={cn(
+          "absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
+          checked ? "translate-x-4" : "translate-x-0"
+        )} />
+      </button>
+    </div>
+  )
+}
+
+function SliderSetting({
+  label,
+  value,
+  min,
+  max,
+  step,
+  output,
+  onChange,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  output: string
+  onChange: (value: number) => void
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-xs font-semibold text-zinc-300">{label}</label>
+        <output className="text-[10px] font-mono font-semibold text-zinc-500">{output}</output>
+      </div>
+      <Slider
+        value={[value]}
+        min={min}
+        max={max}
+        step={step}
+        onValueChange={(next) => onChange(sliderValue(next))}
+        className="w-full cursor-pointer py-1"
+      />
+    </div>
+  )
+}
+
+function ColorSetting({
+  label,
+  value,
+  autoColor,
+  allowAuto = true,
+  onChange,
+}: {
+  label: string
+  value: string
+  autoColor: string
+  allowAuto?: boolean
+  onChange: (value: string) => void
+}) {
+  const resolved = value === 'auto' ? autoColor : value
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-xs font-semibold text-zinc-300">{label}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <label
+          className="relative h-7 w-7 flex-none overflow-hidden rounded-md border border-zinc-700 ring-1 ring-black/20 cursor-pointer"
+          title={`选择${label}`}
+        >
+          <span className="absolute inset-0" style={{ backgroundColor: resolved }} />
+          <input
+            type="color"
+            aria-label={label}
+            className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+            value={resolved}
+            onChange={(event) => onChange(event.target.value)}
+          />
+        </label>
+        <code className="w-[74px] truncate text-right text-[10px] font-semibold text-zinc-500">
+          {value === 'auto' ? '跟随主题' : value.toUpperCase()}
+        </code>
+        {allowAuto ? (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            title="恢复自动颜色"
+            aria-label={`${label}恢复自动`}
+            disabled={value === 'auto'}
+            onClick={() => onChange('auto')}
+            className="text-zinc-500 hover:text-zinc-100 disabled:opacity-30 cursor-pointer"
+          >
+            <RotateCcw size={12} />
+          </Button>
+        ) : (
+          <span className="h-7 w-7 flex-none" aria-hidden="true" />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ShadowSetting({
+  value,
+  onChange,
+}: {
+  value: SurfaceStyle['shadow']
+  onChange: (value: SurfaceStyle['shadow']) => void
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-xs font-semibold text-zinc-300">阴影</label>
+      <div className="flex w-full gap-1 rounded-lg bg-zinc-950 p-1">
+        {(['none', 'soft', 'strong'] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={cn(
+              "flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors cursor-pointer",
+              value === option ? "bg-zinc-800 text-zinc-50 shadow-sm" : "text-zinc-500 hover:text-zinc-200"
+            )}
+            onClick={() => onChange(option)}
+          >
+            {option === 'none' ? '关闭' : option === 'soft' ? '柔和' : '强调'}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ConfigSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <details className="group border-t border-zinc-800 first:border-t-0">
+      <summary className="flex h-10 list-none items-center justify-between gap-3 text-xs font-semibold text-zinc-300 cursor-pointer select-none [&::-webkit-details-marker]:hidden">
+        <span>{title}</span>
+        <ChevronDown size={13} className="text-zinc-600 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="flex flex-col gap-4 pb-4">{children}</div>
+    </details>
+  )
+}
+
+function SurfaceStyleEditor({
+  value,
+  autoColor,
+  onChange,
+}: {
+  value: SurfaceStyle
+  autoColor: string
+  onChange: (value: SurfaceStyle) => void
+}) {
+  const patch = (next: Partial<SurfaceStyle>) => onChange({ ...value, ...next })
+  return (
+    <>
+      <ToggleSetting label="显示" checked={value.visible} onChange={(visible) => patch({ visible })} />
+      {value.visible && (
+        <>
+          <ColorSetting label="背景色" value={value.background} autoColor={autoColor} onChange={(background) => patch({ background })} />
+          <SliderSetting label="不透明度" value={value.opacity} min={0} max={1} step={0.01} output={`${Math.round(value.opacity * 100)}%`} onChange={(opacity) => patch({ opacity })} />
+          <SliderSetting label="背景模糊" value={value.blur} min={0} max={32} step={1} output={`${value.blur}px`} onChange={(blur) => patch({ blur })} />
+          <SliderSetting label="边框强度" value={value.borderOpacity} min={0} max={1} step={0.01} output={`${Math.round(value.borderOpacity * 100)}%`} onChange={(borderOpacity) => patch({ borderOpacity })} />
+          <SliderSetting label="圆角" value={value.radius} min={0} max={32} step={1} output={`${value.radius}px`} onChange={(radius) => patch({ radius })} />
+          <ShadowSetting value={value.shadow} onChange={(shadow) => patch({ shadow })} />
+        </>
+      )}
+    </>
+  )
+}
+
+function RowStyleEditor({
+  value,
+  autoColor,
+  onChange,
+}: {
+  value: RowStyle
+  autoColor: string
+  onChange: (value: RowStyle) => void
+}) {
+  const patch = (next: Partial<RowStyle>) => onChange({ ...value, ...next })
+  return (
+    <>
+      <ToggleSetting label="显示" checked={value.visible} onChange={(visible) => patch({ visible })} />
+      {value.visible && (
+        <>
+          <ColorSetting label="背景色" value={value.background} autoColor={autoColor} onChange={(background) => patch({ background })} />
+          <SliderSetting label="常态强度" value={value.opacity} min={0} max={1} step={0.01} output={`${Math.round(value.opacity * 100)}%`} onChange={(opacity) => patch({ opacity })} />
+          <SliderSetting label="悬停强度" value={value.hoverOpacity} min={0} max={1} step={0.01} output={`${Math.round(value.hoverOpacity * 100)}%`} onChange={(hoverOpacity) => patch({ hoverOpacity })} />
+          <SliderSetting label="选中强度" value={value.selectedOpacity} min={0} max={1} step={0.01} output={`${Math.round(value.selectedOpacity * 100)}%`} onChange={(selectedOpacity) => patch({ selectedOpacity })} />
+          <SliderSetting label="圆角" value={value.radius} min={0} max={24} step={1} output={`${value.radius}px`} onChange={(radius) => patch({ radius })} />
+        </>
+      )}
+    </>
+  )
 }
 
 function App() {
@@ -92,6 +408,42 @@ function App() {
     }
     return selected.appearance
   }, [selected])
+
+  const previewComposerColor = selected
+    ? selected.composer.background !== 'auto'
+      ? selected.composer.background
+      : resolvedAppearance === 'light' ? '#f8fafc' : '#121620'
+    : '#121620'
+
+  const previewComposerShadow = selected?.composer.shadow === 'none'
+    ? 'none'
+    : selected?.composer.shadow === 'strong'
+      ? '0 14px 34px rgba(0, 0, 0, 0.42), 0 3px 8px rgba(0, 0, 0, 0.2)'
+      : '0 8px 20px rgba(0, 0, 0, 0.24)'
+
+  const previewEnvironmentColor = selected
+    ? selected.environment.background !== 'auto'
+      ? selected.environment.background
+      : resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'
+    : '#18181b'
+
+  const previewEnvironmentShadow = selected?.environment.shadow === 'none'
+    ? 'none'
+    : selected?.environment.shadow === 'strong'
+      ? '0 12px 30px rgba(0, 0, 0, 0.44), 0 3px 8px rgba(0, 0, 0, 0.22)'
+      : '0 7px 18px rgba(0, 0, 0, 0.26)'
+
+  const previewChangeSummaryColor = selected
+    ? selected.changeSummary.background !== 'auto'
+      ? selected.changeSummary.background
+      : resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'
+    : '#18181b'
+
+  const previewChangeSummaryShadow = selected?.changeSummary.shadow === 'none'
+    ? 'none'
+    : selected?.changeSummary.shadow === 'strong'
+      ? '0 10px 24px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2)'
+      : '0 6px 16px rgba(0, 0, 0, 0.22)'
 
   const refresh = async () => {
     try {
@@ -164,16 +516,24 @@ function App() {
     await run(
       'autostart',
       () => invoke('set_autostart', { enabled }),
-      enabled ? '已启用登录时后台运行' : '已关闭登录时后台运行',
+      enabled ? '已启用开机启动' : '已关闭开机启动',
     )
   }
 
-  const updateSelected = async (patch: Partial<Pick<ThemeRecord, 'appearance' | 'art'>>) => {
+  const updateSelected = async (patch: Partial<Pick<ThemeRecord, 'appearance' | 'art' | 'composer' | 'environment' | 'changeSummary' | 'ui'>>) => {
     if (!selected) return
     const next = {
       ...selected,
       ...patch,
       art: patch.art ? { ...selected.art, ...patch.art } : selected.art,
+      composer: patch.composer ? { ...selected.composer, ...patch.composer } : selected.composer,
+      environment: patch.environment
+        ? { ...selected.environment, ...patch.environment }
+        : selected.environment,
+      changeSummary: patch.changeSummary
+        ? { ...selected.changeSummary, ...patch.changeSummary }
+        : selected.changeSummary,
+      ui: patch.ui ? { ...selected.ui, ...patch.ui } : selected.ui,
     }
     setDashboard((current) => ({
       ...current,
@@ -182,6 +542,8 @@ function App() {
     try {
       await invoke('update_theme', {
         themeId: next.id, appearance: next.appearance, art: next.art,
+        composer: next.composer, environment: next.environment,
+        changeSummary: next.changeSummary, ui: next.ui,
       })
       if (dashboard.activeThemeId === next.id) {
         await invoke('apply_theme', { themeId: next.id, restartExisting: false })
@@ -190,6 +552,11 @@ function App() {
       toast.error(String(error))
       await refresh()
     }
+  }
+
+  const updateUi = <Key extends keyof UiConfig,>(key: Key, value: UiConfig[Key]) => {
+    if (!selected) return Promise.resolve()
+    return updateSelected({ ui: { ...selected.ui, [key]: value } })
   }
 
   const modeLabel = dashboard.mode === 'active' ? '主题运行中'
@@ -261,7 +628,7 @@ function App() {
               type="button"
               role="switch"
               aria-checked={dashboard.autostartEnabled}
-              title="登录时后台运行"
+              title="开机启动"
               onClick={() => void toggleAutostart()}
               disabled={Boolean(working)}
               className="flex h-8 items-center gap-2 px-2.5 rounded-md border border-zinc-800 bg-zinc-900 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
@@ -275,7 +642,7 @@ function App() {
                   dashboard.autostartEnabled ? "translate-x-3" : "translate-x-0",
                 )} />
               </span>
-              <span>登录时后台运行</span>
+              <span>开机启动</span>
             </button>
             <Button
               variant="outline"
@@ -361,7 +728,7 @@ function App() {
               <>
                 {/* Live Preview */}
                 <div
-                  className="relative overflow-hidden w-full aspect-[16/10] border border-zinc-800 rounded-lg bg-zinc-950 bg-center bg-cover shadow-md"
+                  className="relative shrink-0 overflow-hidden w-full aspect-[16/10] border border-zinc-800 rounded-lg bg-zinc-950 bg-center bg-cover shadow-md"
                   style={{ backgroundImage: `url(${selected.previewDataUrl})` }}
                 >
                   {/* Overlay Gradient depending on safeArea */}
@@ -394,13 +761,122 @@ function App() {
                     </div>
                   </div>
 
+                  {/* Preview Change Summary */}
+                  <div
+                    aria-hidden="true"
+                    className={cn(
+                      "pointer-events-none absolute z-20 right-[36%] bottom-[34%] left-[28%] flex h-[24%] flex-col overflow-hidden border transition-all duration-300",
+                      selected.changeSummary.visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
+                    )}
+                    style={{
+                      background: `color-mix(in oklab, ${previewChangeSummaryColor} ${Math.round(selected.changeSummary.opacity * 100)}%, transparent)`,
+                      borderColor: `color-mix(in oklab, ${resolvedAppearance === 'light' ? '#94a3b8' : '#64748b'} ${Math.round(selected.changeSummary.borderOpacity * 100)}%, transparent)`,
+                      borderRadius: `${selected.changeSummary.radius}px`,
+                      backdropFilter: `blur(${selected.changeSummary.blur}px) saturate(1.04)`,
+                      boxShadow: previewChangeSummaryShadow,
+                    }}
+                  >
+                    <div className="flex h-1/2 items-center justify-between border-b border-white/10 px-2">
+                      <div className="flex items-center gap-1.5">
+                        <i className="h-2 w-2 rounded-sm bg-emerald-500/80" />
+                        <span className={cn(
+                          "h-1 w-10 rounded-full",
+                          resolvedAppearance === 'light' ? "bg-zinc-700/65" : "bg-zinc-300/65"
+                        )} />
+                      </div>
+                      <span className={cn(
+                        "h-1 w-5 rounded-full",
+                        resolvedAppearance === 'light' ? "bg-zinc-500/55" : "bg-zinc-400/55"
+                      )} />
+                    </div>
+                    <div className="flex flex-1 items-center justify-between px-2">
+                      <span className={cn(
+                        "h-1 w-[58%] rounded-full",
+                        resolvedAppearance === 'light' ? "bg-zinc-600/50" : "bg-zinc-400/50"
+                      )} />
+                      <i className="h-1 w-3 rounded-full bg-emerald-500/70" />
+                    </div>
+                  </div>
+
+                  {/* Preview Environment Panel */}
+                  <div
+                    aria-hidden="true"
+                    className={cn(
+                      "pointer-events-none absolute z-20 top-[8%] right-[5%] flex h-[45%] w-[28%] flex-col gap-2 border p-2 transition-all duration-300",
+                      selected.environment.visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
+                    )}
+                    style={{
+                      background: `color-mix(in oklab, ${previewEnvironmentColor} ${Math.round(selected.environment.opacity * 100)}%, transparent)`,
+                      borderColor: `color-mix(in oklab, ${resolvedAppearance === 'light' ? '#94a3b8' : '#64748b'} ${Math.round(selected.environment.borderOpacity * 100)}%, transparent)`,
+                      borderRadius: `${selected.environment.radius}px`,
+                      backdropFilter: `blur(${selected.environment.blur}px) saturate(1.06)`,
+                      boxShadow: previewEnvironmentShadow,
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={cn(
+                        "h-1 w-[46%] rounded-full",
+                        resolvedAppearance === 'light' ? "bg-zinc-600/60" : "bg-white/60"
+                      )} />
+                      <b className={cn(
+                        "h-2 w-2 rounded-full",
+                        resolvedAppearance === 'light' ? "bg-zinc-500/70" : "bg-zinc-400/70"
+                      )} />
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <i className="h-2 w-2 rounded bg-emerald-500/80" />
+                      <span className={cn(
+                        "h-1 w-[55%] rounded-full",
+                        resolvedAppearance === 'light' ? "bg-zinc-700/65" : "bg-zinc-300/65"
+                      )} />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <i className={cn(
+                        "h-2 w-2 rounded-full border",
+                        resolvedAppearance === 'light' ? "border-zinc-500" : "border-zinc-400"
+                      )} />
+                      <span className={cn(
+                        "h-1 w-[68%] rounded-full",
+                        resolvedAppearance === 'light' ? "bg-zinc-700/55" : "bg-zinc-300/55"
+                      )} />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <i className={cn(
+                        "h-2 w-2 rounded-full border",
+                        resolvedAppearance === 'light' ? "border-zinc-500" : "border-zinc-400"
+                      )} />
+                      <span className={cn(
+                        "h-1 w-[48%] rounded-full",
+                        resolvedAppearance === 'light' ? "bg-zinc-700/55" : "bg-zinc-300/55"
+                      )} />
+                    </div>
+                  </div>
+
+                  {/* Preview Footer Backdrop */}
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-[8%] bottom-0 left-[8%] h-[30%] transition-opacity duration-300"
+                    style={{
+                      opacity: selected.composer.showFooterBackdrop ? 1 : 0,
+                      background: resolvedAppearance === 'light'
+                        ? 'linear-gradient(to top, rgba(248, 250, 252, 0.96), rgba(248, 250, 252, 0.78) 55%, transparent)'
+                        : 'linear-gradient(to top, rgba(9, 9, 11, 0.96), rgba(9, 9, 11, 0.78) 55%, transparent)',
+                    }}
+                  />
+
                   {/* Preview Composer */}
-                  <div className={cn(
-                    "absolute right-[11%] bottom-[10%] left-[11%] flex h-[18%] items-center justify-between px-3 border rounded-md shadow-sm backdrop-blur-[2px] transition-all duration-300",
-                    resolvedAppearance === 'light'
-                      ? "bg-white/90 border-zinc-300/80 text-zinc-900"
-                      : "bg-zinc-950/85 border-white/20 text-white"
-                  )}>
+                  <div
+                    className={cn(
+                      "absolute z-10 right-[11%] bottom-[10%] left-[11%] flex h-[18%] items-center justify-between px-3 border rounded-md transition-all duration-300",
+                      resolvedAppearance === 'light' ? "text-zinc-900" : "text-white"
+                    )}
+                    style={{
+                      background: `color-mix(in oklab, ${previewComposerColor} ${Math.round(selected.composer.opacity * 100)}%, transparent)`,
+                      borderColor: `color-mix(in oklab, ${resolvedAppearance === 'light' ? '#94a3b8' : '#64748b'} ${Math.round(selected.composer.borderOpacity * 100)}%, transparent)`,
+                      backdropFilter: `blur(${selected.composer.blur}px) saturate(1.06)`,
+                      boxShadow: previewComposerShadow,
+                    }}
+                  >
                     <span className={cn("w-[42%] h-1 rounded-full", resolvedAppearance === 'light' ? "bg-zinc-400" : "bg-zinc-600")} />
                     <b className="w-2 h-2 rounded-full" style={{ backgroundColor: selected?.accent }} />
                   </div>
@@ -515,6 +991,817 @@ function App() {
                     }}
                     className="w-full cursor-pointer py-2"
                   />
+                </div>
+
+                {/* Composer Settings */}
+                <div className="flex flex-col gap-4 pb-5 border-b border-zinc-800">
+                  <label className="flex gap-2 items-center text-xs font-bold text-zinc-400 tracking-wide uppercase">
+                    <PanelBottom size={13} className="text-zinc-500" />
+                    <span>输入框</span>
+                  </label>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold text-zinc-300">背景</span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <label
+                        className="relative h-7 w-7 flex-none overflow-hidden rounded-md border border-zinc-700 ring-1 ring-black/20 cursor-pointer"
+                        title="选择输入框背景色"
+                      >
+                        <span className="absolute inset-0" style={{ backgroundColor: previewComposerColor }} />
+                        <input
+                          type="color"
+                          aria-label="输入框背景色"
+                          className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                          value={previewComposerColor}
+                          onChange={(event) => void updateSelected({
+                            composer: { ...selected.composer, background: event.target.value },
+                          })}
+                        />
+                      </label>
+                      <code className="w-[74px] truncate text-right text-[10px] font-semibold text-zinc-500">
+                        {selected.composer.background === 'auto'
+                          ? '跟随主题'
+                          : selected.composer.background.toUpperCase()}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        title="恢复自动背景"
+                        aria-label="恢复自动背景"
+                        disabled={selected.composer.background === 'auto'}
+                        onClick={() => void updateSelected({
+                          composer: { ...selected.composer, background: 'auto' },
+                        })}
+                        className="text-zinc-500 hover:text-zinc-100 disabled:opacity-30 cursor-pointer"
+                      >
+                        <RotateCcw size={12} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-zinc-300">不透明度</label>
+                      <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                        {Math.round(selected.composer.opacity * 100)}%
+                      </output>
+                    </div>
+                    <Slider
+                      value={[selected.composer.opacity]}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onValueChange={(value) => void updateSelected({
+                        composer: { ...selected.composer, opacity: sliderValue(value) },
+                      })}
+                      className="w-full cursor-pointer py-1"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-zinc-300">背景模糊</label>
+                      <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                        {selected.composer.blur}px
+                      </output>
+                    </div>
+                    <Slider
+                      value={[selected.composer.blur]}
+                      min={0}
+                      max={32}
+                      step={1}
+                      onValueChange={(value) => void updateSelected({
+                        composer: { ...selected.composer, blur: sliderValue(value) },
+                      })}
+                      className="w-full cursor-pointer py-1"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-zinc-300">边框强度</label>
+                      <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                        {Math.round(selected.composer.borderOpacity * 100)}%
+                      </output>
+                    </div>
+                    <Slider
+                      value={[selected.composer.borderOpacity]}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onValueChange={(value) => void updateSelected({
+                        composer: { ...selected.composer, borderOpacity: sliderValue(value) },
+                      })}
+                      className="w-full cursor-pointer py-1"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-semibold text-zinc-300">阴影</label>
+                    <div className="flex w-full gap-1 rounded-lg bg-zinc-950 p-1">
+                      {(['none', 'soft', 'strong'] as const).map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className={cn(
+                            "flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors cursor-pointer",
+                            selected.composer.shadow === value
+                              ? "bg-zinc-800 text-zinc-50 shadow-sm"
+                              : "text-zinc-500 hover:text-zinc-200"
+                          )}
+                          onClick={() => void updateSelected({
+                            composer: { ...selected.composer, shadow: value },
+                          })}
+                        >
+                          {value === 'none' ? '关闭' : value === 'soft' ? '柔和' : '强调'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-xs font-semibold text-zinc-300">底部遮罩</span>
+                      <small className="text-[10px] font-medium text-zinc-500">
+                        {selected.composer.showFooterBackdrop ? '显示' : '隐藏'}
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={selected.composer.showFooterBackdrop}
+                      aria-label="显示底部遮罩"
+                      title={selected.composer.showFooterBackdrop ? '隐藏底部遮罩' : '显示底部遮罩'}
+                      onClick={() => void updateSelected({
+                        composer: {
+                          ...selected.composer,
+                          showFooterBackdrop: !selected.composer.showFooterBackdrop,
+                        },
+                      })}
+                      className={cn(
+                        "relative h-5 w-9 flex-none rounded-full border transition-colors cursor-pointer",
+                        selected.composer.showFooterBackdrop
+                          ? "border-emerald-400/40 bg-emerald-500"
+                          : "border-zinc-700 bg-zinc-800"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
+                        selected.composer.showFooterBackdrop ? "translate-x-4" : "translate-x-0"
+                      )} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Environment Panel Settings */}
+                <div className="flex flex-col gap-4 pb-5 border-b border-zinc-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="flex gap-2 items-center text-xs font-bold text-zinc-400 tracking-wide uppercase">
+                      <PanelRight size={13} className="text-zinc-500" />
+                      <span>环境面板</span>
+                    </label>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={selected.environment.visible}
+                      aria-label="显示环境面板"
+                      title={selected.environment.visible ? '隐藏环境面板' : '显示环境面板'}
+                      onClick={() => void updateSelected({
+                        environment: {
+                          ...selected.environment,
+                          visible: !selected.environment.visible,
+                        },
+                      })}
+                      className={cn(
+                        "relative h-5 w-9 flex-none rounded-full border transition-colors cursor-pointer",
+                        selected.environment.visible
+                          ? "border-emerald-400/40 bg-emerald-500"
+                          : "border-zinc-700 bg-zinc-800"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
+                        selected.environment.visible ? "translate-x-4" : "translate-x-0"
+                      )} />
+                    </button>
+                  </div>
+
+                  {selected.environment.visible && (
+                    <>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-zinc-300">背景</span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <label
+                            className="relative h-7 w-7 flex-none overflow-hidden rounded-md border border-zinc-700 ring-1 ring-black/20 cursor-pointer"
+                            title="选择环境面板背景色"
+                          >
+                            <span className="absolute inset-0" style={{ backgroundColor: previewEnvironmentColor }} />
+                            <input
+                              type="color"
+                              aria-label="环境面板背景色"
+                              className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                              value={previewEnvironmentColor}
+                              onChange={(event) => void updateSelected({
+                                environment: { ...selected.environment, background: event.target.value },
+                              })}
+                            />
+                          </label>
+                          <code className="w-[74px] truncate text-right text-[10px] font-semibold text-zinc-500">
+                            {selected.environment.background === 'auto'
+                              ? '跟随主题'
+                              : selected.environment.background.toUpperCase()}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            title="恢复自动背景"
+                            aria-label="恢复环境面板自动背景"
+                            disabled={selected.environment.background === 'auto'}
+                            onClick={() => void updateSelected({
+                              environment: { ...selected.environment, background: 'auto' },
+                            })}
+                            className="text-zinc-500 hover:text-zinc-100 disabled:opacity-30 cursor-pointer"
+                          >
+                            <RotateCcw size={12} />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-zinc-300">不透明度</label>
+                          <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                            {Math.round(selected.environment.opacity * 100)}%
+                          </output>
+                        </div>
+                        <Slider
+                          value={[selected.environment.opacity]}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          onValueChange={(value) => void updateSelected({
+                            environment: { ...selected.environment, opacity: sliderValue(value) },
+                          })}
+                          className="w-full cursor-pointer py-1"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-zinc-300">背景模糊</label>
+                          <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                            {selected.environment.blur}px
+                          </output>
+                        </div>
+                        <Slider
+                          value={[selected.environment.blur]}
+                          min={0}
+                          max={32}
+                          step={1}
+                          onValueChange={(value) => void updateSelected({
+                            environment: { ...selected.environment, blur: sliderValue(value) },
+                          })}
+                          className="w-full cursor-pointer py-1"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-zinc-300">边框强度</label>
+                          <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                            {Math.round(selected.environment.borderOpacity * 100)}%
+                          </output>
+                        </div>
+                        <Slider
+                          value={[selected.environment.borderOpacity]}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          onValueChange={(value) => void updateSelected({
+                            environment: { ...selected.environment, borderOpacity: sliderValue(value) },
+                          })}
+                          className="w-full cursor-pointer py-1"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-zinc-300">圆角</label>
+                          <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                            {selected.environment.radius}px
+                          </output>
+                        </div>
+                        <Slider
+                          value={[selected.environment.radius]}
+                          min={8}
+                          max={32}
+                          step={1}
+                          onValueChange={(value) => void updateSelected({
+                            environment: { ...selected.environment, radius: sliderValue(value) },
+                          })}
+                          className="w-full cursor-pointer py-1"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs font-semibold text-zinc-300">阴影</label>
+                        <div className="flex w-full gap-1 rounded-lg bg-zinc-950 p-1">
+                          {(['none', 'soft', 'strong'] as const).map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              className={cn(
+                                "flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors cursor-pointer",
+                                selected.environment.shadow === value
+                                  ? "bg-zinc-800 text-zinc-50 shadow-sm"
+                                  : "text-zinc-500 hover:text-zinc-200"
+                              )}
+                              onClick={() => void updateSelected({
+                                environment: { ...selected.environment, shadow: value },
+                              })}
+                            >
+                              {value === 'none' ? '关闭' : value === 'soft' ? '柔和' : '强调'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Change Summary Settings */}
+                <div className="flex flex-col gap-4 pb-5 border-b border-zinc-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="flex gap-2 items-center text-xs font-bold text-zinc-400 tracking-wide uppercase">
+                      <Files size={13} className="text-zinc-500" />
+                      <span>变更摘要</span>
+                    </label>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={selected.changeSummary.visible}
+                      aria-label="显示变更摘要"
+                      title={selected.changeSummary.visible ? '隐藏变更摘要' : '显示变更摘要'}
+                      onClick={() => void updateSelected({
+                        changeSummary: {
+                          ...selected.changeSummary,
+                          visible: !selected.changeSummary.visible,
+                        },
+                      })}
+                      className={cn(
+                        "relative h-5 w-9 flex-none rounded-full border transition-colors cursor-pointer",
+                        selected.changeSummary.visible
+                          ? "border-emerald-400/40 bg-emerald-500"
+                          : "border-zinc-700 bg-zinc-800"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
+                        selected.changeSummary.visible ? "translate-x-4" : "translate-x-0"
+                      )} />
+                    </button>
+                  </div>
+
+                  {selected.changeSummary.visible && (
+                    <>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-zinc-300">背景</span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <label
+                            className="relative h-7 w-7 flex-none overflow-hidden rounded-md border border-zinc-700 ring-1 ring-black/20 cursor-pointer"
+                            title="选择变更摘要背景色"
+                          >
+                            <span className="absolute inset-0" style={{ backgroundColor: previewChangeSummaryColor }} />
+                            <input
+                              type="color"
+                              aria-label="变更摘要背景色"
+                              className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                              value={previewChangeSummaryColor}
+                              onChange={(event) => void updateSelected({
+                                changeSummary: { ...selected.changeSummary, background: event.target.value },
+                              })}
+                            />
+                          </label>
+                          <code className="w-[74px] truncate text-right text-[10px] font-semibold text-zinc-500">
+                            {selected.changeSummary.background === 'auto'
+                              ? '跟随主题'
+                              : selected.changeSummary.background.toUpperCase()}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            title="恢复自动背景"
+                            aria-label="恢复变更摘要自动背景"
+                            disabled={selected.changeSummary.background === 'auto'}
+                            onClick={() => void updateSelected({
+                              changeSummary: { ...selected.changeSummary, background: 'auto' },
+                            })}
+                            className="text-zinc-500 hover:text-zinc-100 disabled:opacity-30 cursor-pointer"
+                          >
+                            <RotateCcw size={12} />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-zinc-300">不透明度</label>
+                          <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                            {Math.round(selected.changeSummary.opacity * 100)}%
+                          </output>
+                        </div>
+                        <Slider
+                          value={[selected.changeSummary.opacity]}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          onValueChange={(value) => void updateSelected({
+                            changeSummary: { ...selected.changeSummary, opacity: sliderValue(value) },
+                          })}
+                          className="w-full cursor-pointer py-1"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-zinc-300">背景模糊</label>
+                          <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                            {selected.changeSummary.blur}px
+                          </output>
+                        </div>
+                        <Slider
+                          value={[selected.changeSummary.blur]}
+                          min={0}
+                          max={32}
+                          step={1}
+                          onValueChange={(value) => void updateSelected({
+                            changeSummary: { ...selected.changeSummary, blur: sliderValue(value) },
+                          })}
+                          className="w-full cursor-pointer py-1"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-zinc-300">边框强度</label>
+                          <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                            {Math.round(selected.changeSummary.borderOpacity * 100)}%
+                          </output>
+                        </div>
+                        <Slider
+                          value={[selected.changeSummary.borderOpacity]}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          onValueChange={(value) => void updateSelected({
+                            changeSummary: { ...selected.changeSummary, borderOpacity: sliderValue(value) },
+                          })}
+                          className="w-full cursor-pointer py-1"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-zinc-300">圆角</label>
+                          <output className="text-[10px] font-mono font-semibold text-zinc-500">
+                            {selected.changeSummary.radius}px
+                          </output>
+                        </div>
+                        <Slider
+                          value={[selected.changeSummary.radius]}
+                          min={8}
+                          max={32}
+                          step={1}
+                          onValueChange={(value) => void updateSelected({
+                            changeSummary: { ...selected.changeSummary, radius: sliderValue(value) },
+                          })}
+                          className="w-full cursor-pointer py-1"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs font-semibold text-zinc-300">阴影</label>
+                        <div className="flex w-full gap-1 rounded-lg bg-zinc-950 p-1">
+                          {(['none', 'soft', 'strong'] as const).map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              className={cn(
+                                "flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors cursor-pointer",
+                                selected.changeSummary.shadow === value
+                                  ? "bg-zinc-800 text-zinc-50 shadow-sm"
+                                  : "text-zinc-500 hover:text-zinc-200"
+                              )}
+                              onClick={() => void updateSelected({
+                                changeSummary: { ...selected.changeSummary, shadow: value },
+                              })}
+                            >
+                              {value === 'none' ? '关闭' : value === 'soft' ? '柔和' : '强调'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Advanced UI Settings */}
+                <div className="flex flex-col gap-2 pb-5 border-b border-zinc-800">
+                  <label className="mb-1 flex items-center gap-2 text-xs font-bold text-zinc-400 tracking-wide uppercase">
+                    <SlidersHorizontal size={13} className="text-zinc-500" />
+                    <span>界面元素</span>
+                  </label>
+
+                  <ConfigSection title="左侧边栏">
+                    <SurfaceStyleEditor
+                      value={selected.ui.sidebar}
+                      autoColor={resolvedAppearance === 'light' ? '#f1f5f9' : '#0e121c'}
+                      onChange={(value) => void updateUi('sidebar', value)}
+                    />
+                  </ConfigSection>
+
+                  <ConfigSection title="顶部标题栏">
+                    <SurfaceStyleEditor
+                      value={selected.ui.header}
+                      autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#121620'}
+                      onChange={(value) => void updateUi('header', value)}
+                    />
+                  </ConfigSection>
+
+                  <ConfigSection title="用户消息气泡">
+                    <SurfaceStyleEditor
+                      value={selected.ui.userBubble}
+                      autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
+                      onChange={(value) => void updateUi('userBubble', value)}
+                    />
+                  </ConfigSection>
+
+                  <ConfigSection title="代码块">
+                    <SurfaceStyleEditor
+                      value={selected.ui.codeBlock}
+                      autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
+                      onChange={(value) => void updateUi('codeBlock', value)}
+                    />
+                  </ConfigSection>
+
+                  <ConfigSection title="工具活动卡片">
+                    <SurfaceStyleEditor
+                      value={selected.ui.activityCard}
+                      autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
+                      onChange={(value) => void updateUi('activityCard', value)}
+                    />
+                  </ConfigSection>
+
+                  <ConfigSection title="任务列表行">
+                    <RowStyleEditor
+                      value={selected.ui.threadRows}
+                      autoColor={selected.accent}
+                      onChange={(value) => void updateUi('threadRows', value)}
+                    />
+                  </ConfigSection>
+
+                  <ConfigSection title="环境面板项目">
+                    <RowStyleEditor
+                      value={selected.ui.summaryRows}
+                      autoColor={selected.accent}
+                      onChange={(value) => void updateUi('summaryRows', value)}
+                    />
+                  </ConfigSection>
+
+                  <ConfigSection title="导航轨与滚动条">
+                    <ToggleSetting
+                      label="消息导航轨"
+                      checked={selected.ui.navigationRailVisible}
+                      onChange={(value) => void updateUi('navigationRailVisible', value)}
+                    />
+                    {selected.ui.navigationRailVisible && (
+                      <SliderSetting
+                        label="导航轨不透明度"
+                        value={selected.ui.navigationRailOpacity}
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        output={`${Math.round(selected.ui.navigationRailOpacity * 100)}%`}
+                        onChange={(value) => void updateUi('navigationRailOpacity', value)}
+                      />
+                    )}
+                    <div className="h-px bg-zinc-800" />
+                    <ToggleSetting
+                      label="滚动条"
+                      checked={selected.ui.scrollbar.visible}
+                      onChange={(visible) => void updateUi('scrollbar', { ...selected.ui.scrollbar, visible })}
+                    />
+                    {selected.ui.scrollbar.visible && (
+                      <>
+                        <ColorSetting
+                          label="滚动条颜色"
+                          value={selected.ui.scrollbar.color}
+                          autoColor={resolvedAppearance === 'light' ? '#94a3b8' : '#64748b'}
+                          onChange={(color) => void updateUi('scrollbar', { ...selected.ui.scrollbar, color })}
+                        />
+                        <SliderSetting
+                          label="不透明度"
+                          value={selected.ui.scrollbar.opacity}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          output={`${Math.round(selected.ui.scrollbar.opacity * 100)}%`}
+                          onChange={(opacity) => void updateUi('scrollbar', { ...selected.ui.scrollbar, opacity })}
+                        />
+                        <SliderSetting
+                          label="宽度"
+                          value={selected.ui.scrollbar.width}
+                          min={4}
+                          max={16}
+                          step={1}
+                          output={`${selected.ui.scrollbar.width}px`}
+                          onChange={(width) => void updateUi('scrollbar', { ...selected.ui.scrollbar, width })}
+                        />
+                        <SliderSetting
+                          label="圆角"
+                          value={selected.ui.scrollbar.radius}
+                          min={0}
+                          max={16}
+                          step={1}
+                          output={`${selected.ui.scrollbar.radius}px`}
+                          onChange={(radius) => void updateUi('scrollbar', { ...selected.ui.scrollbar, radius })}
+                        />
+                      </>
+                    )}
+                  </ConfigSection>
+
+                  <ConfigSection title="Diff 文件行">
+                    <ToggleSetting
+                      label="显示"
+                      checked={selected.ui.diff.visible}
+                      onChange={(visible) => void updateUi('diff', { ...selected.ui.diff, visible })}
+                    />
+                    {selected.ui.diff.visible && (
+                      <>
+                        <ColorSetting
+                          label="背景色"
+                          value={selected.ui.diff.background}
+                          autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
+                          onChange={(background) => void updateUi('diff', { ...selected.ui.diff, background })}
+                        />
+                        <SliderSetting
+                          label="背景强度"
+                          value={selected.ui.diff.opacity}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          output={`${Math.round(selected.ui.diff.opacity * 100)}%`}
+                          onChange={(opacity) => void updateUi('diff', { ...selected.ui.diff, opacity })}
+                        />
+                        <ColorSetting
+                          label="新增颜色"
+                          value={selected.ui.diff.addedColor}
+                          autoColor="#22c55e"
+                          allowAuto={false}
+                          onChange={(addedColor) => void updateUi('diff', { ...selected.ui.diff, addedColor })}
+                        />
+                        <ColorSetting
+                          label="删除颜色"
+                          value={selected.ui.diff.deletedColor}
+                          autoColor="#ef4444"
+                          allowAuto={false}
+                          onChange={(deletedColor) => void updateUi('diff', { ...selected.ui.diff, deletedColor })}
+                        />
+                        <SliderSetting
+                          label="圆角"
+                          value={selected.ui.diff.radius}
+                          min={0}
+                          max={24}
+                          step={1}
+                          output={`${selected.ui.diff.radius}px`}
+                          onChange={(radius) => void updateUi('diff', { ...selected.ui.diff, radius })}
+                        />
+                      </>
+                    )}
+                  </ConfigSection>
+
+                  <ConfigSection title="正文布局">
+                    <SliderSetting
+                      label="内容宽度"
+                      value={selected.ui.content.maxWidth}
+                      min={560}
+                      max={1200}
+                      step={8}
+                      output={`${selected.ui.content.maxWidth}px`}
+                      onChange={(maxWidth) => void updateUi('content', { ...selected.ui.content, maxWidth })}
+                    />
+                    <SliderSetting
+                      label="字体缩放"
+                      value={selected.ui.content.fontScale}
+                      min={0.8}
+                      max={1.3}
+                      step={0.01}
+                      output={`${Math.round(selected.ui.content.fontScale * 100)}%`}
+                      onChange={(fontScale) => void updateUi('content', { ...selected.ui.content, fontScale })}
+                    />
+                    <SliderSetting
+                      label="消息间距"
+                      value={selected.ui.content.messageGap}
+                      min={4}
+                      max={32}
+                      step={1}
+                      output={`${selected.ui.content.messageGap}px`}
+                      onChange={(messageGap) => void updateUi('content', { ...selected.ui.content, messageGap })}
+                    />
+                  </ConfigSection>
+
+                  <ConfigSection title="富文本内容">
+                    <ColorSetting
+                      label="链接颜色"
+                      value={selected.ui.richText.linkColor}
+                      autoColor={selected.accent}
+                      onChange={(linkColor) => void updateUi('richText', { ...selected.ui.richText, linkColor })}
+                    />
+                    <ColorSetting
+                      label="行内代码背景"
+                      value={selected.ui.richText.inlineCodeBackground}
+                      autoColor={resolvedAppearance === 'light' ? '#f1f5f9' : '#18181b'}
+                      onChange={(inlineCodeBackground) => void updateUi('richText', { ...selected.ui.richText, inlineCodeBackground })}
+                    />
+                    <SliderSetting
+                      label="行内代码强度"
+                      value={selected.ui.richText.inlineCodeOpacity}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      output={`${Math.round(selected.ui.richText.inlineCodeOpacity * 100)}%`}
+                      onChange={(inlineCodeOpacity) => void updateUi('richText', { ...selected.ui.richText, inlineCodeOpacity })}
+                    />
+                    <SliderSetting
+                      label="行内代码圆角"
+                      value={selected.ui.richText.inlineCodeRadius}
+                      min={0}
+                      max={24}
+                      step={1}
+                      output={`${selected.ui.richText.inlineCodeRadius}px`}
+                      onChange={(inlineCodeRadius) => void updateUi('richText', { ...selected.ui.richText, inlineCodeRadius })}
+                    />
+                    <ColorSetting
+                      label="引用强调色"
+                      value={selected.ui.richText.quoteAccent}
+                      autoColor={selected.accent}
+                      onChange={(quoteAccent) => void updateUi('richText', { ...selected.ui.richText, quoteAccent })}
+                    />
+                    <ColorSetting
+                      label="引用背景"
+                      value={selected.ui.richText.quoteBackground}
+                      autoColor={resolvedAppearance === 'light' ? '#f1f5f9' : '#18181b'}
+                      onChange={(quoteBackground) => void updateUi('richText', { ...selected.ui.richText, quoteBackground })}
+                    />
+                    <SliderSetting
+                      label="引用背景强度"
+                      value={selected.ui.richText.quoteOpacity}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      output={`${Math.round(selected.ui.richText.quoteOpacity * 100)}%`}
+                      onChange={(quoteOpacity) => void updateUi('richText', { ...selected.ui.richText, quoteOpacity })}
+                    />
+                    <ColorSetting
+                      label="表格边框"
+                      value={selected.ui.richText.tableBorder}
+                      autoColor={resolvedAppearance === 'light' ? '#cbd5e1' : '#475569'}
+                      onChange={(tableBorder) => void updateUi('richText', { ...selected.ui.richText, tableBorder })}
+                    />
+                    <ColorSetting
+                      label="表格背景"
+                      value={selected.ui.richText.tableBackground}
+                      autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
+                      onChange={(tableBackground) => void updateUi('richText', { ...selected.ui.richText, tableBackground })}
+                    />
+                    <SliderSetting
+                      label="表格背景强度"
+                      value={selected.ui.richText.tableOpacity}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      output={`${Math.round(selected.ui.richText.tableOpacity * 100)}%`}
+                      onChange={(tableOpacity) => void updateUi('richText', { ...selected.ui.richText, tableOpacity })}
+                    />
+                    <SliderSetting
+                      label="表格圆角"
+                      value={selected.ui.richText.tableRadius}
+                      min={0}
+                      max={24}
+                      step={1}
+                      output={`${selected.ui.richText.tableRadius}px`}
+                      onChange={(tableRadius) => void updateUi('richText', { ...selected.ui.richText, tableRadius })}
+                    />
+                    <SliderSetting
+                      label="图片圆角"
+                      value={selected.ui.richText.imageRadius}
+                      min={0}
+                      max={32}
+                      step={1}
+                      output={`${selected.ui.richText.imageRadius}px`}
+                      onChange={(imageRadius) => void updateUi('richText', { ...selected.ui.richText, imageRadius })}
+                    />
+                  </ConfigSection>
                 </div>
               </>
             ) : (
