@@ -18,7 +18,7 @@ use uuid::Uuid;
 const MAX_IMAGE_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_DIMENSION: u32 = 16_384;
 const MAX_PIXELS: u64 = 50_000_000;
-const BUILTIN_THEME_VERSION: &str = "1.2.1";
+const BUILTIN_THEME_VERSION: &str = "1.2.3";
 const ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-alpine-lake.jpg");
 const AMBER: &[u8] = include_bytes!("../assets/preset-amber-dusk.jpg");
 const AURORA: &[u8] = include_bytes!("../assets/preset-midnight-aurora.jpg");
@@ -36,6 +36,7 @@ const SAKURA: &[u8] = include_bytes!("../assets/preset-sakura-dawn.jpg");
 const SKY_LIGHT_STUDY: &[u8] = include_bytes!("../assets/preset-sky-light-study.jpg");
 const STRATA_FORGE: &[u8] = include_bytes!("../assets/preset-strata-forge.jpg");
 const SUNLIT_SHORE: &[u8] = include_bytes!("../assets/preset-sunlit-shore.jpg");
+const WINDREST_CLOUD_HOUSE: &[u8] = include_bytes!("../assets/preset-windrest-cloud-house.jpg");
 const YELLOW_GADGETEERS: &[u8] = include_bytes!("../assets/preset-yellow-gadgeteers.jpg");
 
 fn valid_id(id: &str) -> bool {
@@ -604,6 +605,24 @@ fn component_theme(id: &str) -> Option<ComponentTheme> {
             shadow: "none",
             content_width: 720,
         },
+        "preset-windrest-cloud-house" => ComponentTheme {
+            appearance: "dark",
+            accent: "#e2b35f",
+            sidebar: "#101a16",
+            surface: "#18241f",
+            raised: "#24342b",
+            code: "#0a1210",
+            line: "#668076",
+            quote: "#8fc3c6",
+            added: "#70cf96",
+            deleted: "#ef7e70",
+            sidebar_opacity: 0.92,
+            panel_opacity: 0.84,
+            blur: 16,
+            radius: 14,
+            shadow: "strong",
+            content_width: 720,
+        },
         "preset-yellow-gadgeteers" => ComponentTheme {
             appearance: "dark",
             accent: "#f2c94c",
@@ -766,13 +785,13 @@ fn builtin_manifest(
         author: "Fei-Away/Codex-Dream-Skin contributors".into(),
         image: "background.jpg".into(),
         thumbnail: "thumbnail.jpg".into(),
-        appearance: "auto".into(),
+        appearance: "dark".into(),
         art: ArtConfig {
             focus_x,
-            focus_y: if id == "preset-strata-forge" {
-                0.48
-            } else {
-                0.45
+            focus_y: match id {
+                "preset-strata-forge" => 0.48,
+                "preset-windrest-cloud-house" => 0.47,
+                _ => 0.45,
             },
             safe_area: safe_area.into(),
             task_mode: "ambient".into(),
@@ -934,6 +953,14 @@ pub fn ensure_library() -> Result<()> {
         "left",
     )?;
     seed_one(
+        "preset-windrest-cloud-house",
+        "风栖云屋",
+        "#e2b35f",
+        WINDREST_CLOUD_HOUSE,
+        0.82,
+        "left",
+    )?;
+    seed_one(
         "preset-yellow-gadgeteers",
         "小黄人工坊",
         "#f2c94c",
@@ -1035,7 +1062,7 @@ pub fn import_wallpaper(path: &str) -> Result<ThemeRecord> {
         author: "本地用户".into(),
         image: image_name,
         thumbnail: "thumbnail.jpg".into(),
-        appearance: "auto".into(),
+        appearance: "dark".into(),
         art: ArtConfig::default(),
         palette: Palette::default(),
         composer: ComposerConfig::default(),
@@ -1087,8 +1114,8 @@ mod tests {
     use super::{
         ALPINE_LAKE, AMBER, AURORA, CODEX_OBSERVATORY, CYBER, FOREST, HARBOR_CITY, MAX_IMAGE_BYTES,
         MIDNIGHT_PAPER_OBSERVATORY, MOONLIT_ALPINE_LAKE, PAPER_SKY_WORKSHOP, RAINY_HARBOR,
-        ROMANTIC, SAKURA, SKY_LIGHT_STUDY, STRATA_FORGE, SUNLIT_SHORE, YELLOW_GADGETEERS,
-        builtin_manifest, image_info, should_upgrade_builtin, validate_manifest,
+        ROMANTIC, SAKURA, SKY_LIGHT_STUDY, STRATA_FORGE, SUNLIT_SHORE, WINDREST_CLOUD_HOUSE,
+        YELLOW_GADGETEERS, builtin_manifest, image_info, should_upgrade_builtin, validate_manifest,
     };
 
     #[test]
@@ -1110,6 +1137,7 @@ mod tests {
             SKY_LIGHT_STUDY,
             STRATA_FORGE,
             SUNLIT_SHORE,
+            WINDREST_CLOUD_HOUSE,
             YELLOW_GADGETEERS,
         ] {
             let (_, width, height) = image_info(bytes).expect("bundled image should validate");
@@ -1138,13 +1166,14 @@ mod tests {
             ("preset-sky-light-study", "dark"),
             ("preset-strata-forge", "dark"),
             ("preset-sunlit-shore", "dark"),
+            ("preset-windrest-cloud-house", "dark"),
             ("preset-yellow-gadgeteers", "dark"),
         ];
         for (id, appearance) in themes {
             let manifest = builtin_manifest(id, id, "#000000", 0.5, "left")
                 .expect("every bundled theme should have a component adaptation");
             validate_manifest(&manifest).expect("adapted theme should validate");
-            assert_eq!(manifest.version, "1.2.1");
+            assert_eq!(manifest.version, "1.2.3");
             assert_eq!(manifest.appearance, appearance);
             assert_ne!(manifest.ui.sidebar.background, "auto");
             assert_ne!(manifest.ui.code_block.background, "auto");

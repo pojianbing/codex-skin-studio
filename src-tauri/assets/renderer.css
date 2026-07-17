@@ -115,6 +115,13 @@ html.codex-skin-studio .skin-configurable-surface {
   box-shadow: var(--skin-region-shadow) !important;
   backdrop-filter: blur(var(--skin-region-blur)) saturate(1.05) !important;
 }
+html.codex-skin-studio .skin-application-menu-surface {
+  --color-token-text-tertiary: color-mix(in oklab, var(--skin-text) 82%, transparent) !important;
+  --color-token-description-foreground: var(--skin-text) !important;
+  border-width: 0 0 1px !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
 html.codex-skin-studio aside.app-shell-left-panel {
   color: var(--skin-text) !important;
 }
@@ -181,6 +188,11 @@ html.codex-skin-studio .skin-change-summary-card {
 html.codex-skin-studio .skin-code-block-surface pre,
 html.codex-skin-studio .skin-code-block-surface [class*="bg-token-text-code-block-background"] {
   background: transparent !important;
+}
+html.codex-skin-studio .skin-activity-card-surface > .group\/activity-header {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px !important;
 }
 html.codex-skin-studio .skin-thread-row-hidden,
 html.codex-skin-studio .skin-summary-row-hidden,

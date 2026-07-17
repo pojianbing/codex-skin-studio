@@ -112,10 +112,14 @@
     root.style.setProperty('--skin-composer-blur', `${Math.round(clamp(composer.blur, 0, 32, 12))}px`);
     root.style.setProperty('--skin-composer-shadow', composerShadows[composer.shadow] || composerShadows.soft);
     for (const footer of document.querySelectorAll('[data-thread-scroll-footer="true"]')) {
-      footer.firstElementChild?.classList.toggle(
-        'skin-composer-footer-backdrop',
-        Boolean(footer.querySelector('.composer-surface-chrome')) && composer.showFooterBackdrop !== true,
-      );
+      const hasComposer = Boolean(footer.querySelector('.composer-surface-chrome'));
+      for (const layer of footer.children) {
+        if (layer.querySelector('.composer-surface-chrome')) continue;
+        layer.classList.toggle(
+          'skin-composer-footer-backdrop',
+          hasComposer && composer.showFooterBackdrop !== true,
+        );
+      }
     }
     const environment = theme.environment || {};
     const environmentColor = /^#[0-9a-f]{6}$/i.test(environment.background || '')
@@ -161,11 +165,27 @@
       color: 'var(--skin-sidebar)', opacity: 0.76, borderOpacity: 0.25,
       blur: 8, radius: 0, shadow: 'none',
     });
+    const headerDefaults = {
+      color: 'var(--skin-surface)', opacity: 0.42, borderOpacity: 0.25,
+      blur: 8, radius: 0, shadow: 'none',
+    };
     applyConfigurableSurface(
       document.querySelector('main.main-surface > header.app-header-tint'),
       'skin-header-surface',
       ui.header,
-      { color: 'var(--skin-surface)', opacity: 0.42, borderOpacity: 0.25, blur: 8, radius: 0, shadow: 'none' },
+      headerDefaults,
+    );
+    applyConfigurableSurface(
+      document.querySelector('[class~="group/application-menu-top-bar"]'),
+      'skin-application-menu-surface',
+      {
+        ...ui.header,
+        visible: true,
+        opacity: Math.max(0.72, clamp(ui.header?.opacity, 0, 1, headerDefaults.opacity)),
+        radius: 0,
+        shadow: 'none',
+      },
+      headerDefaults,
     );
     for (const bubble of document.querySelectorAll('[data-user-message-bubble="true"]')) {
       applyConfigurableSurface(bubble, 'skin-user-bubble-surface', ui.userBubble, {
@@ -313,8 +333,8 @@
     document.querySelectorAll('.skin-configurable-surface').forEach((node) => {
       node.classList.remove(
         'skin-configurable-surface', 'skin-configurable-hidden', 'skin-sidebar-surface',
-        'skin-header-surface', 'skin-user-bubble-surface', 'skin-code-block-surface',
-        'skin-activity-card-surface',
+        'skin-header-surface', 'skin-application-menu-surface', 'skin-user-bubble-surface',
+        'skin-code-block-surface', 'skin-activity-card-surface',
       );
       for (const property of configurableSurfaceProperties) node.style.removeProperty(property);
     });

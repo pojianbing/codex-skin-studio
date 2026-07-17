@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import {
   Check, ChevronDown, Download, Files, ImagePlus, Library, LoaderCircle, MonitorCog,
-  PanelBottom, PanelRight, Pause, Play, RefreshCw, RotateCcw, Settings2, ShieldCheck, Trash2,
+  PanelBottom, PanelRight, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Trash2,
   SlidersHorizontal,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -748,31 +748,6 @@ function App() {
                   )}
                 </div>
 
-                {/* Appearance Settings */}
-                <div className="flex flex-col gap-2.5 pb-4 border-b border-zinc-800">
-                  <label className="flex gap-2 items-center text-xs font-bold text-zinc-400 tracking-wide uppercase">
-                    <Settings2 size={13} className="text-zinc-500" />
-                    <span>外观</span>
-                  </label>
-                  {/* Segmented control */}
-                  <div className="flex rounded-lg bg-zinc-950 p-1 gap-1 w-full">
-                    {(['auto', 'light', 'dark'] as const).map((value) => (
-                      <button
-                        key={value}
-                        className={cn(
-                          "flex-1 text-center py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer",
-                          selected.appearance === value
-                            ? "bg-zinc-800 text-zinc-50 shadow-sm"
-                            : "text-zinc-400 hover:text-zinc-100"
-                        )}
-                        onClick={() => void updateSelected({ appearance: value })}
-                      >
-                        {value === 'auto' ? '跟随系统' : value === 'light' ? '浅色' : '深色'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Select dropdown fields */}
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b border-zinc-800">
                   <div className="flex flex-col gap-2">
@@ -968,7 +943,7 @@ function App() {
 
                   <div className="flex items-center justify-between gap-3 pt-1">
                     <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-zinc-300">底部遮罩</span>
+                      <span className="text-xs font-semibold text-zinc-300">输入框上方渐变</span>
                       <small className="text-[10px] font-medium text-zinc-500">
                         {selected.composer.showFooterBackdrop ? '显示' : '隐藏'}
                       </small>
@@ -977,8 +952,8 @@ function App() {
                       type="button"
                       role="switch"
                       aria-checked={selected.composer.showFooterBackdrop}
-                      aria-label="显示底部遮罩"
-                      title={selected.composer.showFooterBackdrop ? '隐藏底部遮罩' : '显示底部遮罩'}
+                      aria-label="显示输入框上方渐变"
+                      title={selected.composer.showFooterBackdrop ? '隐藏输入框上方渐变' : '显示输入框上方渐变'}
                       onClick={() => void updateSelected({
                         composer: {
                           ...selected.composer,
