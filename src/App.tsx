@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Toaster } from '@/components/ui/sonner'
+import { CodexPreview } from '@/components/codex-preview'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -415,35 +416,17 @@ function App() {
       : resolvedAppearance === 'light' ? '#f8fafc' : '#121620'
     : '#121620'
 
-  const previewComposerShadow = selected?.composer.shadow === 'none'
-    ? 'none'
-    : selected?.composer.shadow === 'strong'
-      ? '0 14px 34px rgba(0, 0, 0, 0.42), 0 3px 8px rgba(0, 0, 0, 0.2)'
-      : '0 8px 20px rgba(0, 0, 0, 0.24)'
-
   const previewEnvironmentColor = selected
     ? selected.environment.background !== 'auto'
       ? selected.environment.background
       : resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'
     : '#18181b'
 
-  const previewEnvironmentShadow = selected?.environment.shadow === 'none'
-    ? 'none'
-    : selected?.environment.shadow === 'strong'
-      ? '0 12px 30px rgba(0, 0, 0, 0.44), 0 3px 8px rgba(0, 0, 0, 0.22)'
-      : '0 7px 18px rgba(0, 0, 0, 0.26)'
-
   const previewChangeSummaryColor = selected
     ? selected.changeSummary.background !== 'auto'
       ? selected.changeSummary.background
       : resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'
     : '#18181b'
-
-  const previewChangeSummaryShadow = selected?.changeSummary.shadow === 'none'
-    ? 'none'
-    : selected?.changeSummary.shadow === 'strong'
-      ? '0 10px 24px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2)'
-      : '0 6px 16px rgba(0, 0, 0, 0.22)'
 
   const refresh = async () => {
     try {
@@ -671,7 +654,7 @@ function App() {
         </header>
 
         {/* Content grid */}
-        <section className="flex-1 grid grid-cols-[minmax(430px,1.15fr)_minmax(360px,0.85fr)] min-h-0 overflow-hidden">
+        <section className="grid min-h-0 flex-1 grid-cols-[minmax(360px,1.05fr)_minmax(320px,0.95fr)] overflow-hidden">
           {/* Left panel: Theme browser */}
           <div className="overflow-y-auto p-6 border-r border-zinc-800 bg-zinc-900/30">
             <div className="flex justify-between items-center mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">
@@ -723,165 +706,29 @@ function App() {
           </div>
 
           {/* Right panel: Inspector */}
-          <aside className="overflow-y-auto p-6 bg-zinc-900 flex flex-col gap-6">
+          <aside className="flex min-h-0 flex-col overflow-hidden bg-zinc-900">
             {selected ? (
               <>
-                {/* Live Preview */}
-                <div
-                  className="relative shrink-0 overflow-hidden w-full aspect-[16/10] border border-zinc-800 rounded-lg bg-zinc-950 bg-center bg-cover shadow-md"
-                  style={{ backgroundImage: `url(${selected.previewDataUrl})` }}
-                >
-                  {/* Overlay Gradient depending on safeArea */}
-                  <div className={cn(
-                    "absolute inset-0 pointer-events-none transition-all duration-300",
-                    resolvedSafeArea === 'left' && "bg-gradient-to-r from-black/60 via-zinc-900/10 to-transparent",
-                    resolvedSafeArea === 'right' && "bg-gradient-to-l from-black/60 via-zinc-900/10 to-transparent",
-                    resolvedSafeArea === 'center' && "bg-black/40",
-                    resolvedSafeArea === 'none' && "bg-transparent opacity-0"
-                  )} />
-
-                  {/* Preview Sidebar */}
-                  <div className={cn(
-                    "absolute z-10 inset-y-0 left-0 flex w-[22%] flex-col gap-2.5 pt-[12%] px-2 backdrop-blur-[1px] transition-colors duration-300",
-                    resolvedAppearance === 'light' ? "bg-white/45" : "bg-black/45"
-                  )}>
-                    <i className={cn("w-[70%] h-1 ml-[12%] rounded-full transition-colors duration-300", resolvedAppearance === 'light' ? "bg-zinc-800/60" : "bg-white/60")} />
-                    <i className={cn("w-[50%] h-1 ml-[12%] rounded-full transition-colors duration-300", resolvedAppearance === 'light' ? "bg-zinc-800/60" : "bg-white/60")} />
-                    <i className={cn("w-[60%] h-1 ml-[12%] rounded-full transition-colors duration-300", resolvedAppearance === 'light' ? "bg-zinc-800/60" : "bg-white/60")} />
-                    <i className={cn("w-[45%] h-1 ml-[12%] rounded-full transition-colors duration-300", resolvedAppearance === 'light' ? "bg-zinc-800/60" : "bg-white/60")} />
+                <div className="shrink-0 border-b border-zinc-800 bg-zinc-900 px-5 pb-4 pt-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.16)]">
+                  <div className="mb-2.5 flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded bg-zinc-800 text-zinc-300">
+                        <PanelRight size={11} />
+                      </span>
+                      <span className="text-[11px] font-bold text-zinc-200">Codex 实时预览</span>
+                    </div>
+                    <span className="max-w-[48%] truncate text-right text-[10px] font-medium text-zinc-500">
+                      {selected.name}
+                    </span>
                   </div>
-
-                  {/* Preview Main */}
-                  <div className="absolute z-10 inset-y-0 left-[22%] right-0 flex items-center justify-center">
-                    <div className={cn(
-                      "text-base font-bold tracking-wide drop-shadow-md select-none opacity-90 transition-colors duration-300",
-                      resolvedAppearance === 'light' ? "text-zinc-900" : "text-white"
-                    )}>
-                      Codex
-                    </div>
-                  </div>
-
-                  {/* Preview Change Summary */}
-                  <div
-                    aria-hidden="true"
-                    className={cn(
-                      "pointer-events-none absolute z-20 right-[36%] bottom-[34%] left-[28%] flex h-[24%] flex-col overflow-hidden border transition-all duration-300",
-                      selected.changeSummary.visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
-                    )}
-                    style={{
-                      background: `color-mix(in oklab, ${previewChangeSummaryColor} ${Math.round(selected.changeSummary.opacity * 100)}%, transparent)`,
-                      borderColor: `color-mix(in oklab, ${resolvedAppearance === 'light' ? '#94a3b8' : '#64748b'} ${Math.round(selected.changeSummary.borderOpacity * 100)}%, transparent)`,
-                      borderRadius: `${selected.changeSummary.radius}px`,
-                      backdropFilter: `blur(${selected.changeSummary.blur}px) saturate(1.04)`,
-                      boxShadow: previewChangeSummaryShadow,
-                    }}
-                  >
-                    <div className="flex h-1/2 items-center justify-between border-b border-white/10 px-2">
-                      <div className="flex items-center gap-1.5">
-                        <i className="h-2 w-2 rounded-sm bg-emerald-500/80" />
-                        <span className={cn(
-                          "h-1 w-10 rounded-full",
-                          resolvedAppearance === 'light' ? "bg-zinc-700/65" : "bg-zinc-300/65"
-                        )} />
-                      </div>
-                      <span className={cn(
-                        "h-1 w-5 rounded-full",
-                        resolvedAppearance === 'light' ? "bg-zinc-500/55" : "bg-zinc-400/55"
-                      )} />
-                    </div>
-                    <div className="flex flex-1 items-center justify-between px-2">
-                      <span className={cn(
-                        "h-1 w-[58%] rounded-full",
-                        resolvedAppearance === 'light' ? "bg-zinc-600/50" : "bg-zinc-400/50"
-                      )} />
-                      <i className="h-1 w-3 rounded-full bg-emerald-500/70" />
-                    </div>
-                  </div>
-
-                  {/* Preview Environment Panel */}
-                  <div
-                    aria-hidden="true"
-                    className={cn(
-                      "pointer-events-none absolute z-20 top-[8%] right-[5%] flex h-[45%] w-[28%] flex-col gap-2 border p-2 transition-all duration-300",
-                      selected.environment.visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
-                    )}
-                    style={{
-                      background: `color-mix(in oklab, ${previewEnvironmentColor} ${Math.round(selected.environment.opacity * 100)}%, transparent)`,
-                      borderColor: `color-mix(in oklab, ${resolvedAppearance === 'light' ? '#94a3b8' : '#64748b'} ${Math.round(selected.environment.borderOpacity * 100)}%, transparent)`,
-                      borderRadius: `${selected.environment.radius}px`,
-                      backdropFilter: `blur(${selected.environment.blur}px) saturate(1.06)`,
-                      boxShadow: previewEnvironmentShadow,
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={cn(
-                        "h-1 w-[46%] rounded-full",
-                        resolvedAppearance === 'light' ? "bg-zinc-600/60" : "bg-white/60"
-                      )} />
-                      <b className={cn(
-                        "h-2 w-2 rounded-full",
-                        resolvedAppearance === 'light' ? "bg-zinc-500/70" : "bg-zinc-400/70"
-                      )} />
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <i className="h-2 w-2 rounded bg-emerald-500/80" />
-                      <span className={cn(
-                        "h-1 w-[55%] rounded-full",
-                        resolvedAppearance === 'light' ? "bg-zinc-700/65" : "bg-zinc-300/65"
-                      )} />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <i className={cn(
-                        "h-2 w-2 rounded-full border",
-                        resolvedAppearance === 'light' ? "border-zinc-500" : "border-zinc-400"
-                      )} />
-                      <span className={cn(
-                        "h-1 w-[68%] rounded-full",
-                        resolvedAppearance === 'light' ? "bg-zinc-700/55" : "bg-zinc-300/55"
-                      )} />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <i className={cn(
-                        "h-2 w-2 rounded-full border",
-                        resolvedAppearance === 'light' ? "border-zinc-500" : "border-zinc-400"
-                      )} />
-                      <span className={cn(
-                        "h-1 w-[48%] rounded-full",
-                        resolvedAppearance === 'light' ? "bg-zinc-700/55" : "bg-zinc-300/55"
-                      )} />
-                    </div>
-                  </div>
-
-                  {/* Preview Footer Backdrop */}
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-[8%] bottom-0 left-[8%] h-[30%] transition-opacity duration-300"
-                    style={{
-                      opacity: selected.composer.showFooterBackdrop ? 1 : 0,
-                      background: resolvedAppearance === 'light'
-                        ? 'linear-gradient(to top, rgba(248, 250, 252, 0.96), rgba(248, 250, 252, 0.78) 55%, transparent)'
-                        : 'linear-gradient(to top, rgba(9, 9, 11, 0.96), rgba(9, 9, 11, 0.78) 55%, transparent)',
-                    }}
+                  <CodexPreview
+                    theme={selected}
+                    appearance={resolvedAppearance}
+                    safeArea={resolvedSafeArea}
                   />
-
-                  {/* Preview Composer */}
-                  <div
-                    className={cn(
-                      "absolute z-10 right-[11%] bottom-[10%] left-[11%] flex h-[18%] items-center justify-between px-3 border rounded-md transition-all duration-300",
-                      resolvedAppearance === 'light' ? "text-zinc-900" : "text-white"
-                    )}
-                    style={{
-                      background: `color-mix(in oklab, ${previewComposerColor} ${Math.round(selected.composer.opacity * 100)}%, transparent)`,
-                      borderColor: `color-mix(in oklab, ${resolvedAppearance === 'light' ? '#94a3b8' : '#64748b'} ${Math.round(selected.composer.borderOpacity * 100)}%, transparent)`,
-                      backdropFilter: `blur(${selected.composer.blur}px) saturate(1.06)`,
-                      boxShadow: previewComposerShadow,
-                    }}
-                  >
-                    <span className={cn("w-[42%] h-1 rounded-full", resolvedAppearance === 'light' ? "bg-zinc-400" : "bg-zinc-600")} />
-                    <b className="w-2 h-2 rounded-full" style={{ backgroundColor: selected?.accent }} />
-                  </div>
                 </div>
 
+                <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5">
                 {/* Theme Title Header */}
                 <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
                   <div>
@@ -1802,6 +1649,7 @@ function App() {
                       onChange={(imageRadius) => void updateUi('richText', { ...selected.ui.richText, imageRadius })}
                     />
                   </ConfigSection>
+                </div>
                 </div>
               </>
             ) : (
