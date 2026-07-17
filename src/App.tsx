@@ -271,8 +271,8 @@ function App() {
                 dashboard.autostartEnabled ? "bg-emerald-500" : "bg-zinc-700",
               )}>
                 <span className={cn(
-                  "absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
-                  dashboard.autostartEnabled ? "translate-x-3.5" : "translate-x-0.5",
+                  "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
+                  dashboard.autostartEnabled ? "translate-x-3" : "translate-x-0",
                 )} />
               </span>
               <span>登录时后台运行</span>
