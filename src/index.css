@@ -123,3 +123,37 @@ html, body, #root { width: 100%; min-width: 980px; height: 100%; min-height: 680
     @apply font-sans;
   }
 }
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.25 0 0);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.35 0 0);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox 兼容 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.25 0 0) transparent;
+}
