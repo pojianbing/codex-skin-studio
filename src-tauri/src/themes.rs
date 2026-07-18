@@ -9,16 +9,24 @@ use crate::{
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use image::{ImageFormat, ImageReader, codecs::jpeg::JpegEncoder, imageops::FilterType};
 use std::{
+    collections::HashSet,
     fs,
-    io::Cursor,
+    io::{Cursor, Read, Seek, Write},
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
+use zip::{CompressionMethod, ZipArchive, ZipWriter, write::SimpleFileOptions};
 
 const MAX_IMAGE_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_DIMENSION: u32 = 16_384;
 const MAX_PIXELS: u64 = 50_000_000;
-const BUILTIN_THEME_VERSION: &str = "1.2.3";
+const THEME_BUNDLE_SCHEMA_VERSION: u32 = 1;
+const THEME_BUNDLE_EXTENSION: &str = "codex-theme";
+const THEME_BUNDLE_MANIFEST: &str = "bundle.json";
+const MAX_THEME_BUNDLE_BYTES: u64 = MAX_IMAGE_BYTES + 256 * 1024;
+const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
+const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_IMAGE_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
+const BUILTIN_THEME_VERSION: &str = "1.2.4";
 const ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-alpine-lake.jpg");
 const AMBER: &[u8] = include_bytes!("../assets/preset-amber-dusk.jpg");
 const AURORA: &[u8] = include_bytes!("../assets/preset-midnight-aurora.jpg");
@@ -31,6 +39,7 @@ const MIDNIGHT_PAPER_OBSERVATORY: &[u8] =
 const MOONLIT_ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-moonlit-alpine-lake.jpg");
 const PAPER_SKY_WORKSHOP: &[u8] = include_bytes!("../assets/preset-paper-sky-workshop.jpg");
 const RAINY_HARBOR: &[u8] = include_bytes!("../assets/preset-rainy-harbor.jpg");
+const RISO_SPRING_STREAM: &[u8] = include_bytes!("../assets/preset-riso-spring-stream.jpg");
 const ROMANTIC: &[u8] = include_bytes!("../assets/preset-romantic-rose.jpg");
 const SAKURA: &[u8] = include_bytes!("../assets/preset-sakura-dawn.jpg");
 const SKY_LIGHT_STUDY: &[u8] = include_bytes!("../assets/preset-sky-light-study.jpg");
@@ -38,6 +47,80 @@ const STRATA_FORGE: &[u8] = include_bytes!("../assets/preset-strata-forge.jpg");
 const SUNLIT_SHORE: &[u8] = include_bytes!("../assets/preset-sunlit-shore.jpg");
 const WINDREST_CLOUD_HOUSE: &[u8] = include_bytes!("../assets/preset-windrest-cloud-house.jpg");
 const YELLOW_GADGETEERS: &[u8] = include_bytes!("../assets/preset-yellow-gadgeteers.jpg");
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ThemeBundle {
+    schema_version: u32,
+    background: String,
+    theme: ThemeBundleConfig,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ThemeBundleConfig {
+    name: String,
+    version: String,
+    author: String,
+    appearance: String,
+    art: ArtConfig,
+    palette: Palette,
+    #[serde(default)]
+    composer: ComposerConfig,
+    #[serde(default)]
+    environment: EnvironmentConfig,
+    #[serde(default)]
+    change_summary: ChangeSummaryConfig,
+    #[serde(default)]
+    ui: UiConfig,
+}
+
+impl ThemeBundle {
+    fn from_manifest(manifest: &ThemeManifest, background: String) -> Self {
+        Self {
+            schema_version: THEME_BUNDLE_SCHEMA_VERSION,
+            background,
+            theme: ThemeBundleConfig {
+                name: manifest.name.clone(),
+                version: manifest.version.clone(),
+                author: manifest.author.clone(),
+                appearance: manifest.appearance.clone(),
+                art: manifest.art.clone(),
+                palette: manifest.palette.clone(),
+                composer: manifest.composer.clone(),
+                environment: manifest.environment.clone(),
+                change_summary: manifest.change_summary.clone(),
+                ui: manifest.ui.clone(),
+            },
+        }
+    }
+
+    fn into_manifest(self, id: String, image: String) -> ThemeManifest {
+        ThemeManifest {
+            schema_version: 1,
+            id,
+            name: self.theme.name,
+            version: self.theme.version,
+            author: self.theme.author,
+            image,
+            thumbnail: "thumbnail.jpg".into(),
+            appearance: self.theme.appearance,
+            art: self.theme.art,
+            palette: self.theme.palette,
+            composer: self.theme.composer,
+            environment: self.theme.environment,
+            change_summary: self.theme.change_summary,
+            ui: self.theme.ui,
+            built_in: false,
+        }
+    }
+}
+
+struct ImportedThemeBundle {
+    bundle: ThemeBundle,
+    image_name: String,
+    image_bytes: Vec<u8>,
+}
 
 fn valid_id(id: &str) -> bool {
     !id.is_empty()
@@ -239,6 +322,9 @@ fn validate_manifest(manifest: &ThemeManifest) -> Result<()> {
     if !["auto", "light", "dark"].contains(&manifest.appearance.as_str()) {
         return Err(StudioError::from("主题外观设置无效"));
     }
+    if !valid_hex_color(&manifest.palette.accent) {
+        return Err(StudioError::from("主题强调色必须为十六进制颜色"));
+    }
     validate_art(&manifest.art)?;
     validate_composer(&manifest.composer)?;
     validate_environment(&manifest.environment)?;
@@ -293,6 +379,172 @@ fn write_manifest(directory: &Path, manifest: &ThemeManifest) -> Result<()> {
         &directory.join("theme.json"),
         format!("{}\n", serde_json::to_string_pretty(manifest)?).as_bytes(),
     )
+}
+
+fn bundle_error(error: impl std::fmt::Display) -> StudioError {
+    StudioError::from(format!("主题包无效：{error}"))
+}
+
+fn is_flat_bundle_file(name: &str) -> bool {
+    !name.is_empty()
+        && !name.contains(['/', '\\'])
+        && Path::new(name)
+            .file_name()
+            .is_some_and(|file_name| file_name == name)
+}
+
+fn bundle_background_name(format: ImageFormat) -> String {
+    format!("background.{}", extension_for(format))
+}
+
+fn read_bundle_entry<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+    name: &str,
+    maximum_size: u64,
+) -> Result<Vec<u8>> {
+    let mut entry = archive
+        .by_name(name)
+        .map_err(|error| bundle_error(format!("缺少 {name}：{error}")))?;
+    if entry.is_dir() || entry.size() > maximum_size {
+        return Err(bundle_error(format!("{name} 超出允许范围")));
+    }
+    let mut bytes = Vec::with_capacity(entry.size() as usize);
+    entry
+        .by_ref()
+        .take(maximum_size.saturating_add(1))
+        .read_to_end(&mut bytes)?;
+    if bytes.len() as u64 > maximum_size {
+        return Err(bundle_error(format!("{name} 超出允许范围")));
+    }
+    Ok(bytes)
+}
+
+fn encode_theme_bundle(manifest: &ThemeManifest, image: &[u8]) -> Result<Vec<u8>> {
+    validate_manifest(manifest)?;
+    let (format, _, _) = image_info(image)?;
+    let background = bundle_background_name(format);
+    let bundle = ThemeBundle::from_manifest(manifest, background.clone());
+    let manifest_bytes = serde_json::to_vec_pretty(&bundle)?;
+    if manifest_bytes.len() as u64 > MAX_THEME_BUNDLE_MANIFEST_BYTES {
+        return Err(bundle_error("主题配置过大"));
+    }
+
+    let cursor = Cursor::new(Vec::new());
+    let mut writer = ZipWriter::new(cursor);
+    let options = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
+    writer
+        .start_file(THEME_BUNDLE_MANIFEST, options)
+        .map_err(bundle_error)?;
+    writer.write_all(&manifest_bytes)?;
+    writer
+        .start_file(background, options)
+        .map_err(bundle_error)?;
+    writer.write_all(image)?;
+    let output = writer.finish().map_err(bundle_error)?.into_inner();
+    if output.len() as u64 > MAX_THEME_BUNDLE_BYTES {
+        return Err(bundle_error("主题包超过 16 MB 限制"));
+    }
+    Ok(output)
+}
+
+fn decode_theme_bundle(bytes: &[u8]) -> Result<ImportedThemeBundle> {
+    if bytes.is_empty() || bytes.len() as u64 > MAX_THEME_BUNDLE_BYTES {
+        return Err(bundle_error("主题包必须小于 16 MB"));
+    }
+    let mut archive = ZipArchive::new(Cursor::new(bytes)).map_err(bundle_error)?;
+    if archive.len() != 2 {
+        return Err(bundle_error("主题包只能包含配置和一张背景图片"));
+    }
+
+    let mut names = HashSet::new();
+    let mut uncompressed_size = 0_u64;
+    for index in 0..archive.len() {
+        let entry = archive.by_index(index).map_err(bundle_error)?;
+        let name = entry.name();
+        if entry.is_dir() || !is_flat_bundle_file(name) || !names.insert(name.to_owned()) {
+            return Err(bundle_error("主题包包含不安全或重复的文件名"));
+        }
+        uncompressed_size = uncompressed_size
+            .checked_add(entry.size())
+            .ok_or_else(|| bundle_error("主题包内容过大"))?;
+        if uncompressed_size > MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES {
+            return Err(bundle_error("主题包解压后超过允许大小"));
+        }
+    }
+
+    let manifest_bytes = read_bundle_entry(
+        &mut archive,
+        THEME_BUNDLE_MANIFEST,
+        MAX_THEME_BUNDLE_MANIFEST_BYTES,
+    )?;
+    let bundle: ThemeBundle = serde_json::from_slice(&manifest_bytes)?;
+    if bundle.schema_version != THEME_BUNDLE_SCHEMA_VERSION {
+        return Err(bundle_error("不支持的主题包版本"));
+    }
+    if !is_flat_bundle_file(&bundle.background) || bundle.background == THEME_BUNDLE_MANIFEST {
+        return Err(bundle_error("背景文件名无效"));
+    }
+    if !names.contains(THEME_BUNDLE_MANIFEST)
+        || !names.contains(&bundle.background)
+        || names.len() != 2
+    {
+        return Err(bundle_error("主题包文件与配置不一致"));
+    }
+
+    let image_bytes = read_bundle_entry(&mut archive, &bundle.background, MAX_IMAGE_BYTES)?;
+    let (format, _, _) = image_info(&image_bytes)?;
+    let image_name = bundle_background_name(format);
+    if bundle.background != image_name {
+        return Err(bundle_error("背景文件扩展名与图片格式不一致"));
+    }
+    validate_manifest(
+        &bundle
+            .clone()
+            .into_manifest("bundle-validation".into(), image_name.clone()),
+    )?;
+
+    Ok(ImportedThemeBundle {
+        bundle,
+        image_name,
+        image_bytes,
+    })
+}
+
+fn validate_theme_bundle_path(path: &Path) -> Result<()> {
+    if path.file_name().is_none()
+        || path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_none_or(|extension| !extension.eq_ignore_ascii_case(THEME_BUNDLE_EXTENSION))
+    {
+        return Err(StudioError::from("主题包文件必须使用 .codex-theme 扩展名"));
+    }
+    if path.is_dir() {
+        return Err(StudioError::from("主题包路径不能是目录"));
+    }
+    Ok(())
+}
+
+fn install_theme_bundle(root: &Path, imported: ImportedThemeBundle) -> Result<ThemeRecord> {
+    let id = format!("custom-{}", Uuid::new_v4().simple());
+    let directory = root.join(&id);
+    let temporary = root.join(format!(".studio-import-{}", Uuid::new_v4()));
+    let result = (|| {
+        fs::create_dir_all(&temporary)?;
+        let manifest = imported.bundle.into_manifest(id, imported.image_name);
+        fs::write(temporary.join(&manifest.image), imported.image_bytes)?;
+        fs::write(
+            temporary.join(&manifest.thumbnail),
+            make_thumbnail(&fs::read(temporary.join(&manifest.image))?)?,
+        )?;
+        write_manifest(&temporary, &manifest)?;
+        fs::rename(&temporary, &directory)?;
+        record_from(manifest, &directory)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_dir_all(temporary);
+    }
+    result
 }
 
 #[derive(Clone, Copy)]
@@ -514,6 +766,24 @@ fn component_theme(id: &str) -> Option<ComponentTheme> {
             radius: 12,
             shadow: "strong",
             content_width: 720,
+        },
+        "preset-riso-spring-stream" => ComponentTheme {
+            appearance: "dark",
+            accent: "#9bd66f",
+            sidebar: "#1b3027",
+            surface: "#263e34",
+            raised: "#355247",
+            code: "#12251e",
+            line: "#82a493",
+            quote: "#f0afa8",
+            added: "#75d292",
+            deleted: "#f08078",
+            sidebar_opacity: 0.92,
+            panel_opacity: 0.84,
+            blur: 14,
+            radius: 16,
+            shadow: "strong",
+            content_width: 740,
         },
         "preset-romantic-rose" => ComponentTheme {
             appearance: "dark",
@@ -789,6 +1059,7 @@ fn builtin_manifest(
         art: ArtConfig {
             focus_x,
             focus_y: match id {
+                "preset-riso-spring-stream" => 0.52,
                 "preset-strata-forge" => 0.48,
                 "preset-windrest-cloud-house" => 0.47,
                 _ => 0.45,
@@ -913,6 +1184,14 @@ pub fn ensure_library() -> Result<()> {
         "left",
     )?;
     seed_one(
+        "preset-riso-spring-stream",
+        "春溪印语",
+        "#9bd66f",
+        RISO_SPRING_STREAM,
+        0.66,
+        "left",
+    )?;
+    seed_one(
         "preset-romantic-rose",
         "桥本有菜",
         "#d86482",
@@ -1030,6 +1309,28 @@ pub fn list_themes() -> Result<Vec<ThemeRecord>> {
     Ok(records)
 }
 
+pub fn export_theme(id: &str, path: &str) -> Result<()> {
+    let output = Path::new(path);
+    validate_theme_bundle_path(output)?;
+    let (manifest, directory) = load_manifest(id)?;
+    let image = image_bytes(&manifest, &directory)?;
+    atomic_write(output, &encode_theme_bundle(&manifest, &image)?)
+}
+
+pub fn import_theme_bundle(path: &str) -> Result<ThemeRecord> {
+    let source = Path::new(path);
+    validate_theme_bundle_path(source)?;
+    let metadata = fs::metadata(source)?;
+    if !metadata.is_file() {
+        return Err(StudioError::from("请选择一个主题包文件"));
+    }
+    if metadata.len() > MAX_THEME_BUNDLE_BYTES {
+        return Err(bundle_error("主题包必须小于 16 MB"));
+    }
+    let imported = decode_theme_bundle(&fs::read(source)?)?;
+    install_theme_bundle(&themes_root()?, imported)
+}
+
 pub fn import_wallpaper(path: &str) -> Result<ThemeRecord> {
     let source = Path::new(path);
     if !source.is_file() {
@@ -1114,9 +1415,18 @@ mod tests {
     use super::{
         ALPINE_LAKE, AMBER, AURORA, CODEX_OBSERVATORY, CYBER, FOREST, HARBOR_CITY, MAX_IMAGE_BYTES,
         MIDNIGHT_PAPER_OBSERVATORY, MOONLIT_ALPINE_LAKE, PAPER_SKY_WORKSHOP, RAINY_HARBOR,
-        ROMANTIC, SAKURA, SKY_LIGHT_STUDY, STRATA_FORGE, SUNLIT_SHORE, WINDREST_CLOUD_HOUSE,
-        YELLOW_GADGETEERS, builtin_manifest, image_info, should_upgrade_builtin, validate_manifest,
+        RISO_SPRING_STREAM, ROMANTIC, SAKURA, SKY_LIGHT_STUDY, STRATA_FORGE, SUNLIT_SHORE,
+        ThemeBundle, WINDREST_CLOUD_HOUSE, YELLOW_GADGETEERS, builtin_manifest,
+        decode_theme_bundle, encode_theme_bundle, image_info, install_theme_bundle,
+        should_upgrade_builtin, validate_manifest,
     };
+    use crate::models::ThemeManifest;
+    use std::{
+        fs,
+        io::{Cursor, Write},
+    };
+    use uuid::Uuid;
+    use zip::{CompressionMethod, ZipWriter, write::SimpleFileOptions};
 
     #[test]
     fn validates_bundled_image_and_rejects_invalid_payloads() {
@@ -1132,6 +1442,7 @@ mod tests {
             MOONLIT_ALPINE_LAKE,
             PAPER_SKY_WORKSHOP,
             RAINY_HARBOR,
+            RISO_SPRING_STREAM,
             ROMANTIC,
             SAKURA,
             SKY_LIGHT_STUDY,
@@ -1161,6 +1472,7 @@ mod tests {
             ("preset-moonlit-alpine-lake", "dark"),
             ("preset-paper-sky-workshop", "dark"),
             ("preset-rainy-harbor", "dark"),
+            ("preset-riso-spring-stream", "dark"),
             ("preset-romantic-rose", "dark"),
             ("preset-sakura-dawn", "dark"),
             ("preset-sky-light-study", "dark"),
@@ -1173,7 +1485,7 @@ mod tests {
             let manifest = builtin_manifest(id, id, "#000000", 0.5, "left")
                 .expect("every bundled theme should have a component adaptation");
             validate_manifest(&manifest).expect("adapted theme should validate");
-            assert_eq!(manifest.version, "1.2.3");
+            assert_eq!(manifest.version, "1.2.4");
             assert_eq!(manifest.appearance, appearance);
             assert_ne!(manifest.ui.sidebar.background, "auto");
             assert_ne!(manifest.ui.code_block.background, "auto");
@@ -1191,5 +1503,72 @@ mod tests {
         assert!(!should_upgrade_builtin(&next, &next));
         old.built_in = false;
         assert!(!should_upgrade_builtin(&old, &next));
+    }
+
+    #[test]
+    fn theme_bundle_round_trip_preserves_configuration_and_creates_local_copy() {
+        let mut source = builtin_manifest("preset-alpine-lake", "导出测试", "#69aebc", 0.8, "left")
+            .expect("source theme should validate");
+        source.author = "Skin Studio test".into();
+        source.version = "2.4.0".into();
+        source.art.task_mode = "banner".into();
+        source.composer.opacity = 0.71;
+        source.ui.content.max_width = 880;
+        source.ui.rich_text.image_radius = 17;
+
+        let archive =
+            encode_theme_bundle(&source, ALPINE_LAKE).expect("theme bundle should be encoded");
+        let imported = decode_theme_bundle(&archive).expect("theme bundle should be decoded");
+        let root = std::env::temp_dir().join(format!("skin-studio-theme-test-{}", Uuid::new_v4()));
+        fs::create_dir_all(&root).expect("test root should be created");
+
+        let record =
+            install_theme_bundle(&root, imported).expect("theme bundle should be installed");
+        assert!(record.id.starts_with("custom-"));
+        assert!(!record.built_in);
+        let directory = root.join(&record.id);
+        let stored: ThemeManifest = serde_json::from_slice(
+            &fs::read(directory.join("theme.json")).expect("stored manifest should exist"),
+        )
+        .expect("stored manifest should deserialize");
+        assert!(!stored.built_in);
+        assert_eq!(stored.name, source.name);
+        assert_eq!(stored.version, source.version);
+        assert_eq!(stored.author, source.author);
+        assert_eq!(stored.art.task_mode, "banner");
+        assert_eq!(stored.composer.opacity, 0.71);
+        assert_eq!(stored.ui.content.max_width, 880);
+        assert_eq!(stored.ui.rich_text.image_radius, 17);
+        assert_eq!(
+            fs::read(directory.join(&stored.image)).expect("stored background should exist"),
+            ALPINE_LAKE,
+        );
+        assert!(directory.join(&stored.thumbnail).is_file());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn rejects_theme_bundle_with_unsafe_file_name() {
+        let source = builtin_manifest("preset-alpine-lake", "安全性测试", "#69aebc", 0.8, "left")
+            .expect("source theme should validate");
+        let bundle = ThemeBundle::from_manifest(&source, "../background.jpg".into());
+        let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
+        writer
+            .start_file("bundle.json", options)
+            .expect("manifest entry should be written");
+        writer
+            .write_all(&serde_json::to_vec(&bundle).expect("bundle should serialize"))
+            .expect("manifest should be written");
+        writer
+            .start_file("../background.jpg", options)
+            .expect("unsafe entry should be written for the test");
+        writer
+            .write_all(ALPINE_LAKE)
+            .expect("background should be written");
+        let archive = writer.finish().expect("archive should finish").into_inner();
+
+        assert!(decode_theme_bundle(&archive).is_err());
     }
 }

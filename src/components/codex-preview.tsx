@@ -141,6 +141,20 @@ function surfaceStyle(
   }
 }
 
+function applicationMenuStyle(
+  value: SurfaceStyle,
+  fallback: string,
+  border: string,
+): CSSProperties {
+  return {
+    background: mix(resolveColor(value.background, fallback), Math.max(0.72, value.opacity)),
+    borderColor: mix(border, value.borderOpacity),
+    borderRadius: '0px',
+    backdropFilter: `blur(${Math.max(0, value.blur * 0.45)}px) saturate(1.06)`,
+    boxShadow: 'none',
+  }
+}
+
 function rowStyle(
   value: RowStyle,
   fallback: string,
@@ -192,7 +206,8 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
   const mutedText = light ? '#475569' : '#a1a1aa'
   const mainText = light ? '#18181b' : '#f4f4f5'
   const mainLeft = theme.ui.sidebar.visible ? 21 : 0
-  const headerHeight = theme.ui.header.visible ? 11 : 0
+  const applicationMenuHeight = 5
+  const headerHeight = theme.ui.header.visible ? 5 : 0
   const environmentRight = theme.environment.visible ? 28 : 4
   const widthRatio = Math.max(0, Math.min(1, (theme.ui.content.maxWidth - 560) / 640))
   const availableWidth = 100 - mainLeft - environmentRight
@@ -236,7 +251,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
         backgroundSize: theme.art.taskMode === 'banner' ? '100% 47%' : 'cover',
         backgroundRepeat: 'no-repeat',
       }}
-      aria-label="Codex 任务页实时预览"
+      aria-label="Codex 任务页与顶部菜单栏实时预览"
     >
       <div
         className={cn(
@@ -245,9 +260,33 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
         )}
       />
 
-      <section
-        className="absolute inset-y-0 left-0 z-20 flex flex-col border p-[6px]"
+      <nav
+        className="absolute inset-x-0 top-0 z-50 flex items-center justify-between border-b px-[7px] text-[5.5px] font-medium"
         style={{
+          height: `${applicationMenuHeight}%`,
+          color: mainText,
+          ...applicationMenuStyle(theme.ui.header, fallbackHeader, borderColor),
+        }}
+        aria-label="Codex 顶部菜单栏预览"
+      >
+        <div className="flex min-w-0 items-center gap-[6px]">
+          <Monitor size={7} opacity={0.8} />
+          <span>文件</span>
+          <span>编辑</span>
+          <span>视图</span>
+          <span>帮助</span>
+        </div>
+        <div className="flex items-center gap-[4px] opacity-65">
+          <span className="h-[5px] w-[5px] rounded-sm border border-current" />
+          <span className="h-[5px] w-[5px] rounded-sm border border-current" />
+          <span className="h-[5px] w-[5px] rounded-sm border border-current" />
+        </div>
+      </nav>
+
+      <section
+        className="absolute bottom-0 left-0 z-20 flex flex-col border p-[6px]"
+        style={{
+          top: `${applicationMenuHeight}%`,
           width: `${mainLeft}%`,
           color: mainText,
           ...surfaceStyle(theme.ui.sidebar, fallbackSidebar, borderColor),
@@ -289,6 +328,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
         className="absolute right-0 top-0 z-10 flex items-center justify-between border px-[8px]"
         style={{
           left: `${mainLeft}%`,
+          top: `${applicationMenuHeight}%`,
           height: `${headerHeight}%`,
           color: mainText,
           ...surfaceStyle(theme.ui.header, fallbackHeader, borderColor),
@@ -309,7 +349,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
         className="absolute z-0 overflow-hidden"
         style={{
           left: `${contentLeft}%`,
-          top: `${headerHeight + 2}%`,
+          top: `${applicationMenuHeight + headerHeight + 2}%`,
           bottom: '20%',
           width: `${contentWidth}%`,
           color: mainText,
@@ -402,7 +442,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       <aside
         className="absolute right-[2.5%] z-20 flex w-[23%] flex-col border p-[5px]"
         style={{
-          top: `${headerHeight + 3}%`,
+          top: `${applicationMenuHeight + headerHeight + 3}%`,
           color: mainText,
           ...surfaceStyle(theme.environment, fallbackSurface, borderColor),
         }}

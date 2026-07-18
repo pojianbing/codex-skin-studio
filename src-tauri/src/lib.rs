@@ -112,6 +112,24 @@ async fn import_wallpaper(path: String) -> std::result::Result<ThemeRecord, Stri
 }
 
 #[tauri::command]
+async fn import_theme_bundle(path: String) -> std::result::Result<ThemeRecord, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        themes::import_theme_bundle(&path).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn export_theme(theme_id: String, path: String) -> std::result::Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        themes::export_theme(&theme_id, &path).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
 async fn update_theme(
     theme_id: String,
     appearance: String,
@@ -283,6 +301,8 @@ pub fn run() {
             get_apply_plan,
             set_autostart,
             import_wallpaper,
+            import_theme_bundle,
+            export_theme,
             update_theme,
             delete_theme,
             apply_theme,

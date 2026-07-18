@@ -160,6 +160,9 @@ html.codex-skin-studio .composer-surface-chrome {
 html.codex-skin-studio .skin-composer-footer-backdrop {
   display: none !important;
 }
+html.codex-skin-studio .skin-composer-file-change-backdrop {
+  display: none !important;
+}
 html.codex-skin-studio .skin-environment-panel-hidden {
   display: none !important;
 }
@@ -177,7 +180,7 @@ html.codex-skin-studio .skin-environment-panel-surface header {
 html.codex-skin-studio .skin-change-summary-hidden {
   display: none !important;
 }
-html.codex-skin-studio .skin-change-summary-card {
+html.codex-skin-studio :is(.skin-change-summary-card, .skin-change-summary-compact) {
   color: var(--skin-text) !important;
   border: 1px solid color-mix(in oklab, var(--skin-line) var(--skin-change-summary-border-opacity), transparent) !important;
   border-radius: var(--skin-change-summary-radius) !important;

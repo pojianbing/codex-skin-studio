@@ -1,10 +1,10 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-dialog'
+import { open, save } from '@tauri-apps/plugin-dialog'
 import {
-  Check, ChevronDown, Download, Files, ImagePlus, Library, LoaderCircle, MonitorCog,
-  PanelBottom, PanelRight, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Trash2,
-  SlidersHorizontal,
+  Check, ChevronDown, Download, ImagePlus, Library, LoaderCircle, MonitorCog,
+  PanelRight, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Trash2,
+  SlidersHorizontal, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -157,6 +157,14 @@ type ApplyPlan = { action: 'hotSwitch' | 'launch' | 'restart' }
 const fallbackDashboard: Dashboard = {
   platform: 'desktop', codexFound: false, mode: 'official',
   message: '正在连接本地引擎', autostartEnabled: false, themes: [],
+}
+
+const themeBundleFilename = (theme: ThemeRecord) => {
+  const name = theme.name
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .trim()
+    .replace(/\.+$/, '')
+  return `${name || theme.id}.codex-theme`
 }
 
 const sliderValue = (value: number | readonly number[]) => (
@@ -384,6 +392,7 @@ function App() {
   const [working, setWorking] = useState<string>()
   const [confirmRestore, setConfirmRestore] = useState(false)
   const [confirmRestart, setConfirmRestart] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<ThemeRecord | null>(null)
 
   const selected = useMemo(
     () => dashboard.themes.find((theme) => theme.id === selectedId) ?? dashboard.themes[0],
@@ -467,6 +476,53 @@ function App() {
       const theme = await invoke<ThemeRecord>('import_wallpaper', { path: selectedPath })
       setSelectedId(theme.id)
     }, '主题已加入本地主题库')
+  }
+
+  const importThemeBundle = async () => {
+    const selectedPath = await open({
+      multiple: false, directory: false,
+      filters: [{ name: 'Codex Skin Studio 主题包', extensions: ['codex-theme'] }],
+    })
+    if (!selectedPath) return
+    await run('import-theme', async () => {
+      const theme = await invoke<ThemeRecord>('import_theme_bundle', { path: selectedPath })
+      setSelectedId(theme.id)
+    }, '主题包已加入本地主题库')
+  }
+
+  const exportSelected = async () => {
+    if (!selected) return
+    const selectedPath = await save({
+      title: '导出主题包',
+      defaultPath: themeBundleFilename(selected),
+      filters: [{ name: 'Codex Skin Studio 主题包', extensions: ['codex-theme'] }],
+    })
+    if (!selectedPath) return
+    const path = selectedPath.toLowerCase().endsWith('.codex-theme')
+      ? selectedPath
+      : `${selectedPath}.codex-theme`
+    await run(
+      'export',
+      () => invoke('export_theme', { themeId: selected.id, path }),
+      '主题包已导出',
+    )
+  }
+
+  const deleteTheme = async () => {
+    if (!deleteTarget) return
+    const target = deleteTarget
+    setDeleteTarget(null)
+    setWorking('delete')
+    try {
+      await invoke('delete_theme', { themeId: target.id })
+      setSelectedId((current) => current === target.id ? undefined : current)
+      await refresh()
+      toast.success('主题已删除')
+    } catch (error) {
+      toast.error(String(error))
+    } finally {
+      setWorking(undefined)
+    }
   }
 
   const applySelected = async (restartExisting = false) => {
@@ -638,6 +694,20 @@ function App() {
               <RefreshCw size={15} />
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void importThemeBundle()}
+              disabled={Boolean(working)}
+              className="border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-50 cursor-pointer"
+            >
+              {working === 'import-theme' ? (
+                <LoaderCircle className="animate-spin" size={15} />
+              ) : (
+                <Upload size={15} />
+              )}
+              导入主题包
+            </Button>
+            <Button
               onClick={() => void importWallpaper()}
               disabled={Boolean(working)}
               size="sm"
@@ -735,17 +805,36 @@ function App() {
                     <h2 className="text-base font-bold text-zinc-50">{selected.name}</h2>
                     <p className="text-[10px] text-zinc-400 font-mono mt-1 select-all">{selected.id}</p>
                   </div>
-                  {!selected.builtIn && (
+                  <div className="flex items-center gap-1">
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="icon-xs"
-                      title="删除主题"
-                      onClick={() => void run('delete', () => invoke('delete_theme', { themeId: selected.id }), '主题已删除')}
-                      className="cursor-pointer"
+                      title="导出主题包"
+                      aria-label="导出主题包"
+                      onClick={() => void exportSelected()}
+                      disabled={Boolean(working)}
+                      className="border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-50 cursor-pointer"
                     >
-                      <Trash2 size={13} />
+                      {working === 'export' ? (
+                        <LoaderCircle className="animate-spin" size={13} />
+                      ) : (
+                        <Download size={13} />
+                      )}
                     </Button>
-                  )}
+                    {!selected.builtIn && (
+                      <Button
+                        variant="destructive"
+                        size="icon-xs"
+                        title="删除主题"
+                        aria-label={`删除主题 ${selected.name}`}
+                        onClick={() => setDeleteTarget(selected)}
+                        disabled={Boolean(working)}
+                        className="cursor-pointer"
+                      >
+                        <Trash2 size={13} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Select dropdown fields */}
@@ -815,12 +904,14 @@ function App() {
                   />
                 </div>
 
-                {/* Composer Settings */}
-                <div className="flex flex-col gap-4 pb-5 border-b border-zinc-800">
-                  <label className="flex gap-2 items-center text-xs font-bold text-zinc-400 tracking-wide uppercase">
-                    <PanelBottom size={13} className="text-zinc-500" />
-                    <span>输入框</span>
+                {/* Advanced UI Settings */}
+                <div className="flex flex-col gap-2 pb-5 border-b border-zinc-800">
+                  <label className="mb-1 flex items-center gap-2 text-xs font-bold text-zinc-400 tracking-wide uppercase">
+                    <SlidersHorizontal size={13} className="text-zinc-500" />
+                    <span>界面元素</span>
                   </label>
+
+                  <ConfigSection title="输入框">
 
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-semibold text-zinc-300">背景</span>
@@ -943,7 +1034,7 @@ function App() {
 
                   <div className="flex items-center justify-between gap-3 pt-1">
                     <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-zinc-300">输入框上方渐变</span>
+                      <span className="text-xs font-semibold text-zinc-300">底部浮层渐变</span>
                       <small className="text-[10px] font-medium text-zinc-500">
                         {selected.composer.showFooterBackdrop ? '显示' : '隐藏'}
                       </small>
@@ -952,8 +1043,8 @@ function App() {
                       type="button"
                       role="switch"
                       aria-checked={selected.composer.showFooterBackdrop}
-                      aria-label="显示输入框上方渐变"
-                      title={selected.composer.showFooterBackdrop ? '隐藏输入框上方渐变' : '显示输入框上方渐变'}
+                      aria-label="显示底部浮层渐变"
+                      title={selected.composer.showFooterBackdrop ? '隐藏底部浮层渐变' : '显示底部浮层渐变'}
                       onClick={() => void updateSelected({
                         composer: {
                           ...selected.composer,
@@ -973,40 +1064,17 @@ function App() {
                       )} />
                     </button>
                   </div>
-                </div>
+                  </ConfigSection>
 
                 {/* Environment Panel Settings */}
-                <div className="flex flex-col gap-4 pb-5 border-b border-zinc-800">
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex gap-2 items-center text-xs font-bold text-zinc-400 tracking-wide uppercase">
-                      <PanelRight size={13} className="text-zinc-500" />
-                      <span>环境面板</span>
-                    </label>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={selected.environment.visible}
-                      aria-label="显示环境面板"
-                      title={selected.environment.visible ? '隐藏环境面板' : '显示环境面板'}
-                      onClick={() => void updateSelected({
-                        environment: {
-                          ...selected.environment,
-                          visible: !selected.environment.visible,
-                        },
+                  <ConfigSection title="环境面板">
+                    <ToggleSetting
+                      label="显示"
+                      checked={selected.environment.visible}
+                      onChange={(visible) => void updateSelected({
+                        environment: { ...selected.environment, visible },
                       })}
-                      className={cn(
-                        "relative h-5 w-9 flex-none rounded-full border transition-colors cursor-pointer",
-                        selected.environment.visible
-                          ? "border-emerald-400/40 bg-emerald-500"
-                          : "border-zinc-700 bg-zinc-800"
-                      )}
-                    >
-                      <span className={cn(
-                        "absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
-                        selected.environment.visible ? "translate-x-4" : "translate-x-0"
-                      )} />
-                    </button>
-                  </div>
+                    />
 
                   {selected.environment.visible && (
                     <>
@@ -1149,40 +1217,17 @@ function App() {
                       </div>
                     </>
                   )}
-                </div>
+                  </ConfigSection>
 
                 {/* Change Summary Settings */}
-                <div className="flex flex-col gap-4 pb-5 border-b border-zinc-800">
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex gap-2 items-center text-xs font-bold text-zinc-400 tracking-wide uppercase">
-                      <Files size={13} className="text-zinc-500" />
-                      <span>变更摘要</span>
-                    </label>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={selected.changeSummary.visible}
-                      aria-label="显示变更摘要"
-                      title={selected.changeSummary.visible ? '隐藏变更摘要' : '显示变更摘要'}
-                      onClick={() => void updateSelected({
-                        changeSummary: {
-                          ...selected.changeSummary,
-                          visible: !selected.changeSummary.visible,
-                        },
+                  <ConfigSection title="变更摘要">
+                    <ToggleSetting
+                      label="显示"
+                      checked={selected.changeSummary.visible}
+                      onChange={(visible) => void updateSelected({
+                        changeSummary: { ...selected.changeSummary, visible },
                       })}
-                      className={cn(
-                        "relative h-5 w-9 flex-none rounded-full border transition-colors cursor-pointer",
-                        selected.changeSummary.visible
-                          ? "border-emerald-400/40 bg-emerald-500"
-                          : "border-zinc-700 bg-zinc-800"
-                      )}
-                    >
-                      <span className={cn(
-                        "absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
-                        selected.changeSummary.visible ? "translate-x-4" : "translate-x-0"
-                      )} />
-                    </button>
-                  </div>
+                    />
 
                   {selected.changeSummary.visible && (
                     <>
@@ -1325,14 +1370,7 @@ function App() {
                       </div>
                     </>
                   )}
-                </div>
-
-                {/* Advanced UI Settings */}
-                <div className="flex flex-col gap-2 pb-5 border-b border-zinc-800">
-                  <label className="mb-1 flex items-center gap-2 text-xs font-bold text-zinc-400 tracking-wide uppercase">
-                    <SlidersHorizontal size={13} className="text-zinc-500" />
-                    <span>界面元素</span>
-                  </label>
+                  </ConfigSection>
 
                   <ConfigSection title="左侧边栏">
                     <SurfaceStyleEditor
@@ -1712,6 +1750,29 @@ function App() {
             </Button>
             <Button onClick={() => { setConfirmRestart(false); void applySelected(true) }} className="cursor-pointer">
               重启并应用
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Theme Deletion Dialog */}
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <div className="w-10 h-10 rounded-lg bg-rose-950/60 text-rose-400 flex items-center justify-center mb-2">
+              <Trash2 size={20} />
+            </div>
+            <DialogTitle>删除“{deleteTarget?.name}”？</DialogTitle>
+            <DialogDescription>
+              背景图片和全部组件配置将被移除，此操作无法恢复。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} className="cursor-pointer">
+              取消
+            </Button>
+            <Button variant="destructive" onClick={() => void deleteTheme()} className="cursor-pointer">
+              删除主题
             </Button>
           </DialogFooter>
         </DialogContent>

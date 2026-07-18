@@ -5,6 +5,7 @@ Windows 和 macOS 的 Codex Desktop 本地主题管理器。应用通过回环 C
 ## 功能
 
 - 导入 JPG、PNG、WebP 壁纸并生成本地主题
+- 导入和导出单文件 `.codex-theme` 主题包，保留背景图和全部组件配置
 - 主题预览、浅色/深色外观、内容安全区和任务页模式
 - 本机 CDP 注入与 renderer 路由重注入
 - 已建立主题会话时无重启热切换
@@ -36,6 +37,8 @@ npm run desktop:build
 - macOS：`~/Library/Application Support/studio.codex.CodexSkinStudio`
 
 主题存放在数据目录的 `themes/<theme-id>`。引擎状态写入 `engine-state.json`，采用同目录临时文件和可恢复替换。
+
+`.codex-theme` 是 Skin Studio 的 ZIP 主题包，固定包含 `bundle.json` 和一张 JPG、PNG 或 WebP 背景图。导入时应用会重新生成缩略图、验证组件配置及图片限制，并创建新的本地主题副本；主题包不包含引擎状态、CDP 连接信息或可执行代码。
 
 ## 恢复保证
 

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "tauri": "tauri",
+    "predesktop:dev": "node scripts/stop-stale-tauri-dev.mjs",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "build": "tsc -b && vite build",

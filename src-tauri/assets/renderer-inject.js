@@ -121,6 +121,19 @@
         );
       }
     }
+    for (const layer of document.querySelectorAll('div')) {
+      const isFileChangeFooterFade = layer.classList.contains('pointer-events-none')
+        && layer.classList.contains('absolute')
+        && layer.classList.contains('inset-x-0')
+        && layer.classList.contains('-bottom-1')
+        && layer.classList.contains('h-7')
+        && layer.classList.contains('bg-gradient-to-t')
+        && layer.classList.contains('from-token-main-surface-primary')
+        && layer.classList.contains('to-transparent');
+      if (isFileChangeFooterFade) {
+        layer.classList.toggle('skin-composer-file-change-backdrop', composer.showFooterBackdrop !== true);
+      }
+    }
     const environment = theme.environment || {};
     const environmentColor = /^#[0-9a-f]{6}$/i.test(environment.background || '')
       ? environment.background
@@ -159,6 +172,22 @@
       const card = header.parentElement;
       card?.classList.add('skin-change-summary-card');
       card?.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
+    }
+    for (const summary of document.querySelectorAll('div.rounded-3xl.border[class~="bg-token-input-background/70"]')) {
+      const isCompactChangeSummary = summary.classList.contains('flex')
+        && summary.classList.contains('w-max')
+        && summary.classList.contains('max-w-full')
+        && summary.classList.contains('min-w-0')
+        && summary.classList.contains('items-center')
+        && summary.classList.contains('gap-2')
+        && summary.classList.contains('px-3')
+        && summary.classList.contains('py-1.5')
+        && summary.classList.contains('text-token-foreground')
+        && summary.classList.contains('backdrop-blur-sm');
+      if (isCompactChangeSummary) {
+        summary.classList.add('skin-change-summary-compact');
+        summary.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
+      }
     }
     const ui = theme.ui || {};
     applyConfigurableSurface(sidebar, 'skin-sidebar-surface', ui.sidebar, {
@@ -326,10 +355,12 @@
     document.querySelectorAll('.skin-task').forEach((node) => node.classList.remove('skin-task'));
     document.querySelectorAll('.skin-home-shell').forEach((node) => node.classList.remove('skin-home-shell'));
     document.querySelectorAll('.skin-composer-footer-backdrop').forEach((node) => node.classList.remove('skin-composer-footer-backdrop'));
+    document.querySelectorAll('.skin-composer-file-change-backdrop').forEach((node) => node.classList.remove('skin-composer-file-change-backdrop'));
     document.querySelectorAll('.skin-environment-panel-hidden').forEach((node) => node.classList.remove('skin-environment-panel-hidden'));
     document.querySelectorAll('.skin-environment-panel-surface').forEach((node) => node.classList.remove('skin-environment-panel-surface'));
     document.querySelectorAll('.skin-change-summary-hidden').forEach((node) => node.classList.remove('skin-change-summary-hidden'));
     document.querySelectorAll('.skin-change-summary-card').forEach((node) => node.classList.remove('skin-change-summary-card'));
+    document.querySelectorAll('.skin-change-summary-compact').forEach((node) => node.classList.remove('skin-change-summary-compact'));
     document.querySelectorAll('.skin-configurable-surface').forEach((node) => {
       node.classList.remove(
         'skin-configurable-surface', 'skin-configurable-hidden', 'skin-sidebar-surface',
