@@ -49,6 +49,11 @@ type PreviewTheme = {
     focusY: number
     taskMode: 'auto' | 'ambient' | 'banner' | 'off'
   }
+  levelSlider: {
+    enabled: boolean
+    levelColors: [string, string, string, string, string]
+    thumbColor: string
+  }
   composer: {
     background: string
     opacity: number
@@ -291,6 +296,11 @@ export function CodexPreview({
   const composerControl = resolveColor(theme.composer.controlColor, theme.accent)
   const composerAction = resolveColor(theme.composer.primaryActionColor, theme.accent)
   const composerActionText = resolveColor(theme.composer.primaryActionText, inverseText)
+  const previewLevelIndex = 2
+  const previewLevelProgress = 50
+  const levelTrackColor = theme.levelSlider.enabled
+    ? theme.levelSlider.levelColors[previewLevelIndex]
+    : '#339cff'
   const diffRowStyle: CSSProperties = {
     display: theme.ui.diff.visible ? 'grid' : 'none',
     background: mix(resolveColor(theme.ui.diff.background, fallbackSurface), theme.ui.diff.opacity),
@@ -675,6 +685,70 @@ export function CodexPreview({
             : 'linear-gradient(to top, rgba(9,9,11,.98), rgba(9,9,11,.72) 58%, transparent)',
         }}
       />
+
+      <div
+        className={cn(
+          "absolute z-40 w-[108px] border px-[7px] pb-[7px] pt-[6px] shadow-lg",
+          targetClass('levelSlider'),
+        )}
+        style={{
+          left: `calc(${contentLeft + contentWidth}% + 6px)`,
+          bottom: '2.8%',
+          color: mainText,
+          background: light ? 'rgba(255, 255, 255, 0.94)' : 'rgba(24, 24, 27, 0.94)',
+          borderColor: mix(borderColor, 0.32),
+          borderRadius: '6px',
+          backdropFilter: 'blur(9px) saturate(1.08)',
+        }}
+        aria-label="级别滑块预览"
+        {...targetEvents('levelSlider')}
+      >
+        <div className="mb-[6px] flex items-center justify-between text-[5.5px] font-semibold leading-none">
+          <span>推理级别</span>
+          <span className="flex items-center gap-[2px]" style={{ color: secondaryText }}>
+            高 <ChevronDown size={6} />
+          </span>
+        </div>
+        <div
+          className="relative h-[7px] w-full rounded-full"
+          style={{
+            background: theme.levelSlider.enabled ? 'transparent' : mix(mainText, 0.1),
+          }}
+        >
+          <span
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{
+              width: `${previewLevelProgress}%`,
+              background: levelTrackColor,
+            }}
+          />
+          {theme.levelSlider.enabled && (
+            <span
+              className="pointer-events-none absolute inset-0 rounded-full"
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255, 255, 255, 0.24)',
+                backdropFilter: 'blur(4px) saturate(1.22)',
+                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.34), inset 0 -1px 0 rgba(0, 0, 0, 0.1)',
+              }}
+            />
+          )}
+          {[3, 26.5, 50, 73.5, 97].map((left) => (
+            <span
+              key={left}
+              className="absolute top-1/2 z-10 h-[2.5px] w-[2.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+              style={{ left: `${left}%` }}
+            />
+          ))}
+          <span
+            className="absolute top-1/2 z-20 h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/10 shadow-[0_1px_3px_rgba(0,0,0,0.35)]"
+            style={{
+              left: `${previewLevelProgress}%`,
+              background: theme.levelSlider.enabled ? theme.levelSlider.thumbColor : '#ffffff',
+            }}
+          />
+        </div>
+      </div>
 
       <div
         className={cn(
