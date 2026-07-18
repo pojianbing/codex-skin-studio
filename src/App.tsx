@@ -817,11 +817,6 @@ function App() {
             <Library size={16} />
             <span>主题库</span>
           </button>
-          <button className="flex items-center gap-3 w-full h-10 px-3 rounded-lg text-sm font-medium transition-all text-zinc-500 bg-transparent cursor-not-allowed opacity-50" disabled>
-            <Download size={16} />
-            <span>主题商店</span>
-            <span className="ml-auto px-1.5 py-0.5 rounded text-[9px] font-semibold bg-zinc-950 text-zinc-600">稍后</span>
-          </button>
         </nav>
 
         {/* Runtime info block */}
