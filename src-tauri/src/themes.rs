@@ -525,10 +525,14 @@ fn validate_theme_bundle_path(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn install_theme_bundle(root: &Path, imported: ImportedThemeBundle) -> Result<ThemeRecord> {
-    let id = format!("custom-{}", Uuid::new_v4().simple());
+fn install_theme_bundle_with_id(
+    root: &Path,
+    imported: ImportedThemeBundle,
+    id: String,
+) -> Result<ThemeRecord> {
     let directory = root.join(&id);
     let temporary = root.join(format!(".studio-import-{}", Uuid::new_v4()));
+    let backup = root.join(format!(".studio-backup-{}", Uuid::new_v4()));
     let result = (|| {
         fs::create_dir_all(&temporary)?;
         let manifest = imported.bundle.into_manifest(id, imported.image_name);
@@ -538,13 +542,30 @@ fn install_theme_bundle(root: &Path, imported: ImportedThemeBundle) -> Result<Th
             make_thumbnail(&fs::read(temporary.join(&manifest.image))?)?,
         )?;
         write_manifest(&temporary, &manifest)?;
+        if directory.exists() {
+            fs::rename(&directory, &backup)?;
+        }
         fs::rename(&temporary, &directory)?;
+        if backup.exists() {
+            let _ = fs::remove_dir_all(&backup);
+        }
         record_from(manifest, &directory)
     })();
     if result.is_err() {
         let _ = fs::remove_dir_all(temporary);
+        if backup.exists() && !directory.exists() {
+            let _ = fs::rename(backup, directory);
+        }
     }
     result
+}
+
+fn install_theme_bundle(root: &Path, imported: ImportedThemeBundle) -> Result<ThemeRecord> {
+    install_theme_bundle_with_id(
+        root,
+        imported,
+        format!("custom-{}", Uuid::new_v4().simple()),
+    )
 }
 
 #[derive(Clone, Copy)]
@@ -1329,6 +1350,18 @@ pub fn import_theme_bundle(path: &str) -> Result<ThemeRecord> {
     }
     let imported = decode_theme_bundle(&fs::read(source)?)?;
     install_theme_bundle(&themes_root()?, imported)
+}
+
+pub fn import_theme_bundle_bytes(bytes: &[u8]) -> Result<ThemeRecord> {
+    install_theme_bundle(&themes_root()?, decode_theme_bundle(bytes)?)
+}
+
+pub fn replace_theme_bundle(id: &str, bytes: &[u8]) -> Result<ThemeRecord> {
+    let (current, _) = load_manifest(id)?;
+    if current.built_in {
+        return Err(StudioError::from("内置主题不能由主题商店更新"));
+    }
+    install_theme_bundle_with_id(&themes_root()?, decode_theme_bundle(bytes)?, id.into())
 }
 
 pub fn import_wallpaper(path: &str) -> Result<ThemeRecord> {

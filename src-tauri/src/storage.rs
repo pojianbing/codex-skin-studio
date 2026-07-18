@@ -31,6 +31,10 @@ pub fn state_path() -> Result<PathBuf> {
     Ok(app_root()?.join("engine-state.json"))
 }
 
+pub fn store_state_path() -> Result<PathBuf> {
+    Ok(app_root()?.join("theme-store-state.json"))
+}
+
 fn settings_path() -> Result<PathBuf> {
     Ok(app_root()?.join("settings.json"))
 }

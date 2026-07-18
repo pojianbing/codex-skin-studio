@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select'
 import { Toaster } from '@/components/ui/sonner'
 import { CodexPreview } from '@/components/codex-preview'
+import { ThemeStore } from '@/components/theme-store'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -511,6 +512,7 @@ function RowStyleEditor({
 }
 
 function App() {
+  const [activeView, setActiveView] = useState<'library' | 'store'>('library')
   const [dashboard, setDashboard] = useState<Dashboard>(fallbackDashboard)
   const [selectedId, setSelectedId] = useState<string>()
   const [working, setWorking] = useState<string>()
@@ -787,6 +789,11 @@ function App() {
     )
   }
 
+  const handleStoreInstalled = async (themeId: string) => {
+    setSelectedId(themeId)
+    await refresh()
+  }
+
   const updateUi = <Key extends keyof UiConfig,>(key: Key, value: UiConfig[Key]) => {
     if (!selected) return Promise.resolve()
     return updateSelected({ ui: { ...selected.ui, [key]: value } })
@@ -813,9 +820,25 @@ function App() {
 
         {/* Navigation list */}
         <nav className="flex-1 flex flex-col gap-1" aria-label="主导航">
-          <button className="flex items-center gap-3 w-full h-10 px-3 rounded-lg text-sm font-medium transition-all text-zinc-50 bg-zinc-800 shadow-sm border border-zinc-700 cursor-pointer">
+          <button
+            onClick={() => setActiveView('library')}
+            className={cn(
+              'flex h-10 w-full items-center gap-3 rounded-lg border px-3 text-sm font-medium transition-all cursor-pointer',
+              activeView === 'library' ? 'border-zinc-700 bg-zinc-800 text-zinc-50 shadow-sm' : 'border-transparent bg-transparent text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100',
+            )}
+          >
             <Library size={16} />
             <span>主题库</span>
+          </button>
+          <button
+            onClick={() => setActiveView('store')}
+            className={cn(
+              'flex h-10 w-full items-center gap-3 rounded-lg border px-3 text-sm font-medium transition-all cursor-pointer',
+              activeView === 'store' ? 'border-zinc-700 bg-zinc-800 text-zinc-50 shadow-sm' : 'border-transparent bg-transparent text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100',
+            )}
+          >
+            <Download size={16} />
+            <span>主题商店</span>
           </button>
         </nav>
 
@@ -845,6 +868,10 @@ function App() {
 
       {/* Main Workspace */}
       <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-zinc-950">
+        {activeView === 'store' ? (
+          <ThemeStore onInstalled={handleStoreInstalled} />
+        ) : (
+          <>
         {/* Topbar */}
         <header className="h-[68px] border-b border-zinc-800 bg-zinc-900 px-6 flex items-center justify-between flex-none">
           <div>
@@ -1763,6 +1790,8 @@ function App() {
             </Button>
           </div>
         </footer>
+          </>
+        )}
       </main>
 
       {/* Sonner Toaster component */}

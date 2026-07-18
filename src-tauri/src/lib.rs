@@ -4,6 +4,7 @@ mod error;
 mod models;
 mod platform;
 mod storage;
+mod store;
 mod themes;
 
 use engine::AppRuntime;
@@ -131,6 +132,33 @@ async fn import_theme_bundle(path: String) -> std::result::Result<ThemeRecord, S
 }
 
 #[tauri::command]
+async fn get_store_catalog(refresh: bool) -> std::result::Result<store::StoreCatalog, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        store::catalog(refresh).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn install_store_theme(
+    runtime: tauri::State<'_, AppRuntime>,
+    store_id: String,
+) -> std::result::Result<ThemeRecord, String> {
+    let runtime = runtime.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let theme = store::install_theme(&store_id).map_err(|error| error.to_string())?;
+        let state = engine::read_state();
+        if state.mode == "active" && state.active_theme_id.as_deref() == Some(&theme.id) {
+            engine::apply(&runtime, &theme.id, false).map_err(|error| error.to_string())?;
+        }
+        Ok(theme)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
 async fn export_theme(theme_id: String, path: String) -> std::result::Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         themes::export_theme(&theme_id, &path).map_err(|error| error.to_string())
@@ -168,7 +196,8 @@ async fn update_theme(
 #[tauri::command]
 async fn delete_theme(theme_id: String) -> std::result::Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        themes::delete_theme(&theme_id).map_err(|error| error.to_string())
+        themes::delete_theme(&theme_id).map_err(|error| error.to_string())?;
+        store::forget_local_theme(&theme_id).map_err(|error| error.to_string())
     })
     .await
     .map_err(|error| error.to_string())?
@@ -321,6 +350,8 @@ pub fn run() {
             set_launch_codex_on_open,
             import_wallpaper,
             import_theme_bundle,
+            get_store_catalog,
+            install_store_theme,
             export_theme,
             update_theme,
             delete_theme,

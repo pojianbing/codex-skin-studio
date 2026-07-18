@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Codex Skin Studio",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "identifier": "studio.codex.skin",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -25,13 +25,13 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; img-src 'self' data: blob: https://github.com https://objects.githubusercontent.com https://release-assets.githubusercontent.com; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": ["icons/icon.ico", "icons/icon.png"],
+    "icon": ["icons/codex-skin-studio/icon.ico", "icons/codex-skin-studio/icon.png"],
     "category": "Utility",
     "shortDescription": "Codex desktop theme manager",
     "longDescription": "Apply local wallpaper themes to Codex Desktop and restore the official appearance.",
