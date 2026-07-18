@@ -14,6 +14,7 @@ import {
   Plus,
   Search,
   SquareTerminal,
+  Undo2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -141,6 +142,27 @@ function surfaceStyle(
   }
 }
 
+function changeSummaryStyle(
+  value: SurfaceStyle,
+  fallback: string,
+  border: string,
+): CSSProperties {
+  const shadows: Record<Shadow, string> = {
+    none: 'none',
+    soft: '0 10px 28px color-mix(in oklab, #101411 20%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 38%, transparent)',
+    strong: '0 18px 46px color-mix(in oklab, #080b0a 34%, transparent), 0 3px 10px color-mix(in oklab, #080b0a 18%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 58%, transparent)',
+  }
+
+  return {
+    display: value.visible ? undefined : 'none',
+    background: mix(resolveColor(value.background, fallback), value.opacity),
+    borderColor: mix(border, value.borderOpacity),
+    borderRadius: `${value.radius}px`,
+    backdropFilter: `blur(${value.blur}px) saturate(1.04)`,
+    boxShadow: shadows[value.shadow],
+  }
+}
+
 function applicationMenuStyle(
   value: SurfaceStyle,
   fallback: string,
@@ -225,6 +247,11 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
   const tableColor = resolveColor(theme.ui.richText.tableBackground, fallbackSurface)
   const linkColor = resolveColor(theme.ui.richText.linkColor, theme.accent)
   const composerColor = resolveColor(theme.composer.background, light ? '#f8fafc' : '#121620')
+  const diffRowStyle: CSSProperties = {
+    display: theme.ui.diff.visible ? 'grid' : 'none',
+    background: mix(resolveColor(theme.ui.diff.background, fallbackSurface), theme.ui.diff.opacity),
+    borderRadius: `${theme.ui.diff.radius}px`,
+  }
   const backgroundPosition = `${percent(theme.art.focusX)}% ${percent(theme.art.focusY)}%`
   const safeAreaShade = safeArea === 'right'
     ? 'linear-gradient(to left, rgba(0,0,0,.5), transparent 58%)'
@@ -477,26 +504,49 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           bottom: '20.5%',
           width: `${contentWidth}%`,
           color: mainText,
-          ...surfaceStyle(theme.changeSummary, fallbackSurface, borderColor),
+          ...changeSummaryStyle(theme.changeSummary, fallbackSurface, borderColor),
         }}
       >
-        <div className="flex h-[15px] items-center justify-between border-b border-current/10 px-[5px] text-[5.5px] font-semibold">
-          <span>已编辑 3 个文件</span>
-          <span className="opacity-65">审核</span>
-        </div>
-        <div
-          className="grid grid-cols-[1fr_auto] items-center gap-[3px] px-[5px] py-[3px] text-[5.5px]"
-          style={{
-            display: theme.ui.diff.visible ? 'grid' : 'none',
-            background: mix(resolveColor(theme.ui.diff.background, fallbackSurface), theme.ui.diff.opacity),
-            borderRadius: `${theme.ui.diff.radius * 0.35}px`,
-          }}
-        >
-          <span className="truncate">src/components/codex-preview.tsx</span>
-          <span>
-            <b style={{ color: theme.ui.diff.addedColor }}>+24</b>{' '}
-            <b style={{ color: theme.ui.diff.deletedColor }}>-1</b>
+        <div className="flex items-center gap-[4px] border-b border-current/10 px-[5px] py-[4px] text-[5.5px] font-semibold">
+          <span className="flex h-[14px] w-[14px] flex-none items-center justify-center rounded-[4px] bg-black/80 text-white shadow-sm">
+            <FileCode2 size={8} />
           </span>
+          <div className="min-w-0 leading-[1.25]">
+            <div>已编辑 5 个文件</div>
+            <div className="mt-[1px] font-medium">
+              <b style={{ color: theme.ui.diff.addedColor }}>+131</b>{' '}
+              <b style={{ color: theme.ui.diff.deletedColor }}>-28</b>
+            </div>
+          </div>
+          <div className="ml-auto flex items-center gap-[4px] whitespace-nowrap text-[5px]">
+            <span className="flex items-center gap-[2px] opacity-75">撤销 <Undo2 size={6} /></span>
+            <span className="rounded-[4px] border border-current/20 px-[3px] py-[2px]">审核</span>
+          </div>
+        </div>
+        <div className="space-y-[1px] p-[2px] text-[5.5px]">
+          {[
+            ['src-tauri/src/engine.rs', '+17', '-0'],
+            ['src-tauri/src/lib.rs', '+19', '-0'],
+            ['src-tauri/src/models.rs', '+6', '-5'],
+            ['src-tauri/src/storage.rs', '+49', '-13'],
+            ['src/App.tsx', '+40', '-10'],
+          ].map(([path, added, deleted]) => (
+            <div
+              key={path}
+              className="grid grid-cols-[1fr_auto] items-center gap-[3px] px-[4px] py-[2px]"
+              style={diffRowStyle}
+            >
+              <span className="truncate">{path}</span>
+              <span className="whitespace-nowrap">
+                <b style={{ color: theme.ui.diff.addedColor }}>{added}</b>{' '}
+                <b style={{ color: theme.ui.diff.deletedColor }}>{deleted}</b>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-[3px] border-t border-current/10 px-[5px] py-[3px] text-[5px] font-medium">
+          <span>收起文件</span>
+          <ChevronDown size={6} style={{ transform: 'rotate(180deg)' }} />
         </div>
       </section>
 
