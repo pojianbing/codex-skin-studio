@@ -10,7 +10,7 @@ mod themes;
 use engine::AppRuntime;
 use models::{
     ApplyPlan, ArtConfig, ChangeSummaryConfig, ComposerConfig, Dashboard, EnvironmentConfig,
-    SemanticTokens, ThemeRecord, UiConfig,
+    LevelSliderConfig, SemanticTokens, ThemeRecord, UiConfig,
 };
 use tauri::Manager;
 
@@ -172,6 +172,7 @@ async fn update_theme(
     theme_id: String,
     appearance: String,
     art: ArtConfig,
+    level_slider: LevelSliderConfig,
     composer: ComposerConfig,
     environment: EnvironmentConfig,
     change_summary: ChangeSummaryConfig,
@@ -183,6 +184,7 @@ async fn update_theme(
             &theme_id,
             &appearance,
             art,
+            level_slider,
             composer,
             environment,
             change_summary,

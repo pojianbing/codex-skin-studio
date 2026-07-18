@@ -36,6 +36,35 @@ impl Default for Palette {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct LevelSliderConfig {
+    #[serde(default = "default_level_slider_enabled")]
+    pub enabled: bool,
+    pub level_colors: [String; 5],
+    pub thumb_color: String,
+}
+
+fn default_level_slider_enabled() -> bool {
+    true
+}
+
+impl Default for LevelSliderConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_level_slider_enabled(),
+            level_colors: [
+                "#22c55e".into(),
+                "#339cff".into(),
+                "#8b5cf6".into(),
+                "#f59e0b".into(),
+                "#ef4444".into(),
+            ],
+            thumb_color: "#ffffff".into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ComposerConfig {
     pub background: String,
     pub opacity: f64,
@@ -424,6 +453,8 @@ pub struct ThemeManifest {
     pub art: ArtConfig,
     pub palette: Palette,
     #[serde(default)]
+    pub level_slider: LevelSliderConfig,
+    #[serde(default)]
     pub composer: ComposerConfig,
     #[serde(default)]
     pub environment: EnvironmentConfig,
@@ -445,6 +476,7 @@ pub struct ThemeRecord {
     pub version: String,
     pub appearance: String,
     pub accent: String,
+    pub level_slider: LevelSliderConfig,
     pub art: ArtConfig,
     pub composer: ComposerConfig,
     pub environment: EnvironmentConfig,

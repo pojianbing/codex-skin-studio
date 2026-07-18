@@ -371,8 +371,8 @@ pub fn restore_official(runtime: &AppRuntime, restart_codex: bool) -> Result<()>
 mod tests {
     use super::payload_for;
     use crate::models::{
-        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, Palette, SemanticTokens,
-        ThemeManifest, UiConfig,
+        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, LevelSliderConfig,
+        Palette, SemanticTokens, ThemeManifest, UiConfig,
     };
     use std::fs;
     use uuid::Uuid;
@@ -397,6 +397,7 @@ mod tests {
             appearance: "auto".into(),
             art: ArtConfig::default(),
             palette: Palette::default(),
+            level_slider: LevelSliderConfig::default(),
             composer: ComposerConfig::default(),
             environment: EnvironmentConfig::default(),
             change_summary: ChangeSummaryConfig::default(),

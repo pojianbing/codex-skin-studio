@@ -70,6 +70,11 @@ type ChangeSummaryConfig = {
   shadow: 'none' | 'soft' | 'strong'
   radius: number
 }
+type LevelSliderConfig = {
+  enabled: boolean
+  levelColors: [string, string, string, string, string]
+  thumbColor: string
+}
 type SurfaceStyle = {
   visible: boolean
   background: string
@@ -155,6 +160,7 @@ type ThemeRecord = {
   version: string
   appearance: 'auto' | 'light' | 'dark'
   accent: string
+  levelSlider: LevelSliderConfig
   art: ArtConfig
   composer: ComposerConfig
   environment: EnvironmentConfig
@@ -182,6 +188,8 @@ const fallbackDashboard: Dashboard = {
   platform: 'desktop', codexFound: false, mode: 'official',
   message: '正在连接本地引擎', autostartEnabled: false, launchCodexOnOpen: false, themes: [],
 }
+
+const levelSliderLabels = ['低', '标准', '高', '超高', '极高'] as const
 
 const themeBundleFilename = (theme: ThemeRecord) => {
   const name = theme.name
@@ -829,12 +837,15 @@ function App() {
     )
   }
 
-  const updateSelected = async (patch: Partial<Pick<ThemeRecord, 'appearance' | 'art' | 'composer' | 'environment' | 'changeSummary' | 'tokens' | 'ui'>>) => {
+  const updateSelected = async (patch: Partial<Pick<ThemeRecord, 'appearance' | 'art' | 'levelSlider' | 'composer' | 'environment' | 'changeSummary' | 'tokens' | 'ui'>>) => {
     if (!selected) return
     const next = {
       ...selected,
       ...patch,
       art: patch.art ? { ...selected.art, ...patch.art } : selected.art,
+      levelSlider: patch.levelSlider
+        ? { ...selected.levelSlider, ...patch.levelSlider }
+        : selected.levelSlider,
       composer: patch.composer ? { ...selected.composer, ...patch.composer } : selected.composer,
       environment: patch.environment
         ? { ...selected.environment, ...patch.environment }
@@ -852,6 +863,7 @@ function App() {
     try {
       await invoke('update_theme', {
         themeId: next.id, appearance: next.appearance, art: next.art,
+        levelSlider: next.levelSlider,
         composer: next.composer, environment: next.environment,
         changeSummary: next.changeSummary, tokens: next.tokens, ui: next.ui,
       })
@@ -1655,6 +1667,48 @@ function App() {
                             autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
                             onChange={(value) => void updateUi('overlays', value)}
                           />
+                        </ConfigSection>
+
+                        <ConfigSection title="级别滑块" {...configSectionProps('levelSlider')}>
+                          <ToggleSetting
+                            label="自定义轨道"
+                            checked={selected.levelSlider.enabled}
+                            onChange={(enabled) => void updateSelected({
+                              levelSlider: { ...selected.levelSlider, enabled },
+                            })}
+                          />
+                          {selected.levelSlider.enabled && (
+                            <>
+                              <div className="h-px bg-zinc-800" />
+                              {levelSliderLabels.map((label, index) => (
+                                <ColorSetting
+                                  key={label}
+                                  label={`级别 ${index + 1} · ${label}`}
+                                  value={selected.levelSlider.levelColors[index]}
+                                  autoColor={selected.levelSlider.levelColors[index]}
+                                  allowAuto={false}
+                                  onChange={(color) => {
+                                    const levelColors = selected.levelSlider.levelColors.map(
+                                      (current, currentIndex) => currentIndex === index ? color : current,
+                                    ) as LevelSliderConfig['levelColors']
+                                    void updateSelected({
+                                      levelSlider: { ...selected.levelSlider, levelColors },
+                                    })
+                                  }}
+                                />
+                              ))}
+                              <div className="h-px bg-zinc-800" />
+                              <ColorSetting
+                                label="拖块颜色"
+                                value={selected.levelSlider.thumbColor}
+                                autoColor="#ffffff"
+                                allowAuto={false}
+                                onChange={(thumbColor) => void updateSelected({
+                                  levelSlider: { ...selected.levelSlider, thumbColor },
+                                })}
+                              />
+                            </>
+                          )}
                         </ConfigSection>
 
                         <ConfigSection title="任务列表行" {...configSectionProps('threadRows')}>

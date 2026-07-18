@@ -1,8 +1,8 @@
 use crate::{
     error::{Result, StudioError},
     models::{
-        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, Palette, SemanticTokens,
-        ThemeManifest, ThemeRecord, UiConfig,
+        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, LevelSliderConfig,
+        Palette, SemanticTokens, ThemeManifest, ThemeRecord, UiConfig,
     },
     storage::{atomic_write, themes_root},
 };
@@ -26,7 +26,7 @@ const THEME_BUNDLE_MANIFEST: &str = "bundle.json";
 const MAX_THEME_BUNDLE_BYTES: u64 = MAX_IMAGE_BYTES + 256 * 1024;
 const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_IMAGE_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
-const BUILTIN_THEME_VERSION: &str = "1.3.0";
+const BUILTIN_THEME_VERSION: &str = "1.3.2";
 const ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-alpine-lake.jpg");
 const AMBER: &[u8] = include_bytes!("../assets/preset-amber-dusk.jpg");
 const AURORA: &[u8] = include_bytes!("../assets/preset-midnight-aurora.jpg");
@@ -66,6 +66,8 @@ struct ThemeBundleConfig {
     art: ArtConfig,
     palette: Palette,
     #[serde(default)]
+    level_slider: LevelSliderConfig,
+    #[serde(default)]
     composer: ComposerConfig,
     #[serde(default)]
     environment: EnvironmentConfig,
@@ -89,6 +91,7 @@ impl ThemeBundle {
                 appearance: manifest.appearance.clone(),
                 art: manifest.art.clone(),
                 palette: manifest.palette.clone(),
+                level_slider: manifest.level_slider.clone(),
                 composer: manifest.composer.clone(),
                 environment: manifest.environment.clone(),
                 change_summary: manifest.change_summary.clone(),
@@ -110,6 +113,7 @@ impl ThemeBundle {
             appearance: self.theme.appearance,
             art: self.theme.art,
             palette: self.theme.palette,
+            level_slider: self.theme.level_slider,
             composer: self.theme.composer,
             environment: self.theme.environment,
             change_summary: self.theme.change_summary,
@@ -185,6 +189,20 @@ fn validate_composer(composer: &ComposerConfig) -> Result<()> {
     }
     if !["none", "soft", "strong"].contains(&composer.shadow.as_str()) {
         return Err(StudioError::from("输入框阴影设置无效"));
+    }
+    Ok(())
+}
+
+fn validate_level_slider(level_slider: &LevelSliderConfig) -> Result<()> {
+    if level_slider
+        .level_colors
+        .iter()
+        .any(|color| !valid_hex_color(color))
+    {
+        return Err(StudioError::from("级别滑块的级别颜色必须为十六进制颜色"));
+    }
+    if !valid_hex_color(&level_slider.thumb_color) {
+        return Err(StudioError::from("级别滑块拖块颜色必须为十六进制颜色"));
     }
     Ok(())
 }
@@ -366,6 +384,7 @@ fn validate_manifest(manifest: &ThemeManifest) -> Result<()> {
         return Err(StudioError::from("主题强调色必须为十六进制颜色"));
     }
     validate_art(&manifest.art)?;
+    validate_level_slider(&manifest.level_slider)?;
     validate_composer(&manifest.composer)?;
     validate_environment(&manifest.environment)?;
     validate_change_summary(&manifest.change_summary)?;
@@ -987,6 +1006,7 @@ fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
     manifest.version = BUILTIN_THEME_VERSION.into();
     manifest.appearance = theme.appearance.into();
     manifest.palette.accent = theme.accent.into();
+    manifest.level_slider = LevelSliderConfig::default();
     manifest.composer = ComposerConfig {
         background: theme.surface.into(),
         opacity: theme.panel_opacity,
@@ -1151,6 +1171,7 @@ fn builtin_manifest(
         palette: Palette {
             accent: accent.into(),
         },
+        level_slider: LevelSliderConfig::default(),
         composer: ComposerConfig::default(),
         environment: EnvironmentConfig::default(),
         change_summary: ChangeSummaryConfig::default(),
@@ -1359,6 +1380,7 @@ fn record_from(manifest: ThemeManifest, directory: &Path) -> Result<ThemeRecord>
         version: manifest.version,
         appearance: manifest.appearance,
         accent: manifest.palette.accent,
+        level_slider: manifest.level_slider,
         art: manifest.art,
         composer: manifest.composer,
         environment: manifest.environment,
@@ -1461,6 +1483,7 @@ pub fn import_wallpaper(path: &str) -> Result<ThemeRecord> {
         appearance: "dark".into(),
         art: ArtConfig::default(),
         palette: Palette::default(),
+        level_slider: LevelSliderConfig::default(),
         composer: ComposerConfig::default(),
         environment: EnvironmentConfig::default(),
         change_summary: ChangeSummaryConfig::default(),
@@ -1476,6 +1499,7 @@ pub fn update_theme(
     id: &str,
     appearance: &str,
     art: ArtConfig,
+    level_slider: LevelSliderConfig,
     composer: ComposerConfig,
     environment: EnvironmentConfig,
     change_summary: ChangeSummaryConfig,
@@ -1485,6 +1509,7 @@ pub fn update_theme(
     let (mut manifest, directory) = load_manifest(id)?;
     manifest.appearance = appearance.into();
     manifest.art = art;
+    manifest.level_slider = level_slider;
     manifest.composer = composer;
     manifest.environment = environment;
     manifest.change_summary = change_summary;
@@ -1511,12 +1536,12 @@ pub fn image_bytes(manifest: &ThemeManifest, directory: &Path) -> Result<Vec<u8>
 #[cfg(test)]
 mod tests {
     use super::{
-        ALPINE_LAKE, AMBER, AURORA, CODEX_OBSERVATORY, CYBER, FOREST, HARBOR_CITY, MAX_IMAGE_BYTES,
-        MIDNIGHT_PAPER_OBSERVATORY, MOONLIT_ALPINE_LAKE, PAPER_SKY_WORKSHOP, RAINY_HARBOR,
-        RISO_SPRING_STREAM, ROMANTIC, SAKURA, SKY_LIGHT_STUDY, STRATA_FORGE, SUNLIT_SHORE,
-        ThemeBundle, WINDREST_CLOUD_HOUSE, YELLOW_GADGETEERS, builtin_manifest,
-        decode_theme_bundle, encode_theme_bundle, image_info, install_theme_bundle,
-        should_upgrade_builtin, validate_manifest,
+        ALPINE_LAKE, AMBER, AURORA, BUILTIN_THEME_VERSION, CODEX_OBSERVATORY, CYBER, FOREST,
+        HARBOR_CITY, MAX_IMAGE_BYTES, MIDNIGHT_PAPER_OBSERVATORY, MOONLIT_ALPINE_LAKE,
+        PAPER_SKY_WORKSHOP, RAINY_HARBOR, RISO_SPRING_STREAM, ROMANTIC, SAKURA, SKY_LIGHT_STUDY,
+        STRATA_FORGE, SUNLIT_SHORE, ThemeBundle, WINDREST_CLOUD_HOUSE, YELLOW_GADGETEERS,
+        builtin_manifest, decode_theme_bundle, encode_theme_bundle, image_info,
+        install_theme_bundle, should_upgrade_builtin, validate_manifest,
     };
     use crate::models::ThemeManifest;
     use std::{
@@ -1583,7 +1608,7 @@ mod tests {
             let manifest = builtin_manifest(id, id, "#000000", 0.5, "left")
                 .expect("every bundled theme should have a component adaptation");
             validate_manifest(&manifest).expect("adapted theme should validate");
-            assert_eq!(manifest.version, "1.3.0");
+            assert_eq!(manifest.version, BUILTIN_THEME_VERSION);
             assert_eq!(manifest.appearance, appearance);
             assert_ne!(manifest.ui.sidebar.background, "auto");
             assert_ne!(manifest.ui.code_block.background, "auto");

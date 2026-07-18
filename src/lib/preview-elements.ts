@@ -12,6 +12,7 @@ export const previewElementMeta = {
   codeBlock: { tab: 'components', label: '代码块' },
   activityCard: { tab: 'components', label: '工具活动卡片' },
   overlays: { tab: 'components', label: '弹层与菜单' },
+  levelSlider: { tab: 'components', label: '级别滑块' },
   threadRows: { tab: 'components', label: '任务列表行' },
   summaryRows: { tab: 'components', label: '环境面板项目' },
   navigation: { tab: 'styles', label: '导航轨与滚动条' },

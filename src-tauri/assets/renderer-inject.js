@@ -17,11 +17,12 @@
   const classes = [
     'codex-skin-studio', 'skin-theme-light', 'skin-theme-dark', 'skin-safe-left',
     'skin-safe-right', 'skin-safe-center', 'skin-safe-none', 'skin-task-ambient',
-    'skin-task-banner', 'skin-task-off', 'skin-scrollbars-hidden',
+    'skin-task-banner', 'skin-task-off', 'skin-scrollbars-hidden', 'skin-level-slider-custom',
   ];
   let observer;
   let timer;
   let scheduled;
+  const levelSliderBindings = new Map();
 
   const clamp = (value, minimum, maximum, fallback) => {
     const number = Number(value);
@@ -54,6 +55,31 @@
       '--skin-region-shadow',
       configurableSurfaceShadows[value.shadow] || configurableSurfaceShadows[defaults.shadow],
     );
+  };
+
+  const updateLevelSlider = (slider) => {
+    const ticks = [...slider.querySelectorAll('[class*="_Tick_"]')];
+    slider.querySelector('[class*="_Track_"]')?.classList.add('skin-level-slider-track');
+    slider.querySelector('[class*="_Range_"]')?.classList.add('skin-level-slider-range');
+    slider.querySelector('[class*="_Thumb_"]')?.classList.add('skin-level-slider-thumb');
+
+    let selectedIndex = -1;
+    ticks.forEach((tick, index) => {
+      tick.classList.add('skin-level-slider-tick');
+      if (tick.getAttribute('data-selected') === 'true') selectedIndex = index;
+    });
+
+    const activeIndex = Math.max(0, Math.min(4, selectedIndex));
+    slider.classList.add('skin-level-slider');
+    slider.style.setProperty('--skin-level-active-color', `var(--skin-level-color-${activeIndex})`);
+
+    if (!levelSliderBindings.has(slider)) {
+      const refresh = () => requestAnimationFrame(() => updateLevelSlider(slider));
+      for (const event of ['click', 'change', 'input', 'keydown', 'pointermove', 'pointerup']) {
+        slider.addEventListener(event, refresh, { passive: true });
+      }
+      levelSliderBindings.set(slider, refresh);
+    }
   };
 
   const nativeAppearance = () => {
@@ -98,6 +124,20 @@
     root.style.setProperty('--skin-art-position', `${Math.round(theme.art.focusX * 100)}% ${Math.round(theme.art.focusY * 100)}%`);
     root.style.setProperty('--skin-accent', theme.palette.accent || '#3b82f6');
     const resolvedColor = (value, fallback) => /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
+    const levelSlider = theme.levelSlider || {};
+    const levelSliderEnabled = levelSlider.enabled !== false;
+    root.classList.toggle('skin-level-slider-custom', levelSliderEnabled);
+    const levelColorFallbacks = ['#22c55e', '#339cff', '#8b5cf6', '#f59e0b', '#ef4444'];
+    for (let index = 0; index < levelColorFallbacks.length; index += 1) {
+      root.style.setProperty(
+        `--skin-level-color-${index}`,
+        resolvedColor(levelSlider.levelColors?.[index], levelColorFallbacks[index]),
+      );
+    }
+    root.style.setProperty(
+      '--skin-level-thumb-color',
+      resolvedColor(levelSlider.thumbColor, '#ffffff'),
+    );
     const tokens = theme.tokens || {};
     root.style.setProperty('--skin-text-primary', resolvedColor(tokens.textPrimary, 'var(--skin-text)'));
     root.style.setProperty('--skin-text-secondary', resolvedColor(tokens.textSecondary, 'var(--skin-muted-text)'));
@@ -332,6 +372,12 @@
       row.classList.toggle('skin-diff-row-hidden', diff.visible === false);
     }
 
+    if (levelSliderEnabled) {
+      for (const slider of document.querySelectorAll('[data-model-picker-power-slider]')) {
+        updateLevelSlider(slider);
+      }
+    }
+
     const content = ui.content || {};
     root.style.setProperty('--thread-content-max-width', `${Math.round(clamp(content.maxWidth, 560, 1200, 768))}px`);
     root.style.setProperty('--skin-content-font-scale', String(clamp(content.fontScale, 0.8, 1.3, 1)));
@@ -399,6 +445,8 @@
       '--skin-inline-code-radius', '--skin-quote-accent', '--skin-quote-color',
       '--skin-quote-opacity', '--skin-table-border', '--skin-table-color',
       '--skin-table-opacity', '--skin-table-radius', '--skin-image-radius',
+      '--skin-level-color-0', '--skin-level-color-1', '--skin-level-color-2',
+      '--skin-level-color-3', '--skin-level-color-4', '--skin-level-thumb-color',
     ]) root.style.removeProperty(property);
     document.querySelectorAll('.skin-home').forEach((node) => node.classList.remove('skin-home'));
     document.querySelectorAll('.skin-task').forEach((node) => node.classList.remove('skin-task'));
@@ -424,13 +472,32 @@
     document.querySelectorAll('.skin-diff-row').forEach((node) => node.classList.remove('skin-diff-row', 'skin-diff-row-hidden'));
     document.querySelectorAll('.skin-message-stack').forEach((node) => node.classList.remove('skin-message-stack'));
     document.querySelectorAll('.skin-composer-control').forEach((node) => node.classList.remove('skin-composer-control', 'skin-composer-primary-action'));
+    for (const [slider, refresh] of levelSliderBindings) {
+      for (const event of ['click', 'change', 'input', 'keydown', 'pointermove', 'pointerup']) {
+        slider.removeEventListener(event, refresh);
+      }
+      slider.classList.remove('skin-level-slider');
+      slider.style.removeProperty('--skin-level-active-color');
+      slider.querySelectorAll('[class*="_Tick_"]').forEach((tick) => {
+        tick.classList.remove('skin-level-slider-tick');
+      });
+      slider.querySelector('[class*="_Track_"]')?.classList.remove('skin-level-slider-track');
+      slider.querySelector('[class*="_Range_"]')?.classList.remove('skin-level-slider-range');
+      slider.querySelector('[class*="_Thumb_"]')?.classList.remove('skin-level-slider-thumb');
+    }
+    levelSliderBindings.clear();
     URL.revokeObjectURL(artUrl);
     if (window[STATE]?.revision === revision) delete window[STATE];
     return true;
   };
 
   observer = new MutationObserver(schedule);
-  observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-theme', 'data-appearance'] });
+  observer.observe(root, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'data-theme', 'data-appearance', 'data-selected', 'data-max', 'data-pointer-down'],
+  });
   timer = setInterval(ensure, 4000);
   window[STATE] = { revision, ensure, cleanup, observer, timer, artUrl };
   ensure();
