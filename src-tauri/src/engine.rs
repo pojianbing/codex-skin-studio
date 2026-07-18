@@ -220,6 +220,17 @@ fn recover_active_session(runtime: &AppRuntime) -> Result<()> {
     if runtime.watcher_running() {
         return Ok(());
     }
+
+    // Read the recovery intent while holding the same lock as manual theme
+    // operations. Otherwise a recovery queued before restore_official can apply
+    // a stale theme after the official state has already been persisted.
+    let _operation = runtime
+        .operation
+        .lock()
+        .map_err(|_| StudioError::from("主题操作锁已损坏"))?;
+    if runtime.watcher_running() {
+        return Ok(());
+    }
     let state = read_state();
     if state.mode != "active" {
         return Ok(());
@@ -234,7 +245,7 @@ fn recover_active_session(runtime: &AppRuntime) -> Result<()> {
 
     // A normal Codex launch cannot be attached to after startup. Re-establish the
     // previously approved themed session as soon as the process is detected.
-    apply(runtime, theme_id, true)
+    apply_locked(runtime, theme_id, true)
 }
 
 pub fn apply(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) -> Result<()> {
@@ -242,6 +253,10 @@ pub fn apply(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) -> Re
         .operation
         .lock()
         .map_err(|_| StudioError::from("主题操作锁已损坏"))?;
+    apply_locked(runtime, theme_id, restart_existing)
+}
+
+fn apply_locked(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) -> Result<()> {
     let (manifest, directory) = themes::load_manifest(theme_id)?;
     let (payload, revision) = payload_for(&manifest, &directory)?;
     let old_state = read_state();
@@ -340,10 +355,12 @@ pub fn restore_official(runtime: &AppRuntime, restart_codex: bool) -> Result<()>
     {
         let _ = cdp::cleanup(port, state.browser_id.as_deref());
     }
+    // Persist the user's intent before touching the Codex process. A stop or
+    // relaunch failure must not leave an active theme eligible for recovery.
+    write_state(&EngineState::default())?;
     if !platform::running_pids(&install)?.is_empty() {
         platform::stop_codex(&install)?;
     }
-    write_state(&EngineState::default())?;
     if restart_codex {
         platform::launch_normal(&install)?;
     }
