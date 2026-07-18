@@ -1,10 +1,17 @@
 use crate::error::{Result, StudioError};
 use directories::ProjectDirs;
+use serde::{Deserialize, Serialize};
 use std::{
     fs,
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppSettings {
+    pub launch_codex_on_open: bool,
+}
 
 pub fn app_root() -> Result<PathBuf> {
     let dirs = ProjectDirs::from("studio", "codex", "CodexSkinStudio")
@@ -22,6 +29,25 @@ pub fn themes_root() -> Result<PathBuf> {
 
 pub fn state_path() -> Result<PathBuf> {
     Ok(app_root()?.join("engine-state.json"))
+}
+
+fn settings_path() -> Result<PathBuf> {
+    Ok(app_root()?.join("settings.json"))
+}
+
+pub fn read_settings() -> AppSettings {
+    settings_path()
+        .ok()
+        .and_then(|path| fs::read(path).ok())
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or_default()
+}
+
+pub fn write_settings(settings: &AppSettings) -> Result<()> {
+    atomic_write(
+        &settings_path()?,
+        format!("{}\n", serde_json::to_string_pretty(settings)?).as_bytes(),
+    )
 }
 
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
@@ -48,4 +74,14 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
         fs::rename(temporary, path)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AppSettings;
+
+    #[test]
+    fn codex_launch_on_open_is_disabled_by_default() {
+        assert!(!AppSettings::default().launch_codex_on_open);
+    }
 }

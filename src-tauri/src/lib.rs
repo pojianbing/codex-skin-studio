@@ -41,6 +41,7 @@ fn autostart_enabled(app: &tauri::AppHandle) -> std::result::Result<bool, String
 #[tauri::command]
 async fn get_dashboard(app: tauri::AppHandle) -> std::result::Result<Dashboard, String> {
     let autostart_enabled = autostart_enabled(&app)?;
+    let launch_codex_on_open = storage::read_settings().launch_codex_on_open;
     tauri::async_runtime::spawn_blocking(move || {
         themes::ensure_library().map_err(|error| error.to_string())?;
         let themes = themes::list_themes().map_err(|error| error.to_string())?;
@@ -67,6 +68,7 @@ async fn get_dashboard(app: tauri::AppHandle) -> std::result::Result<Dashboard, 
             port: state.port,
             message,
             autostart_enabled,
+            launch_codex_on_open,
             themes,
         })
     })
@@ -100,6 +102,14 @@ fn set_autostart(app: tauri::AppHandle, enabled: bool) -> std::result::Result<bo
         let _ = (app, enabled);
         Err("当前平台不支持开机启动".into())
     }
+}
+
+#[tauri::command]
+fn set_launch_codex_on_open(enabled: bool) -> std::result::Result<bool, String> {
+    let mut settings = storage::read_settings();
+    settings.launch_codex_on_open = enabled;
+    storage::write_settings(&settings).map_err(|error| error.to_string())?;
+    Ok(settings.launch_codex_on_open)
 }
 
 #[tauri::command]
@@ -280,6 +290,14 @@ pub fn run() {
                 .map_err(|error| Box::<dyn std::error::Error>::from(error.to_string()))?;
             let runtime = app.state::<AppRuntime>().inner().clone();
             runtime.start_supervisor();
+            if storage::read_settings().launch_codex_on_open {
+                let runtime = runtime.clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    if let Err(error) = engine::launch_codex_on_open(&runtime) {
+                        eprintln!("[skin-studio] 启动 Codex 失败：{error}");
+                    }
+                });
+            }
             #[cfg(any(target_os = "windows", target_os = "macos"))]
             setup_tray(app)?;
             let background = std::env::args_os().any(|argument| argument == "--background");
@@ -300,6 +318,7 @@ pub fn run() {
             get_dashboard,
             get_apply_plan,
             set_autostart,
+            set_launch_codex_on_open,
             import_wallpaper,
             import_theme_bundle,
             export_theme,

@@ -150,13 +150,14 @@ type Dashboard = {
   port?: number
   message: string
   autostartEnabled: boolean
+  launchCodexOnOpen: boolean
   themes: ThemeRecord[]
 }
 type ApplyPlan = { action: 'hotSwitch' | 'launch' | 'restart' }
 
 const fallbackDashboard: Dashboard = {
   platform: 'desktop', codexFound: false, mode: 'official',
-  message: '正在连接本地引擎', autostartEnabled: false, themes: [],
+  message: '正在连接本地引擎', autostartEnabled: false, launchCodexOnOpen: false, themes: [],
 }
 
 const themeBundleFilename = (theme: ThemeRecord) => {
@@ -593,6 +594,15 @@ function App() {
     }
   }
 
+  const toggleCodexLaunchOnOpen = async () => {
+    const enabled = !dashboard.launchCodexOnOpen
+    await run(
+      'launch-codex-on-open',
+      () => invoke('set_launch_codex_on_open', { enabled }),
+      enabled ? '已启用启动时打开 Codex' : '已关闭启动时打开 Codex',
+    )
+  }
+
   const updateUi = <Key extends keyof UiConfig,>(key: Key, value: UiConfig[Key]) => {
     if (!selected) return Promise.resolve()
     return updateSelected({ ui: { ...selected.ui, [key]: value } })
@@ -682,6 +692,26 @@ function App() {
                 )} />
               </span>
               <span>开机启动</span>
+            </button>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={dashboard.launchCodexOnOpen}
+              title="启动 Skin Studio 时自动打开 Codex"
+              onClick={() => void toggleCodexLaunchOnOpen()}
+              disabled={Boolean(working)}
+              className="flex h-8 items-center gap-2 px-2.5 rounded-md border border-zinc-800 bg-zinc-900 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
+            >
+              <span className={cn(
+                "relative h-4 w-7 rounded-full transition-colors",
+                dashboard.launchCodexOnOpen ? "bg-emerald-500" : "bg-zinc-700",
+              )}>
+                <span className={cn(
+                  "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
+                  dashboard.launchCodexOnOpen ? "translate-x-3" : "translate-x-0",
+                )} />
+              </span>
+              <span>启动时打开 Codex</span>
             </button>
             <Button
               variant="outline"

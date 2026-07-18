@@ -289,6 +289,23 @@ pub fn apply(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) -> Re
     })
 }
 
+pub fn launch_codex_on_open(runtime: &AppRuntime) -> Result<()> {
+    let state = read_state();
+    let install = install_from_state_or_current(&state)?;
+    if !platform::main_pids(&install)?.is_empty() {
+        return Ok(());
+    }
+
+    if state.mode == "active"
+        && let Some(theme_id) = state.active_theme_id.as_deref()
+        && apply(runtime, theme_id, false).is_ok()
+    {
+        return Ok(());
+    }
+
+    platform::launch_normal(&install)
+}
+
 pub fn pause(runtime: &AppRuntime) -> Result<()> {
     let _operation = runtime
         .operation

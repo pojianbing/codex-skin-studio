@@ -412,6 +412,7 @@ pub struct Dashboard {
     pub port: Option<u16>,
     pub message: String,
     pub autostart_enabled: bool,
+    pub launch_codex_on_open: bool,
     pub themes: Vec<ThemeRecord>,
 }
 
