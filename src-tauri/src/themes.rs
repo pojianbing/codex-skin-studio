@@ -722,6 +722,24 @@ fn component_theme(id: &str) -> Option<ComponentTheme> {
             shadow: "strong",
             content_width: 720,
         },
+        "preset-tidal-signal" => ComponentTheme {
+            appearance: "dark",
+            accent: "#72d6cf",
+            sidebar: "#07151d",
+            surface: "#0d2229",
+            raised: "#12343a",
+            code: "#061016",
+            line: "#3f7478",
+            quote: "#d49a5d",
+            added: "#72d6a0",
+            deleted: "#ef786e",
+            sidebar_opacity: 0.94,
+            panel_opacity: 0.84,
+            blur: 18,
+            radius: 12,
+            shadow: "strong",
+            content_width: 760,
+        },
         "preset-midnight-aurora" => ComponentTheme {
             appearance: "dark",
             accent: "#45d8be",
@@ -1229,6 +1247,14 @@ pub fn ensure_library() -> Result<()> {
         CODEX_OBSERVATORY,
         0.82,
         "left",
+    )?;
+    seed_one(
+        "preset-tidal-signal",
+        "潮汐信号舱",
+        "#72d6cf",
+        RAINY_HARBOR,
+        0.58,
+        "center",
     )?;
     seed_one(
         "preset-midnight-aurora",
