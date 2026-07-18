@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import {
@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { type ElementTab, type PreviewElementId, previewElementMeta } from '@/lib/preview-elements'
 
 type EngineMode = 'official' | 'active' | 'paused' | 'error'
 type ArtConfig = {
@@ -415,9 +416,38 @@ function ShadowSetting({
   )
 }
 
-function ConfigSection({ title, children }: { title: string; children: ReactNode }) {
+function ConfigSection({
+  element,
+  title,
+  children,
+  open,
+  active,
+  onOpenChange,
+  onHoverChange,
+  sectionRef,
+}: {
+  element: PreviewElementId
+  title: string
+  children: ReactNode
+  open: boolean
+  active: boolean
+  onOpenChange: (open: boolean) => void
+  onHoverChange: (active: boolean) => void
+  sectionRef: (node: HTMLDetailsElement | null) => void
+}) {
   return (
-    <details className="group border-t border-zinc-800 first:border-t-0">
+    <details
+      ref={sectionRef}
+      open={open}
+      onToggle={(event) => onOpenChange(event.currentTarget.open)}
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
+      className={cn(
+        "config-section-link group border-t border-zinc-800 first:border-t-0",
+        active && "config-section-link--active",
+      )}
+      data-config-element={element}
+    >
       <summary className="flex h-10 list-none items-center justify-between gap-3 text-xs font-semibold text-zinc-300 cursor-pointer select-none [&::-webkit-details-marker]:hidden">
         <span>{title}</span>
         <ChevronDown size={13} className="text-zinc-600 transition-transform group-open:rotate-180" />
@@ -487,7 +517,12 @@ function App() {
   const [confirmRestore, setConfirmRestore] = useState(false)
   const [confirmRestart, setConfirmRestart] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<ThemeRecord | null>(null)
-  const [elementTab, setElementTab] = useState<'shell' | 'components' | 'styles'>('shell')
+  const [elementTab, setElementTab] = useState<ElementTab>('shell')
+  const [openConfigSections, setOpenConfigSections] = useState<Set<PreviewElementId>>(() => new Set())
+  const [hoveredElement, setHoveredElement] = useState<PreviewElementId | null>(null)
+  const [selectedElement, setSelectedElement] = useState<PreviewElementId | null>(null)
+  const [pendingScrollElement, setPendingScrollElement] = useState<PreviewElementId | null>(null)
+  const configSectionRefs = useRef(new Map<PreviewElementId, HTMLDetailsElement>())
   const [showPreview, setShowPreview] = useState(() => {
     try {
       return localStorage.getItem('cs-show-preview') !== 'false'
@@ -503,6 +538,62 @@ function App() {
       localStorage.setItem('cs-show-preview', String(next))
     } catch (_) { }
   }
+
+  const activeElement = hoveredElement ?? selectedElement
+
+  const setConfigSectionOpen = (element: PreviewElementId, open: boolean) => {
+    setOpenConfigSections((current) => {
+      const next = new Set(current)
+      if (open) {
+        next.add(element)
+      } else {
+        next.delete(element)
+      }
+      return next
+    })
+  }
+
+  const setConfigSectionRef = (element: PreviewElementId, node: HTMLDetailsElement | null) => {
+    if (node) {
+      configSectionRefs.current.set(element, node)
+    } else {
+      configSectionRefs.current.delete(element)
+    }
+  }
+
+  const selectElementTab = (tab: ElementTab) => {
+    setElementTab(tab)
+    setSelectedElement(null)
+  }
+
+  const selectPreviewElement = (element: PreviewElementId) => {
+    setSelectedElement(element)
+    setElementTab(previewElementMeta[element].tab)
+    setConfigSectionOpen(element, true)
+    setPendingScrollElement(element)
+  }
+
+  const configSectionProps = (element: PreviewElementId) => ({
+    element,
+    active: activeElement === element,
+    open: openConfigSections.has(element),
+    onOpenChange: (open: boolean) => setConfigSectionOpen(element, open),
+    onHoverChange: (hovering: boolean) => setHoveredElement(hovering ? element : null),
+    sectionRef: (node: HTMLDetailsElement | null) => setConfigSectionRef(element, node),
+  })
+
+  useEffect(() => {
+    if (!pendingScrollElement) return
+    const section = configSectionRefs.current.get(pendingScrollElement)
+    if (!section) return
+
+    const frame = window.requestAnimationFrame(() => {
+      section.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      section.querySelector('summary')?.focus({ preventScroll: true })
+      setPendingScrollElement(null)
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [elementTab, pendingScrollElement])
 
   const selected = useMemo(
     () => dashboard.themes.find((theme) => theme.id === selectedId) ?? dashboard.themes[0],
@@ -934,6 +1025,8 @@ function App() {
                           theme={selected}
                           appearance={resolvedAppearance}
                           safeArea={resolvedSafeArea}
+                          activeElement={activeElement}
+                          onSelectElement={selectPreviewElement}
                         />
                       </div>
                     </div>
@@ -991,7 +1084,7 @@ function App() {
                     <div className="flex p-0.5 rounded-lg bg-zinc-950/60 border border-zinc-800 mb-2">
                       <button
                         type="button"
-                        onClick={() => setElementTab('shell')}
+                        onClick={() => selectElementTab('shell')}
                         className={cn(
                           "flex-1 py-1 text-[11px] font-bold rounded transition-all cursor-pointer text-center",
                           elementTab === 'shell'
@@ -1003,7 +1096,7 @@ function App() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setElementTab('components')}
+                        onClick={() => selectElementTab('components')}
                         className={cn(
                           "flex-1 py-1 text-[11px] font-bold rounded transition-all cursor-pointer text-center",
                           elementTab === 'components'
@@ -1015,7 +1108,7 @@ function App() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setElementTab('styles')}
+                        onClick={() => selectElementTab('styles')}
                         className={cn(
                           "flex-1 py-1 text-[11px] font-bold rounded transition-all cursor-pointer text-center",
                           elementTab === 'styles'
@@ -1029,7 +1122,7 @@ function App() {
 
                     {elementTab === 'shell' && (
                       <>
-                        <ConfigSection title="画布与焦点">
+                        <ConfigSection title="画布与焦点" {...configSectionProps('canvas')}>
                           <div className="grid grid-cols-2 gap-4 pb-1">
                             <div className="flex flex-col gap-2">
                               <label className="text-[10px] font-bold text-zinc-400 tracking-wide uppercase">
@@ -1084,7 +1177,7 @@ function App() {
                           />
                         </ConfigSection>
 
-                        <ConfigSection title="输入框">
+                        <ConfigSection title="输入框" {...configSectionProps('composer')}>
                           <ColorSetting
                             label="背景色"
                             value={selected.composer.background}
@@ -1166,7 +1259,7 @@ function App() {
                           </div>
                         </ConfigSection>
 
-                        <ConfigSection title="环境面板">
+                        <ConfigSection title="环境面板" {...configSectionProps('environment')}>
                           <ToggleSetting
                             label="显示"
                             checked={selected.environment.visible}
@@ -1238,7 +1331,7 @@ function App() {
                           )}
                         </ConfigSection>
 
-                        <ConfigSection title="变更摘要">
+                        <ConfigSection title="变更摘要" {...configSectionProps('changeSummary')}>
                           <ToggleSetting
                             label="显示"
                             checked={selected.changeSummary.visible}
@@ -1310,7 +1403,7 @@ function App() {
                           )}
                         </ConfigSection>
 
-                        <ConfigSection title="左侧边栏">
+                        <ConfigSection title="左侧边栏" {...configSectionProps('sidebar')}>
                           <SurfaceStyleEditor
                             value={selected.ui.sidebar}
                             autoColor={resolvedAppearance === 'light' ? '#f1f5f9' : '#0e121c'}
@@ -1318,7 +1411,7 @@ function App() {
                           />
                         </ConfigSection>
 
-                        <ConfigSection title="顶部标题栏">
+                        <ConfigSection title="顶部标题栏" {...configSectionProps('header')}>
                           <SurfaceStyleEditor
                             value={selected.ui.header}
                             autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#121620'}
@@ -1326,7 +1419,7 @@ function App() {
                           />
                         </ConfigSection>
 
-                        <ConfigSection title="正文布局">
+                        <ConfigSection title="正文布局" {...configSectionProps('content')}>
                           <SliderSetting
                             label="内容宽度"
                             value={selected.ui.content.maxWidth}
@@ -1360,7 +1453,7 @@ function App() {
 
                     {elementTab === 'components' && (
                       <>
-                        <ConfigSection title="用户消息气泡">
+                        <ConfigSection title="用户消息气泡" {...configSectionProps('userBubble')}>
                           <SurfaceStyleEditor
                             value={selected.ui.userBubble}
                             autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
@@ -1368,7 +1461,7 @@ function App() {
                           />
                         </ConfigSection>
 
-                        <ConfigSection title="代码块">
+                        <ConfigSection title="代码块" {...configSectionProps('codeBlock')}>
                           <SurfaceStyleEditor
                             value={selected.ui.codeBlock}
                             autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
@@ -1376,7 +1469,7 @@ function App() {
                           />
                         </ConfigSection>
 
-                        <ConfigSection title="工具活动卡片">
+                        <ConfigSection title="工具活动卡片" {...configSectionProps('activityCard')}>
                           <SurfaceStyleEditor
                             value={selected.ui.activityCard}
                             autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
@@ -1384,7 +1477,7 @@ function App() {
                           />
                         </ConfigSection>
 
-                        <ConfigSection title="任务列表行">
+                        <ConfigSection title="任务列表行" {...configSectionProps('threadRows')}>
                           <RowStyleEditor
                             value={selected.ui.threadRows}
                             autoColor={selected.accent}
@@ -1392,7 +1485,7 @@ function App() {
                           />
                         </ConfigSection>
 
-                        <ConfigSection title="环境面板项目">
+                        <ConfigSection title="环境面板项目" {...configSectionProps('summaryRows')}>
                           <RowStyleEditor
                             value={selected.ui.summaryRows}
                             autoColor={selected.accent}
@@ -1404,7 +1497,7 @@ function App() {
 
                     {elementTab === 'styles' && (
                       <>
-                        <ConfigSection title="导航轨与滚动条">
+                        <ConfigSection title="导航轨与滚动条" {...configSectionProps('navigation')}>
                           <ToggleSetting
                             label="消息导航轨"
                             checked={selected.ui.navigationRailVisible}
@@ -1466,7 +1559,7 @@ function App() {
                           )}
                         </ConfigSection>
 
-                        <ConfigSection title="Diff 文件行">
+                        <ConfigSection title="Diff 文件行" {...configSectionProps('diff')}>
                           <ToggleSetting
                             label="显示"
                             checked={selected.ui.diff.visible}
@@ -1516,7 +1609,7 @@ function App() {
                           )}
                         </ConfigSection>
 
-                        <ConfigSection title="富文本内容">
+                        <ConfigSection title="富文本内容" {...configSectionProps('richText')}>
                           <ColorSetting
                             label="链接颜色"
                             value={selected.ui.richText.linkColor}

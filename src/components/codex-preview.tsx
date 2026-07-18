@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, MouseEvent } from 'react'
 import {
   ArrowUp,
   Check,
@@ -17,6 +17,7 @@ import {
   Undo2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { type PreviewElementId } from '@/lib/preview-elements'
 
 type Shadow = 'none' | 'soft' | 'strong'
 
@@ -109,6 +110,8 @@ type CodexPreviewProps = {
   theme: PreviewTheme
   appearance: 'light' | 'dark'
   safeArea: 'auto' | 'left' | 'right' | 'center' | 'none'
+  activeElement: PreviewElementId | null
+  onSelectElement: (element: PreviewElementId) => void
 }
 
 const percent = (value: number) => Math.round(value * 100)
@@ -197,19 +200,25 @@ function PreviewRow({
   label,
   style,
   active = false,
+  className,
+  onClick,
 }: {
   icon?: React.ReactNode
   label: string
   style?: CSSProperties
   active?: boolean
+  className?: string
+  onClick?: (event: MouseEvent<HTMLDivElement>) => void
 }) {
   return (
     <div
       className={cn(
         "flex h-[15px] items-center gap-[5px] px-[5px] text-[6px] font-medium",
         active && "font-semibold",
+        className,
       )}
       style={style}
+      onClick={onClick}
     >
       <span className="flex h-[7px] w-[7px] flex-none items-center justify-center opacity-75">
         {icon}
@@ -219,7 +228,13 @@ function PreviewRow({
   )
 }
 
-export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps) {
+export function CodexPreview({
+  theme,
+  appearance,
+  safeArea,
+  activeElement,
+  onSelectElement,
+}: CodexPreviewProps) {
   const light = appearance === 'light'
   const fallbackSurface = light ? '#f8fafc' : '#18181b'
   const fallbackSidebar = light ? '#f1f5f9' : '#0e121c'
@@ -265,12 +280,25 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
     ? undefined
     : `${safeAreaShade}, url(${theme.previewDataUrl})`
 
+  const targetClass = (element: PreviewElementId) => cn(
+    'preview-target',
+    activeElement === element && 'preview-target--active',
+  )
+  const targetEvents = (element: PreviewElementId) => ({
+    onClick: (event: MouseEvent<HTMLElement>) => {
+      event.stopPropagation()
+      onSelectElement(element)
+    },
+  })
+
   return (
     <div
       className={cn(
         "relative isolate w-full shrink-0 overflow-hidden rounded-md border shadow-lg",
         light ? "border-zinc-300 bg-zinc-100 text-zinc-900" : "border-zinc-700/80 bg-zinc-950 text-zinc-100",
+        targetClass('canvas'),
       )}
+      onClick={() => onSelectElement('canvas')}
       style={{
         aspectRatio: '16 / 10',
         backgroundImage,
@@ -288,13 +316,17 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       />
 
       <nav
-        className="absolute inset-x-0 top-0 z-50 flex items-center justify-between border-b px-[7px] text-[5.5px] font-medium"
+        className={cn(
+          "absolute inset-x-0 top-0 z-50 flex items-center justify-between border-b px-[7px] text-[5.5px] font-medium",
+          targetClass('header'),
+        )}
         style={{
           height: `${applicationMenuHeight}%`,
           color: mainText,
           ...applicationMenuStyle(theme.ui.header, fallbackHeader, borderColor),
         }}
         aria-label="Codex 顶部菜单栏预览"
+        {...targetEvents('header')}
       >
         <div className="flex min-w-0 items-center gap-[6px]">
           <Monitor size={7} opacity={0.8} />
@@ -311,13 +343,17 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       </nav>
 
       <section
-        className="absolute bottom-0 left-0 z-20 flex flex-col border p-[6px]"
+        className={cn(
+          "absolute bottom-0 left-0 z-20 flex flex-col border p-[6px]",
+          targetClass('sidebar'),
+        )}
         style={{
           top: `${applicationMenuHeight}%`,
           width: `${mainLeft}%`,
           color: mainText,
           ...surfaceStyle(theme.ui.sidebar, fallbackSidebar, borderColor),
         }}
+        {...targetEvents('sidebar')}
       >
         <div className="flex h-[18px] items-center justify-between px-[3px] text-[7px] font-bold">
           <span>Codex</span>
@@ -334,15 +370,21 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
             icon={<Folder size={7} />}
             label="CodexSkinStudio"
             style={rowStyle(theme.ui.threadRows, theme.accent, 'normal')}
+            className={targetClass('threadRows')}
+            onClick={targetEvents('threadRows').onClick}
           />
           <PreviewRow
             label="完善主题预览"
             style={rowStyle(theme.ui.threadRows, theme.accent, 'hover')}
+            className={targetClass('threadRows')}
+            onClick={targetEvents('threadRows').onClick}
           />
           <PreviewRow
             label="配置 Codex 界面"
             active
             style={rowStyle(theme.ui.threadRows, theme.accent, 'selected')}
+            className={targetClass('threadRows')}
+            onClick={targetEvents('threadRows').onClick}
           />
         </div>
         <div className="mt-auto flex items-center gap-[4px] border-t border-current/10 pt-[5px] text-[5px] opacity-60">
@@ -352,7 +394,10 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       </section>
 
       <header
-        className="absolute right-0 top-0 z-10 flex items-center justify-between border px-[8px]"
+        className={cn(
+          "absolute right-0 top-0 z-10 flex items-center justify-between border px-[8px]",
+          targetClass('header'),
+        )}
         style={{
           left: `${mainLeft}%`,
           top: `${applicationMenuHeight}%`,
@@ -360,6 +405,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           color: mainText,
           ...surfaceStyle(theme.ui.header, fallbackHeader, borderColor),
         }}
+        {...targetEvents('header')}
       >
         <div className="flex min-w-0 items-center gap-[4px] text-[6px] font-semibold">
           <Folder size={7} opacity={0.7} />
@@ -373,7 +419,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       </header>
 
       <main
-        className="absolute z-0 overflow-hidden"
+        className={cn("absolute z-0 overflow-hidden", targetClass('content'))}
         style={{
           left: `${contentLeft}%`,
           top: `${applicationMenuHeight + headerHeight + 2}%`,
@@ -382,16 +428,25 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           color: mainText,
           fontSize: `${6 * fontScale}px`,
         }}
+        {...targetEvents('content')}
       >
         <div className="flex h-full flex-col overflow-hidden" style={{ gap: `${messageGap}px` }}>
           <div
-            className="ml-auto max-w-[74%] border px-[6px] py-[4px] leading-[1.35]"
+            className={cn(
+              "ml-auto max-w-[74%] border px-[6px] py-[4px] leading-[1.35]",
+              targetClass('userBubble'),
+            )}
             style={surfaceStyle(theme.ui.userBubble, fallbackSurface, borderColor)}
+            {...targetEvents('userBubble')}
           >
             把所有界面元素加入实时预览
           </div>
 
-          <div className="space-y-[3px] leading-[1.35]" style={{ color: mainText }}>
+          <div
+            className={cn("space-y-[3px] leading-[1.35]", targetClass('richText'))}
+            style={{ color: mainText }}
+            {...targetEvents('richText')}
+          >
             <div>
               已更新 <span style={{ color: linkColor }}>Codex 任务页</span>，配置会在
               <code
@@ -441,8 +496,12 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           </div>
 
           <div
-            className="flex items-center gap-[5px] border px-[5px] py-[3px]"
+            className={cn(
+              "flex items-center gap-[5px] border px-[5px] py-[3px]",
+              targetClass('activityCard'),
+            )}
             style={surfaceStyle(theme.ui.activityCard, fallbackSurface, borderColor)}
+            {...targetEvents('activityCard')}
           >
             <SquareTerminal size={8} style={{ color: theme.accent }} />
             <div className="min-w-0 flex-1">
@@ -453,8 +512,9 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           </div>
 
           <div
-            className="overflow-hidden border font-mono"
+            className={cn("overflow-hidden border font-mono", targetClass('codeBlock'))}
             style={surfaceStyle(theme.ui.codeBlock, light ? '#f1f5f9' : '#111827', borderColor)}
+            {...targetEvents('codeBlock')}
           >
             <div className="flex items-center justify-between border-b border-current/10 px-[5px] py-[2px] opacity-65">
               <span>tsx</span><Code2 size={7} />
@@ -467,12 +527,16 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       </main>
 
       <aside
-        className="absolute right-[2.5%] z-20 flex w-[23%] flex-col border p-[5px]"
+        className={cn(
+          "absolute right-[2.5%] z-20 flex w-[23%] flex-col border p-[5px]",
+          targetClass('environment'),
+        )}
         style={{
           top: `${applicationMenuHeight + headerHeight + 3}%`,
           color: mainText,
           ...surfaceStyle(theme.environment, fallbackSurface, borderColor),
         }}
+        {...targetEvents('environment')}
       >
         <div className="mb-[3px] flex items-center justify-between text-[6px] font-semibold opacity-65">
           <span>环境信息</span><Plus size={7} />
@@ -482,23 +546,29 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           label="变更  +24  -1"
           active
           style={rowStyle(theme.ui.summaryRows, theme.accent, 'selected')}
+          className={targetClass('summaryRows')}
+          onClick={targetEvents('summaryRows').onClick}
         />
         <PreviewRow
           icon={<Monitor size={7} />}
           label="本地"
           style={rowStyle(theme.ui.summaryRows, theme.accent, 'hover')}
+          className={targetClass('summaryRows')}
+          onClick={targetEvents('summaryRows').onClick}
         />
         <PreviewRow
           icon={<GitBranch size={7} />}
           label="main"
           style={rowStyle(theme.ui.summaryRows, theme.accent, 'normal')}
+          className={targetClass('summaryRows')}
+          onClick={targetEvents('summaryRows').onClick}
         />
         <PreviewRow icon={<GitCommitHorizontal size={7} />} label="提交或推送" />
         <PreviewRow icon={<Github size={7} />} label="比较分支" />
       </aside>
 
       <section
-        className="absolute z-20 overflow-hidden border"
+        className={cn("absolute z-20 overflow-hidden border", targetClass('changeSummary'))}
         style={{
           left: `${contentLeft}%`,
           bottom: '20.5%',
@@ -506,6 +576,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           color: mainText,
           ...changeSummaryStyle(theme.changeSummary, fallbackSurface, borderColor),
         }}
+        {...targetEvents('changeSummary')}
       >
         <div className="flex items-center gap-[4px] border-b border-current/10 px-[5px] py-[4px] text-[5.5px] font-semibold">
           <span className="flex h-[14px] w-[14px] flex-none items-center justify-center rounded-[4px] bg-black/80 text-white shadow-sm">
@@ -533,8 +604,12 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           ].map(([path, added, deleted]) => (
             <div
               key={path}
-              className="grid grid-cols-[1fr_auto] items-center gap-[3px] px-[4px] py-[2px]"
+              className={cn(
+                "grid grid-cols-[1fr_auto] items-center gap-[3px] px-[4px] py-[2px]",
+                targetClass('diff'),
+              )}
               style={diffRowStyle}
+              {...targetEvents('diff')}
             >
               <span className="truncate">{path}</span>
               <span className="whitespace-nowrap">
@@ -563,7 +638,10 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       />
 
       <div
-        className="absolute z-30 flex h-[16%] items-center border px-[7px]"
+        className={cn(
+          "absolute z-30 flex h-[16%] items-center border px-[7px]",
+          targetClass('composer'),
+        )}
         style={{
           left: `${contentLeft}%`,
           bottom: '2.8%',
@@ -575,6 +653,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           backdropFilter: `blur(${theme.composer.blur * 0.45}px) saturate(1.06)`,
           boxShadow: shadow(theme.composer.shadow),
         }}
+        {...targetEvents('composer')}
       >
         <Plus size={8} opacity={0.7} />
         <span className="ml-[5px] text-[5.5px] opacity-45">随心输入</span>
@@ -591,7 +670,10 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       </div>
 
       <div
-        className="absolute z-30 flex flex-col items-center gap-[3px]"
+        className={cn(
+          "absolute z-30 flex flex-col items-center gap-[3px]",
+          targetClass('navigation'),
+        )}
         style={{
           display: theme.ui.navigationRailVisible ? 'flex' : 'none',
           left: `${mainLeft + 1.2}%`,
@@ -599,6 +681,7 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
           opacity: theme.ui.navigationRailOpacity,
           color: mutedText,
         }}
+        {...targetEvents('navigation')}
       >
         {[0, 1, 2, 3].map((item) => (
           <span key={item} className="h-[2px] w-[2px] rounded-full bg-current" />
@@ -606,13 +689,17 @@ export function CodexPreview({ theme, appearance, safeArea }: CodexPreviewProps)
       </div>
 
       <div
-        className="absolute bottom-[19%] right-[2px] top-[12%] z-40 flex justify-center"
+        className={cn(
+          "absolute bottom-[19%] right-[2px] top-[12%] z-40 flex justify-center",
+          targetClass('navigation'),
+        )}
         style={{
           display: theme.ui.scrollbar.visible ? 'flex' : 'none',
           width: `${Math.max(2, theme.ui.scrollbar.width * 0.36)}px`,
           borderRadius: `${theme.ui.scrollbar.radius * 0.36}px`,
           background: mix(resolveColor(theme.ui.scrollbar.color, mutedText), theme.ui.scrollbar.opacity * 0.22),
         }}
+        {...targetEvents('navigation')}
       >
         <span
           className="mt-[22%] block h-[28%] w-full"
