@@ -44,6 +44,13 @@ type ComposerConfig = {
   borderOpacity: number
   shadow: 'none' | 'soft' | 'strong'
   showFooterBackdrop: boolean
+  radius: number
+  placeholderColor: string
+  controlColor: string
+  controlOpacity: number
+  controlRadius: number
+  primaryActionColor: string
+  primaryActionText: string
 }
 type EnvironmentConfig = {
   visible: boolean
@@ -114,12 +121,25 @@ type RichTextStyle = {
   tableRadius: number
   imageRadius: number
 }
+type SemanticTokens = {
+  textPrimary: string
+  textSecondary: string
+  textMuted: string
+  textDisabled: string
+  textInverse: string
+  border: string
+  focusRing: string
+  success: string
+  warning: string
+  danger: string
+}
 type UiConfig = {
   sidebar: SurfaceStyle
   header: SurfaceStyle
   userBubble: SurfaceStyle
   codeBlock: SurfaceStyle
   activityCard: SurfaceStyle
+  overlays: SurfaceStyle
   threadRows: RowStyle
   summaryRows: RowStyle
   navigationRailVisible: boolean
@@ -139,6 +159,7 @@ type ThemeRecord = {
   composer: ComposerConfig
   environment: EnvironmentConfig
   changeSummary: ChangeSummaryConfig
+  tokens: SemanticTokens
   ui: UiConfig
   previewDataUrl: string
   builtIn: boolean
@@ -485,6 +506,68 @@ function SurfaceStyleEditor({
   )
 }
 
+function OverlayStyleEditor({
+  value,
+  autoColor,
+  onChange,
+}: {
+  value: SurfaceStyle
+  autoColor: string
+  onChange: (value: SurfaceStyle) => void
+}) {
+  const patch = (next: Partial<SurfaceStyle>) => onChange({ ...value, visible: true, ...next })
+  return (
+    <>
+      <ColorSetting label="背景色" value={value.background} autoColor={autoColor} onChange={(background) => patch({ background })} />
+      <SliderSetting label="不透明度" value={value.opacity} min={0} max={1} step={0.01} unit="%" onChange={(opacity) => patch({ opacity })} />
+      <SliderSetting label="背景模糊" value={value.blur} min={0} max={32} step={1} unit="px" onChange={(blur) => patch({ blur })} />
+      <SliderSetting label="边框强度" value={value.borderOpacity} min={0} max={1} step={0.01} unit="%" onChange={(borderOpacity) => patch({ borderOpacity })} />
+      <SliderSetting label="圆角" value={value.radius} min={0} max={32} step={1} unit="px" onChange={(radius) => patch({ radius })} />
+      <ShadowSetting value={value.shadow} onChange={(shadow) => patch({ shadow })} />
+    </>
+  )
+}
+
+function SemanticTokensEditor({
+  value,
+  appearance,
+  onChange,
+}: {
+  value: SemanticTokens
+  appearance: 'light' | 'dark'
+  onChange: (value: SemanticTokens) => void
+}) {
+  const automatic = appearance === 'light'
+    ? {
+        textPrimary: '#0F172A', textSecondary: '#334155', textMuted: '#475569', textDisabled: '#94A3B8',
+        textInverse: '#FFFFFF', border: '#94A3B8', focusRing: '#2563EB', success: '#16A34A', warning: '#D97706', danger: '#DC2626',
+      }
+    : {
+        textPrimary: '#F4F4F5', textSecondary: '#D4D4D8', textMuted: '#B8C0CA', textDisabled: '#6F7885',
+        textInverse: '#101318', border: '#64748B', focusRing: '#60A5FA', success: '#4ADE80', warning: '#FBBF24', danger: '#FB7185',
+      }
+  const fields: Array<[keyof SemanticTokens, string]> = [
+    ['textPrimary', '主文字'], ['textSecondary', '次级文字'], ['textMuted', '弱化文字'], ['textDisabled', '禁用文字'],
+    ['textInverse', '反色文字'], ['border', '语义边框'], ['focusRing', '焦点环'], ['success', '成功状态'],
+    ['warning', '警告状态'], ['danger', '危险状态'],
+  ]
+  return (
+    <div className="flex flex-col gap-3">
+      {fields.map(([key, label], index) => (
+        <div key={key}>
+          {index === 5 && <div className="mb-3 h-px bg-zinc-800" />}
+          <ColorSetting
+            label={label}
+            value={value[key]}
+            autoColor={automatic[key]}
+            onChange={(next) => onChange({ ...value, [key]: next })}
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function RowStyleEditor({
   value,
   autoColor,
@@ -538,7 +621,7 @@ function App() {
     setShowPreview(next)
     try {
       localStorage.setItem('cs-show-preview', String(next))
-    } catch (_) { }
+    } catch { }
   }
 
   const activeElement = hoveredElement ?? selectedElement
@@ -746,7 +829,7 @@ function App() {
     )
   }
 
-  const updateSelected = async (patch: Partial<Pick<ThemeRecord, 'appearance' | 'art' | 'composer' | 'environment' | 'changeSummary' | 'ui'>>) => {
+  const updateSelected = async (patch: Partial<Pick<ThemeRecord, 'appearance' | 'art' | 'composer' | 'environment' | 'changeSummary' | 'tokens' | 'ui'>>) => {
     if (!selected) return
     const next = {
       ...selected,
@@ -759,6 +842,7 @@ function App() {
       changeSummary: patch.changeSummary
         ? { ...selected.changeSummary, ...patch.changeSummary }
         : selected.changeSummary,
+      tokens: patch.tokens ? { ...selected.tokens, ...patch.tokens } : selected.tokens,
       ui: patch.ui ? { ...selected.ui, ...patch.ui } : selected.ui,
     }
     setDashboard((current) => ({
@@ -769,7 +853,7 @@ function App() {
       await invoke('update_theme', {
         themeId: next.id, appearance: next.appearance, art: next.art,
         composer: next.composer, environment: next.environment,
-        changeSummary: next.changeSummary, ui: next.ui,
+        changeSummary: next.changeSummary, tokens: next.tokens, ui: next.ui,
       })
       if (dashboard.activeThemeId === next.id) {
         await invoke('apply_theme', { themeId: next.id, restartExisting: false })
@@ -1247,6 +1331,72 @@ function App() {
                               composer: { ...selected.composer, shadow },
                             })}
                           />
+                          <SliderSetting
+                            label="输入框圆角"
+                            value={selected.composer.radius}
+                            min={8}
+                            max={32}
+                            step={1}
+                            unit="px"
+                            onChange={(radius) => void updateSelected({
+                              composer: { ...selected.composer, radius },
+                            })}
+                          />
+                          <div className="h-px bg-zinc-800" />
+                          <ColorSetting
+                            label="占位文字"
+                            value={selected.composer.placeholderColor}
+                            autoColor={resolvedAppearance === 'light' ? '#475569' : '#B8C0CA'}
+                            onChange={(placeholderColor) => void updateSelected({
+                              composer: { ...selected.composer, placeholderColor },
+                            })}
+                          />
+                          <ColorSetting
+                            label="内部控件颜色"
+                            value={selected.composer.controlColor}
+                            autoColor={selected.accent}
+                            onChange={(controlColor) => void updateSelected({
+                              composer: { ...selected.composer, controlColor },
+                            })}
+                          />
+                          <SliderSetting
+                            label="内部控件强度"
+                            value={selected.composer.controlOpacity}
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            unit="%"
+                            onChange={(controlOpacity) => void updateSelected({
+                              composer: { ...selected.composer, controlOpacity },
+                            })}
+                          />
+                          <SliderSetting
+                            label="内部控件圆角"
+                            value={selected.composer.controlRadius}
+                            min={0}
+                            max={24}
+                            step={1}
+                            unit="px"
+                            onChange={(controlRadius) => void updateSelected({
+                              composer: { ...selected.composer, controlRadius },
+                            })}
+                          />
+                          <ColorSetting
+                            label="主操作颜色"
+                            value={selected.composer.primaryActionColor}
+                            autoColor={selected.accent}
+                            onChange={(primaryActionColor) => void updateSelected({
+                              composer: { ...selected.composer, primaryActionColor },
+                            })}
+                          />
+                          <ColorSetting
+                            label="主操作文字"
+                            value={selected.composer.primaryActionText}
+                            autoColor={resolvedAppearance === 'light' ? '#FFFFFF' : '#101318'}
+                            onChange={(primaryActionText) => void updateSelected({
+                              composer: { ...selected.composer, primaryActionText },
+                            })}
+                          />
                           <div className="flex items-center justify-between gap-3 pt-1">
                             <div className="flex min-w-0 flex-col gap-0.5">
                               <span className="text-xs font-semibold text-zinc-300">底部浮层渐变</span>
@@ -1499,6 +1649,14 @@ function App() {
                           />
                         </ConfigSection>
 
+                        <ConfigSection title="弹层与菜单" {...configSectionProps('overlays')}>
+                          <OverlayStyleEditor
+                            value={selected.ui.overlays}
+                            autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
+                            onChange={(value) => void updateUi('overlays', value)}
+                          />
+                        </ConfigSection>
+
                         <ConfigSection title="任务列表行" {...configSectionProps('threadRows')}>
                           <RowStyleEditor
                             value={selected.ui.threadRows}
@@ -1519,6 +1677,14 @@ function App() {
 
                     {elementTab === 'styles' && (
                       <>
+                        <ConfigSection title="语义文字与状态" {...configSectionProps('tokens')}>
+                          <SemanticTokensEditor
+                            value={selected.tokens}
+                            appearance={resolvedAppearance}
+                            onChange={(tokens) => void updateSelected({ tokens })}
+                          />
+                        </ConfigSection>
+
                         <ConfigSection title="导航轨与滚动条" {...configSectionProps('navigation')}>
                           <ToggleSetting
                             label="消息导航轨"

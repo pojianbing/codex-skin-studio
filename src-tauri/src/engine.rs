@@ -354,8 +354,8 @@ pub fn restore_official(runtime: &AppRuntime, restart_codex: bool) -> Result<()>
 mod tests {
     use super::payload_for;
     use crate::models::{
-        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, Palette, ThemeManifest,
-        UiConfig,
+        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, Palette, SemanticTokens,
+        ThemeManifest, UiConfig,
     };
     use std::fs;
     use uuid::Uuid;
@@ -383,6 +383,7 @@ mod tests {
             composer: ComposerConfig::default(),
             environment: EnvironmentConfig::default(),
             change_summary: ChangeSummaryConfig::default(),
+            tokens: SemanticTokens::default(),
             ui: UiConfig::default(),
             built_in: false,
         };

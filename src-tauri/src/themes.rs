@@ -1,8 +1,8 @@
 use crate::{
     error::{Result, StudioError},
     models::{
-        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, Palette, ThemeManifest,
-        ThemeRecord, UiConfig,
+        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, Palette, SemanticTokens,
+        ThemeManifest, ThemeRecord, UiConfig,
     },
     storage::{atomic_write, themes_root},
 };
@@ -26,7 +26,7 @@ const THEME_BUNDLE_MANIFEST: &str = "bundle.json";
 const MAX_THEME_BUNDLE_BYTES: u64 = MAX_IMAGE_BYTES + 256 * 1024;
 const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_IMAGE_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
-const BUILTIN_THEME_VERSION: &str = "1.2.4";
+const BUILTIN_THEME_VERSION: &str = "1.3.0";
 const ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-alpine-lake.jpg");
 const AMBER: &[u8] = include_bytes!("../assets/preset-amber-dusk.jpg");
 const AURORA: &[u8] = include_bytes!("../assets/preset-midnight-aurora.jpg");
@@ -72,6 +72,8 @@ struct ThemeBundleConfig {
     #[serde(default)]
     change_summary: ChangeSummaryConfig,
     #[serde(default)]
+    tokens: SemanticTokens,
+    #[serde(default)]
     ui: UiConfig,
 }
 
@@ -90,6 +92,7 @@ impl ThemeBundle {
                 composer: manifest.composer.clone(),
                 environment: manifest.environment.clone(),
                 change_summary: manifest.change_summary.clone(),
+                tokens: manifest.tokens.clone(),
                 ui: manifest.ui.clone(),
             },
         }
@@ -110,6 +113,7 @@ impl ThemeBundle {
             composer: self.theme.composer,
             environment: self.theme.environment,
             change_summary: self.theme.change_summary,
+            tokens: self.theme.tokens,
             ui: self.theme.ui,
             built_in: false,
         }
@@ -157,17 +161,52 @@ fn valid_hex_color(value: &str) -> bool {
 }
 
 fn validate_composer(composer: &ComposerConfig) -> Result<()> {
-    if composer.background != "auto" && !valid_hex_color(&composer.background) {
-        return Err(StudioError::from("输入框背景色必须为自动或十六进制颜色"));
+    for (label, color) in [
+        ("输入框背景", &composer.background),
+        ("输入框占位文字", &composer.placeholder_color),
+        ("输入框控件", &composer.control_color),
+        ("输入框主操作", &composer.primary_action_color),
+        ("输入框主操作文字", &composer.primary_action_text),
+    ] {
+        if color != "auto" && !valid_hex_color(color) {
+            return Err(StudioError::from(format!(
+                "{label}颜色必须为自动或十六进制颜色"
+            )));
+        }
     }
-    if !(0.0..=1.0).contains(&composer.opacity) || !(0.0..=1.0).contains(&composer.border_opacity) {
+    if !(0.0..=1.0).contains(&composer.opacity)
+        || !(0.0..=1.0).contains(&composer.border_opacity)
+        || !(0.0..=1.0).contains(&composer.control_opacity)
+    {
         return Err(StudioError::from("输入框透明度必须位于 0 到 1 之间"));
     }
-    if composer.blur > 32 {
-        return Err(StudioError::from("输入框模糊强度不能超过 32px"));
+    if composer.blur > 32 || !(8..=32).contains(&composer.radius) || composer.control_radius > 24 {
+        return Err(StudioError::from("输入框模糊或圆角参数无效"));
     }
     if !["none", "soft", "strong"].contains(&composer.shadow.as_str()) {
         return Err(StudioError::from("输入框阴影设置无效"));
+    }
+    Ok(())
+}
+
+fn validate_tokens(tokens: &SemanticTokens) -> Result<()> {
+    for (label, color) in [
+        ("主文字", &tokens.text_primary),
+        ("次级文字", &tokens.text_secondary),
+        ("弱化文字", &tokens.text_muted),
+        ("禁用文字", &tokens.text_disabled),
+        ("反色文字", &tokens.text_inverse),
+        ("语义边框", &tokens.border),
+        ("焦点环", &tokens.focus_ring),
+        ("成功状态", &tokens.success),
+        ("警告状态", &tokens.warning),
+        ("危险状态", &tokens.danger),
+    ] {
+        if color != "auto" && !valid_hex_color(color) {
+            return Err(StudioError::from(format!(
+                "{label}颜色必须为自动或十六进制颜色"
+            )));
+        }
     }
     Ok(())
 }
@@ -221,6 +260,7 @@ fn validate_ui(ui: &UiConfig) -> Result<()> {
         ("用户消息", &ui.user_bubble),
         ("代码块", &ui.code_block),
         ("活动卡片", &ui.activity_card),
+        ("弹层与菜单", &ui.overlays),
     ] {
         if surface.background != "auto" && !valid_hex_color(&surface.background) {
             return Err(StudioError::from(format!(
@@ -329,6 +369,7 @@ fn validate_manifest(manifest: &ThemeManifest) -> Result<()> {
     validate_composer(&manifest.composer)?;
     validate_environment(&manifest.environment)?;
     validate_change_summary(&manifest.change_summary)?;
+    validate_tokens(&manifest.tokens)?;
     validate_ui(&manifest.ui)
 }
 
@@ -953,6 +994,7 @@ fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
         border_opacity,
         shadow: theme.shadow.into(),
         show_footer_backdrop: false,
+        ..ComposerConfig::default()
     };
     manifest.environment = EnvironmentConfig {
         visible: true,
@@ -971,6 +1013,18 @@ fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
         border_opacity: border_opacity - 0.04,
         shadow: theme.shadow.into(),
         radius: theme.radius,
+    };
+    manifest.tokens = SemanticTokens {
+        text_primary: if light { "#172033" } else { "#f4f4f5" }.into(),
+        text_secondary: if light { "#334155" } else { "#d4d4d8" }.into(),
+        text_muted: if light { "#526174" } else { "#b8c0ca" }.into(),
+        text_disabled: if light { "#8a96a8" } else { "#6f7885" }.into(),
+        text_inverse: if light { "#ffffff" } else { "#101318" }.into(),
+        border: theme.line.into(),
+        focus_ring: theme.accent.into(),
+        success: theme.added.into(),
+        warning: "#f6b73c".into(),
+        danger: theme.deleted.into(),
     };
 
     let mut ui = UiConfig::default();
@@ -1000,6 +1054,12 @@ fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
     ui.activity_card.border_opacity = border_opacity - 0.04;
     ui.activity_card.shadow = theme.shadow.into();
     ui.activity_card.radius = theme.radius;
+    ui.overlays.background = theme.surface.into();
+    ui.overlays.opacity = raised_opacity;
+    ui.overlays.blur = theme.blur;
+    ui.overlays.border_opacity = border_opacity;
+    ui.overlays.shadow = theme.shadow.into();
+    ui.overlays.radius = theme.radius;
     ui.thread_rows.background = theme.accent.into();
     ui.thread_rows.opacity = if light { 0.03 } else { 0.02 };
     ui.thread_rows.hover_opacity = if light { 0.09 } else { 0.11 };
@@ -1094,6 +1154,7 @@ fn builtin_manifest(
         composer: ComposerConfig::default(),
         environment: EnvironmentConfig::default(),
         change_summary: ChangeSummaryConfig::default(),
+        tokens: SemanticTokens::default(),
         ui: UiConfig::default(),
         built_in: true,
     };
@@ -1302,6 +1363,7 @@ fn record_from(manifest: ThemeManifest, directory: &Path) -> Result<ThemeRecord>
         composer: manifest.composer,
         environment: manifest.environment,
         change_summary: manifest.change_summary,
+        tokens: manifest.tokens,
         ui: manifest.ui,
         preview_data_url: format!("data:image/jpeg;base64,{}", STANDARD.encode(thumbnail)),
         built_in: manifest.built_in,
@@ -1402,6 +1464,7 @@ pub fn import_wallpaper(path: &str) -> Result<ThemeRecord> {
         composer: ComposerConfig::default(),
         environment: EnvironmentConfig::default(),
         change_summary: ChangeSummaryConfig::default(),
+        tokens: SemanticTokens::default(),
         ui: UiConfig::default(),
         built_in: false,
     };
@@ -1416,6 +1479,7 @@ pub fn update_theme(
     composer: ComposerConfig,
     environment: EnvironmentConfig,
     change_summary: ChangeSummaryConfig,
+    tokens: SemanticTokens,
     ui: UiConfig,
 ) -> Result<()> {
     let (mut manifest, directory) = load_manifest(id)?;
@@ -1424,6 +1488,7 @@ pub fn update_theme(
     manifest.composer = composer;
     manifest.environment = environment;
     manifest.change_summary = change_summary;
+    manifest.tokens = tokens;
     manifest.ui = ui;
     write_manifest(&directory, &manifest)
 }
@@ -1518,7 +1583,7 @@ mod tests {
             let manifest = builtin_manifest(id, id, "#000000", 0.5, "left")
                 .expect("every bundled theme should have a component adaptation");
             validate_manifest(&manifest).expect("adapted theme should validate");
-            assert_eq!(manifest.version, "1.2.4");
+            assert_eq!(manifest.version, "1.3.0");
             assert_eq!(manifest.appearance, appearance);
             assert_ne!(manifest.ui.sidebar.background, "auto");
             assert_ne!(manifest.ui.code_block.background, "auto");
@@ -1539,6 +1604,45 @@ mod tests {
     }
 
     #[test]
+    fn loads_existing_theme_manifests_with_new_component_defaults() {
+        let source = builtin_manifest("preset-alpine-lake", "兼容性测试", "#69aebc", 0.8, "left")
+            .expect("built-in manifest should exist");
+        let mut legacy = serde_json::to_value(source).expect("manifest should serialize");
+        legacy
+            .as_object_mut()
+            .expect("manifest should be an object")
+            .remove("tokens");
+        legacy
+            .pointer_mut("/ui")
+            .and_then(serde_json::Value::as_object_mut)
+            .expect("ui should be an object")
+            .remove("overlays");
+        let composer = legacy
+            .pointer_mut("/composer")
+            .and_then(serde_json::Value::as_object_mut)
+            .expect("composer should be an object");
+        for field in [
+            "radius",
+            "placeholderColor",
+            "controlColor",
+            "controlOpacity",
+            "controlRadius",
+            "primaryActionColor",
+            "primaryActionText",
+        ] {
+            composer.remove(field);
+        }
+
+        let restored: ThemeManifest = serde_json::from_value(legacy)
+            .expect("older manifest should deserialize with defaults");
+        validate_manifest(&restored).expect("restored manifest should validate");
+        assert_eq!(restored.composer.radius, 16);
+        assert_eq!(restored.composer.control_radius, 8);
+        assert_eq!(restored.ui.overlays.radius, 12);
+        assert_eq!(restored.tokens.focus_ring, "auto");
+    }
+
+    #[test]
     fn theme_bundle_round_trip_preserves_configuration_and_creates_local_copy() {
         let mut source = builtin_manifest("preset-alpine-lake", "导出测试", "#69aebc", 0.8, "left")
             .expect("source theme should validate");
@@ -1546,6 +1650,9 @@ mod tests {
         source.version = "2.4.0".into();
         source.art.task_mode = "banner".into();
         source.composer.opacity = 0.71;
+        source.composer.control_radius = 11;
+        source.tokens.focus_ring = "#7dd3fc".into();
+        source.ui.overlays.radius = 14;
         source.ui.content.max_width = 880;
         source.ui.rich_text.image_radius = 17;
 
@@ -1570,6 +1677,9 @@ mod tests {
         assert_eq!(stored.author, source.author);
         assert_eq!(stored.art.task_mode, "banner");
         assert_eq!(stored.composer.opacity, 0.71);
+        assert_eq!(stored.composer.control_radius, 11);
+        assert_eq!(stored.tokens.focus_ring, "#7dd3fc");
+        assert_eq!(stored.ui.overlays.radius, 14);
         assert_eq!(stored.ui.content.max_width, 880);
         assert_eq!(stored.ui.rich_text.image_radius, 17);
         assert_eq!(

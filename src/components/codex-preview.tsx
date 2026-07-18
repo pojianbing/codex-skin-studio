@@ -56,6 +56,13 @@ type PreviewTheme = {
     borderOpacity: number
     shadow: Shadow
     showFooterBackdrop: boolean
+    radius: number
+    placeholderColor: string
+    controlColor: string
+    controlOpacity: number
+    controlRadius: number
+    primaryActionColor: string
+    primaryActionText: string
   }
   environment: SurfaceStyle
   changeSummary: SurfaceStyle
@@ -65,6 +72,7 @@ type PreviewTheme = {
     userBubble: SurfaceStyle
     codeBlock: SurfaceStyle
     activityCard: SurfaceStyle
+    overlays: SurfaceStyle
     threadRows: RowStyle
     summaryRows: RowStyle
     navigationRailVisible: boolean
@@ -103,6 +111,18 @@ type PreviewTheme = {
       tableRadius: number
       imageRadius: number
     }
+  }
+  tokens: {
+    textPrimary: string
+    textSecondary: string
+    textMuted: string
+    textDisabled: string
+    textInverse: string
+    border: string
+    focusRing: string
+    success: string
+    warning: string
+    danger: string
   }
 }
 
@@ -239,9 +259,14 @@ export function CodexPreview({
   const fallbackSurface = light ? '#f8fafc' : '#18181b'
   const fallbackSidebar = light ? '#f1f5f9' : '#0e121c'
   const fallbackHeader = light ? '#f8fafc' : '#121620'
-  const borderColor = light ? '#94a3b8' : '#64748b'
-  const mutedText = light ? '#475569' : '#a1a1aa'
-  const mainText = light ? '#18181b' : '#f4f4f5'
+  const defaultBorder = light ? '#94a3b8' : '#64748b'
+  const defaultMuted = light ? '#475569' : '#a1a1aa'
+  const defaultText = light ? '#18181b' : '#f4f4f5'
+  const borderColor = resolveColor(theme.tokens.border, defaultBorder)
+  const mutedText = resolveColor(theme.tokens.textMuted, defaultMuted)
+  const mainText = resolveColor(theme.tokens.textPrimary, defaultText)
+  const secondaryText = resolveColor(theme.tokens.textSecondary, mutedText)
+  const inverseText = resolveColor(theme.tokens.textInverse, light ? '#ffffff' : '#101318')
   const mainLeft = theme.ui.sidebar.visible ? 21 : 0
   const applicationMenuHeight = 5
   const headerHeight = theme.ui.header.visible ? 5 : 0
@@ -262,6 +287,10 @@ export function CodexPreview({
   const tableColor = resolveColor(theme.ui.richText.tableBackground, fallbackSurface)
   const linkColor = resolveColor(theme.ui.richText.linkColor, theme.accent)
   const composerColor = resolveColor(theme.composer.background, light ? '#f8fafc' : '#121620')
+  const composerPlaceholder = resolveColor(theme.composer.placeholderColor, mutedText)
+  const composerControl = resolveColor(theme.composer.controlColor, theme.accent)
+  const composerAction = resolveColor(theme.composer.primaryActionColor, theme.accent)
+  const composerActionText = resolveColor(theme.composer.primaryActionText, inverseText)
   const diffRowStyle: CSSProperties = {
     display: theme.ui.diff.visible ? 'grid' : 'none',
     background: mix(resolveColor(theme.ui.diff.background, fallbackSurface), theme.ui.diff.opacity),
@@ -387,6 +416,16 @@ export function CodexPreview({
             onClick={targetEvents('threadRows').onClick}
           />
         </div>
+        <div
+          className={cn("mt-[5px] border px-[4px] py-[3px]", targetClass('overlays'))}
+          style={surfaceStyle(theme.ui.overlays, fallbackSurface, borderColor)}
+          {...targetEvents('overlays')}
+        >
+          <div className="text-[5px] font-semibold" style={{ color: mainText }}>快速操作</div>
+          <div className="mt-[2px] flex items-center justify-between text-[4.5px]" style={{ color: secondaryText }}>
+            <span>打开命令面板</span><span>Ctrl K</span>
+          </div>
+        </div>
         <div className="mt-auto flex items-center gap-[4px] border-t border-current/10 pt-[5px] text-[5px] opacity-60">
           <span className="h-[6px] w-[6px] rounded-full border border-current" />
           <span>custom</span>
@@ -506,9 +545,9 @@ export function CodexPreview({
             <SquareTerminal size={8} style={{ color: theme.accent }} />
             <div className="min-w-0 flex-1">
               <div className="font-semibold">运行构建</div>
-              <div className="truncate opacity-55">npm run build</div>
+              <div className="truncate" style={{ color: secondaryText }}>npm run build</div>
             </div>
-            <Check size={8} className="text-emerald-500" />
+            <Check size={8} style={{ color: resolveColor(theme.tokens.success, '#22c55e') }} />
           </div>
 
           <div
@@ -649,20 +688,37 @@ export function CodexPreview({
           color: mainText,
           background: mix(composerColor, theme.composer.opacity),
           borderColor: mix(borderColor, theme.composer.borderOpacity),
-          borderRadius: '9px',
+          borderRadius: `${Math.max(4, theme.composer.radius * 0.55)}px`,
           backdropFilter: `blur(${theme.composer.blur * 0.45}px) saturate(1.06)`,
           boxShadow: shadow(theme.composer.shadow),
         }}
         {...targetEvents('composer')}
       >
-        <Plus size={8} opacity={0.7} />
-        <span className="ml-[5px] text-[5.5px] opacity-45">随心输入</span>
+        <span
+          className="flex h-[13px] w-[13px] items-center justify-center"
+          style={{
+            color: composerControl,
+            borderRadius: `${Math.max(2, theme.composer.controlRadius * 0.42)}px`,
+            background: mix(composerControl, theme.composer.controlOpacity),
+          }}
+        >
+          <Plus size={8} />
+        </span>
+        <span className="ml-[5px] text-[5.5px]" style={{ color: composerPlaceholder }}>随心输入</span>
         <div className="ml-auto flex items-center gap-[5px] text-[5px]">
-          <span className="opacity-60">5.6 Codex</span>
-          <ChevronDown size={6} opacity={0.6} />
+          <span
+            className="flex items-center gap-[2px] px-[3px] py-[2px]"
+            style={{
+              color: composerControl,
+              borderRadius: `${Math.max(2, theme.composer.controlRadius * 0.36)}px`,
+              background: mix(composerControl, theme.composer.controlOpacity),
+            }}
+          >
+            5.6 Codex <ChevronDown size={6} />
+          </span>
           <span
             className="flex h-[13px] w-[13px] items-center justify-center rounded-full"
-            style={{ background: mix(mainText, 0.7), color: light ? '#fff' : '#111' }}
+            style={{ background: composerAction, color: composerActionText }}
           >
             <ArrowUp size={7} />
           </span>

@@ -97,6 +97,18 @@
     root.style.setProperty('--skin-art', `url("${artUrl}")`);
     root.style.setProperty('--skin-art-position', `${Math.round(theme.art.focusX * 100)}% ${Math.round(theme.art.focusY * 100)}%`);
     root.style.setProperty('--skin-accent', theme.palette.accent || '#3b82f6');
+    const resolvedColor = (value, fallback) => /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
+    const tokens = theme.tokens || {};
+    root.style.setProperty('--skin-text-primary', resolvedColor(tokens.textPrimary, 'var(--skin-text)'));
+    root.style.setProperty('--skin-text-secondary', resolvedColor(tokens.textSecondary, 'var(--skin-muted-text)'));
+    root.style.setProperty('--skin-text-muted', resolvedColor(tokens.textMuted, 'var(--skin-muted-text)'));
+    root.style.setProperty('--skin-text-disabled', resolvedColor(tokens.textDisabled, 'color-mix(in oklab, var(--skin-muted-text) 56%, transparent)'));
+    root.style.setProperty('--skin-text-inverse', resolvedColor(tokens.textInverse, '#ffffff'));
+    root.style.setProperty('--skin-border', resolvedColor(tokens.border, 'var(--skin-line)'));
+    root.style.setProperty('--skin-focus-ring', resolvedColor(tokens.focusRing, 'var(--skin-accent)'));
+    root.style.setProperty('--skin-success', resolvedColor(tokens.success, '#22c55e'));
+    root.style.setProperty('--skin-warning', resolvedColor(tokens.warning, '#f59e0b'));
+    root.style.setProperty('--skin-danger', resolvedColor(tokens.danger, '#ef4444'));
     const composer = theme.composer || {};
     const composerColor = /^#[0-9a-f]{6}$/i.test(composer.background || '')
       ? composer.background
@@ -111,6 +123,23 @@
     root.style.setProperty('--skin-composer-border-opacity', `${Math.round(clamp(composer.borderOpacity, 0, 1, 0.65) * 100)}%`);
     root.style.setProperty('--skin-composer-blur', `${Math.round(clamp(composer.blur, 0, 32, 12))}px`);
     root.style.setProperty('--skin-composer-shadow', composerShadows[composer.shadow] || composerShadows.soft);
+    root.style.setProperty('--skin-composer-radius', `${Math.round(clamp(composer.radius, 8, 32, 16))}px`);
+    root.style.setProperty('--skin-composer-placeholder', resolvedColor(composer.placeholderColor, 'var(--skin-text-muted)'));
+    root.style.setProperty('--skin-composer-control-color', resolvedColor(composer.controlColor, 'var(--skin-accent)'));
+    root.style.setProperty('--skin-composer-control-opacity', `${Math.round(clamp(composer.controlOpacity, 0, 1, 0.14) * 100)}%`);
+    root.style.setProperty('--skin-composer-control-radius', `${Math.round(clamp(composer.controlRadius, 0, 24, 8))}px`);
+    root.style.setProperty('--skin-composer-action-color', resolvedColor(composer.primaryActionColor, 'var(--skin-accent)'));
+    root.style.setProperty('--skin-composer-action-text', resolvedColor(composer.primaryActionText, 'var(--skin-text-inverse)'));
+    const composerSurfaces = document.querySelectorAll('.composer-surface-chrome');
+    for (const composerSurface of composerSurfaces) {
+      const controls = composerSurface.querySelectorAll('button, [role="button"]');
+      controls.forEach((control) => control.classList.add('skin-composer-control'));
+      const primaryAction = [...controls].find((control) => {
+        const label = `${control.getAttribute('aria-label') || ''} ${control.textContent || ''}`;
+        return control.getAttribute('type') === 'submit' || /send|发送|stop|停止/i.test(label);
+      });
+      primaryAction?.classList.add('skin-composer-primary-action');
+    }
     for (const footer of document.querySelectorAll('[data-thread-scroll-footer="true"]')) {
       const hasComposer = Boolean(footer.querySelector('.composer-surface-chrome'));
       for (const layer of footer.children) {
@@ -198,14 +227,16 @@
       color: 'var(--skin-surface)', opacity: 0.42, borderOpacity: 0.25,
       blur: 8, radius: 0, shadow: 'none',
     };
+    const taskHeader = document.querySelector('main.main-surface > header.app-header-tint');
+    const applicationMenu = document.querySelector('[class~="group/application-menu-top-bar"]');
     applyConfigurableSurface(
-      document.querySelector('main.main-surface > header.app-header-tint'),
+      taskHeader,
       'skin-header-surface',
       ui.header,
       headerDefaults,
     );
     applyConfigurableSurface(
-      document.querySelector('[class~="group/application-menu-top-bar"]'),
+      applicationMenu,
       'skin-application-menu-surface',
       {
         ...ui.header,
@@ -240,6 +271,19 @@
         color: 'var(--skin-surface)', opacity: 0.68, borderOpacity: 0.3,
         blur: 4, radius: 12, shadow: 'none',
       });
+    }
+
+    const overlayConfig = { ...(ui.overlays || {}), visible: true };
+    const overlayDefaults = {
+      color: 'var(--skin-surface)', opacity: 0.92, borderOpacity: 0.5,
+      blur: 14, radius: 12, shadow: 'strong',
+    };
+    const overlays = new Set();
+    for (const selector of ['[role="dialog"]', '[role="menu"]', '[role="listbox"]', '[data-slot="popover-content"]']) {
+      document.querySelectorAll(selector).forEach((node) => overlays.add(node));
+    }
+    for (const overlay of overlays) {
+      applyConfigurableSurface(overlay, 'skin-overlay-surface', overlayConfig, overlayDefaults);
     }
 
     const threadRows = ui.threadRows || {};
@@ -331,7 +375,12 @@
     for (const property of [
       '--skin-art', '--skin-art-position', '--skin-accent', '--skin-composer-color',
       '--skin-composer-opacity', '--skin-composer-border-opacity', '--skin-composer-blur',
-      '--skin-composer-shadow', '--skin-environment-color', '--skin-environment-opacity',
+      '--skin-composer-shadow', '--skin-composer-radius', '--skin-composer-placeholder',
+      '--skin-composer-control-color', '--skin-composer-control-opacity', '--skin-composer-control-radius',
+      '--skin-composer-action-color', '--skin-composer-action-text', '--skin-text-primary',
+      '--skin-text-secondary', '--skin-text-muted', '--skin-text-disabled', '--skin-text-inverse',
+      '--skin-border', '--skin-focus-ring', '--skin-success', '--skin-warning', '--skin-danger',
+      '--skin-environment-color', '--skin-environment-opacity',
       '--skin-environment-border-opacity', '--skin-environment-blur',
       '--skin-environment-radius', '--skin-environment-shadow',
       '--skin-change-summary-color', '--skin-change-summary-opacity',
@@ -365,7 +414,7 @@
       node.classList.remove(
         'skin-configurable-surface', 'skin-configurable-hidden', 'skin-sidebar-surface',
         'skin-header-surface', 'skin-application-menu-surface', 'skin-user-bubble-surface',
-        'skin-code-block-surface', 'skin-activity-card-surface',
+        'skin-code-block-surface', 'skin-activity-card-surface', 'skin-overlay-surface',
       );
       for (const property of configurableSurfaceProperties) node.style.removeProperty(property);
     });
@@ -374,6 +423,7 @@
     document.querySelectorAll('.skin-navigation-rail').forEach((node) => node.classList.remove('skin-navigation-rail', 'skin-navigation-rail-hidden'));
     document.querySelectorAll('.skin-diff-row').forEach((node) => node.classList.remove('skin-diff-row', 'skin-diff-row-hidden'));
     document.querySelectorAll('.skin-message-stack').forEach((node) => node.classList.remove('skin-message-stack'));
+    document.querySelectorAll('.skin-composer-control').forEach((node) => node.classList.remove('skin-composer-control', 'skin-composer-primary-action'));
     URL.revokeObjectURL(artUrl);
     if (window[STATE]?.revision === revision) delete window[STATE];
     return true;

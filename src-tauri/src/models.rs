@@ -44,6 +44,36 @@ pub struct ComposerConfig {
     pub shadow: String,
     #[serde(default)]
     pub show_footer_backdrop: bool,
+    #[serde(default = "default_composer_radius")]
+    pub radius: u32,
+    #[serde(default = "automatic_color")]
+    pub placeholder_color: String,
+    #[serde(default = "automatic_color")]
+    pub control_color: String,
+    #[serde(default = "default_composer_control_opacity")]
+    pub control_opacity: f64,
+    #[serde(default = "default_composer_control_radius")]
+    pub control_radius: u32,
+    #[serde(default = "automatic_color")]
+    pub primary_action_color: String,
+    #[serde(default = "automatic_color")]
+    pub primary_action_text: String,
+}
+
+fn automatic_color() -> String {
+    "auto".into()
+}
+
+fn default_composer_radius() -> u32 {
+    16
+}
+
+fn default_composer_control_opacity() -> f64 {
+    0.14
+}
+
+fn default_composer_control_radius() -> u32 {
+    8
 }
 
 impl Default for ComposerConfig {
@@ -55,6 +85,45 @@ impl Default for ComposerConfig {
             border_opacity: 0.65,
             shadow: "soft".into(),
             show_footer_backdrop: false,
+            radius: default_composer_radius(),
+            placeholder_color: automatic_color(),
+            control_color: automatic_color(),
+            control_opacity: default_composer_control_opacity(),
+            control_radius: default_composer_control_radius(),
+            primary_action_color: automatic_color(),
+            primary_action_text: automatic_color(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SemanticTokens {
+    pub text_primary: String,
+    pub text_secondary: String,
+    pub text_muted: String,
+    pub text_disabled: String,
+    pub text_inverse: String,
+    pub border: String,
+    pub focus_ring: String,
+    pub success: String,
+    pub warning: String,
+    pub danger: String,
+}
+
+impl Default for SemanticTokens {
+    fn default() -> Self {
+        Self {
+            text_primary: automatic_color(),
+            text_secondary: automatic_color(),
+            text_muted: automatic_color(),
+            text_disabled: automatic_color(),
+            text_inverse: automatic_color(),
+            border: automatic_color(),
+            focus_ring: automatic_color(),
+            success: automatic_color(),
+            warning: automatic_color(),
+            danger: automatic_color(),
         }
     }
 }
@@ -269,6 +338,8 @@ pub struct UiConfig {
     pub user_bubble: SurfaceConfig,
     pub code_block: SurfaceConfig,
     pub activity_card: SurfaceConfig,
+    #[serde(default)]
+    pub overlays: SurfaceConfig,
     pub thread_rows: RowConfig,
     pub summary_rows: RowConfig,
     pub navigation_rail_visible: bool,
@@ -315,6 +386,14 @@ impl Default for UiConfig {
                 border_opacity: 0.3,
                 ..SurfaceConfig::default()
             },
+            overlays: SurfaceConfig {
+                opacity: 0.92,
+                blur: 14,
+                border_opacity: 0.5,
+                shadow: "strong".into(),
+                radius: 12,
+                ..SurfaceConfig::default()
+            },
             thread_rows: RowConfig::default(),
             summary_rows: RowConfig {
                 hover_opacity: 0.12,
@@ -351,6 +430,8 @@ pub struct ThemeManifest {
     #[serde(default)]
     pub change_summary: ChangeSummaryConfig,
     #[serde(default)]
+    pub tokens: SemanticTokens,
+    #[serde(default)]
     pub ui: UiConfig,
     #[serde(default)]
     pub built_in: bool,
@@ -368,6 +449,7 @@ pub struct ThemeRecord {
     pub composer: ComposerConfig,
     pub environment: EnvironmentConfig,
     pub change_summary: ChangeSummaryConfig,
+    pub tokens: SemanticTokens,
     pub ui: UiConfig,
     pub preview_data_url: String,
     pub built_in: bool,

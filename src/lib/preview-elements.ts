@@ -11,11 +11,13 @@ export const previewElementMeta = {
   userBubble: { tab: 'components', label: '用户消息气泡' },
   codeBlock: { tab: 'components', label: '代码块' },
   activityCard: { tab: 'components', label: '工具活动卡片' },
+  overlays: { tab: 'components', label: '弹层与菜单' },
   threadRows: { tab: 'components', label: '任务列表行' },
   summaryRows: { tab: 'components', label: '环境面板项目' },
   navigation: { tab: 'styles', label: '导航轨与滚动条' },
   diff: { tab: 'styles', label: 'Diff 文件行' },
   richText: { tab: 'styles', label: '富文本内容' },
+  tokens: { tab: 'styles', label: '语义文字与状态' },
 } as const satisfies Record<string, { tab: ElementTab; label: string }>
 
 export type PreviewElementId = keyof typeof previewElementMeta

@@ -10,7 +10,7 @@ mod themes;
 use engine::AppRuntime;
 use models::{
     ApplyPlan, ArtConfig, ChangeSummaryConfig, ComposerConfig, Dashboard, EnvironmentConfig,
-    ThemeRecord, UiConfig,
+    SemanticTokens, ThemeRecord, UiConfig,
 };
 use tauri::Manager;
 
@@ -175,6 +175,7 @@ async fn update_theme(
     composer: ComposerConfig,
     environment: EnvironmentConfig,
     change_summary: ChangeSummaryConfig,
+    tokens: SemanticTokens,
     ui: UiConfig,
 ) -> std::result::Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
@@ -185,6 +186,7 @@ async fn update_theme(
             composer,
             environment,
             change_summary,
+            tokens,
             ui,
         )
         .map_err(|error| error.to_string())
