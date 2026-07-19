@@ -1228,7 +1228,7 @@ function App() {
                   <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
                     <div>
                       <h2 className="text-base font-bold text-zinc-50">{selected.name}</h2>
-                      <p className="text-[10px] text-zinc-400 font-mono mt-1 select-all">{selected.id}</p>
+
                     </div>
                     <div className="flex items-center gap-1">
                       <Button
