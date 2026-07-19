@@ -32,6 +32,20 @@ cargo test --manifest-path src-tauri/Cargo.toml
 npm run desktop:build
 ```
 
+## 发布与自动更新
+
+推送 `v0.2.1` 形式的版本 tag 后，GitHub Actions 会构建 Windows x64、macOS Apple Silicon 和 macOS Intel 安装包，并创建草稿 Release。正式发布前，需要在仓库的 Actions Secrets 中配置：
+
+```text
+TAURI_SIGNING_PRIVATE_KEY
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+TAURI_UPDATER_PUBKEY
+```
+
+首次执行 `npm run secrets:generate-updater-key`，按提示为私钥设置密码。密钥会统一写入 `.secrets/codex-skin-studio-updater.key` 和 `.secrets/codex-skin-studio-updater.key.pub`，该目录被 Git 忽略。私钥完整内容放入 `TAURI_SIGNING_PRIVATE_KEY`，密码放入 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`，公钥文件内容放入 `TAURI_UPDATER_PUBKEY`。不要将私钥或密码提交到仓库。
+
+发布工作流会临时生成 updater 配置、创建 `latest.json`，并上传经签名的更新包。macOS 默认使用 ad-hoc 签名；取得 Apple Developer ID 证书后，可通过 `TAURI_MACOS_SIGNING_IDENTITY` 覆盖签名身份，再接入证书导入与 notarization。
+
 ## 本地数据
 
 - Windows：`%LOCALAPPDATA%\codex\CodexSkinStudio\data`

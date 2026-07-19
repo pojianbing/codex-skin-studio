@@ -1,7 +1,7 @@
 {
   "name": "codex-skin-studio",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,9 @@
     "predesktop:dev": "node scripts/stop-stale-tauri-dev.mjs",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
+    "secrets:generate-updater-key": "node scripts/generate-updater-key.mjs",
+    "release:prepare": "node scripts/prepare-release-config.mjs",
+    "release:verify-version": "node scripts/verify-release-version.mjs",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -19,6 +22,8 @@
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

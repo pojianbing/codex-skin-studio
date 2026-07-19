@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select'
 import { Toaster } from '@/components/ui/sonner'
 import { CodexPreview } from '@/components/codex-preview'
+import { AppUpdater } from '@/components/app-updater'
 import { ThemeStore } from '@/components/theme-store'
 import { toast } from 'sonner'
 import {
@@ -974,6 +975,9 @@ function App() {
           <div className="flex gap-2 items-center px-2 text-[10px] text-zinc-500 font-medium tracking-wide uppercase">
             <MonitorCog size={13} className="text-zinc-650" />
             <span>{dashboard.platform}</span>
+          </div>
+          <div className="mt-2 border-t border-zinc-850/40 pt-2">
+            {!import.meta.env.DEV && <AppUpdater />}
           </div>
         </div>
       </aside>

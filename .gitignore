@@ -24,3 +24,10 @@ dist-ssr
 *.sw?
 .playwright-cli/
 output/
+
+# Local signing material. Never commit updater private keys or passwords.
+.secrets/
+*.key
+
+# Generated only by the release workflow. It embeds the public updater key.
+src-tauri/tauri.release.conf.json

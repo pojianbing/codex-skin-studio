@@ -302,7 +302,20 @@ fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default();
+    let context = tauri::generate_context!();
+    let has_updater_config = context
+        .config()
+        .plugins
+        .0
+        .get("updater")
+        .is_some_and(serde_json::Value::is_object);
+
+    let builder = tauri::Builder::<tauri::Wry>::default().plugin(tauri_plugin_process::init());
+    let builder = if has_updater_config {
+        builder.plugin(tauri_plugin_updater::Builder::new().build())
+    } else {
+        builder
+    };
     #[cfg(any(target_os = "windows", target_os = "macos"))]
     let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
         if !args.iter().any(|argument| argument == "--background") {
@@ -363,6 +376,6 @@ pub fn run() {
             pause_skin,
             restore_official,
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("Codex Skin Studio failed to start");
 }
