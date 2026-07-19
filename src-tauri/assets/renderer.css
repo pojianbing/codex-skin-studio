@@ -19,10 +19,10 @@
   --skin-danger: #ef4444;
   --skin-wash: color-mix(in oklab, var(--skin-surface) 86%, transparent);
   --skin-composer-color: var(--skin-surface);
-  --skin-composer-opacity: 88%;
-  --skin-composer-border-opacity: 65%;
+  --skin-composer-opacity: 20%;
+  --skin-composer-border-opacity: 1%;
   --skin-composer-blur: 12px;
-  --skin-composer-shadow: 0 10px 28px color-mix(in oklab, #101411 22%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 55%, transparent);
+  --skin-composer-shadow: none;
   --skin-composer-radius: 16px;
   --skin-composer-placeholder: var(--skin-text-muted);
   --skin-composer-control-color: var(--skin-accent);
@@ -31,17 +31,17 @@
   --skin-composer-action-color: var(--skin-accent);
   --skin-composer-action-text: var(--skin-text-inverse);
   --skin-environment-color: var(--skin-surface);
-  --skin-environment-opacity: 92%;
-  --skin-environment-border-opacity: 55%;
+  --skin-environment-opacity: 20%;
+  --skin-environment-border-opacity: 1%;
   --skin-environment-blur: 12px;
   --skin-environment-radius: 24px;
-  --skin-environment-shadow: 0 14px 36px color-mix(in oklab, #101411 24%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 45%, transparent);
+  --skin-environment-shadow: none;
   --skin-change-summary-color: var(--skin-surface);
-  --skin-change-summary-opacity: 72%;
+  --skin-change-summary-opacity: 20%;
   --skin-change-summary-border-opacity: 45%;
   --skin-change-summary-blur: 8px;
   --skin-change-summary-radius: 12px;
-  --skin-change-summary-shadow: 0 10px 28px color-mix(in oklab, #101411 20%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 38%, transparent);
+  --skin-change-summary-shadow: none;
   --skin-thread-row-color: var(--skin-accent);
   --skin-thread-row-opacity: 0%;
   --skin-thread-row-hover-opacity: 10%;
@@ -57,11 +57,12 @@
   --skin-scrollbar-opacity: 45%;
   --skin-scrollbar-width: 8px;
   --skin-scrollbar-radius: 8px;
-  --skin-diff-color: var(--skin-surface);
-  --skin-diff-opacity: 12%;
+  --skin-diff-color: #ffffff;
+  --skin-diff-opacity: 3%;
+  --skin-diff-hover-opacity: 1%;
   --skin-diff-added: #22c55e;
   --skin-diff-deleted: #ef4444;
-  --skin-diff-radius: 6px;
+  --skin-diff-radius: 1px;
   --skin-content-font-scale: 1;
   --skin-message-gap: 16px;
   --skin-link-color: var(--skin-accent);
@@ -287,6 +288,11 @@ html.codex-skin-studio.skin-scrollbars-hidden *::-webkit-scrollbar {
 }
 html.codex-skin-studio .skin-diff-row {
   border-radius: var(--skin-diff-radius) !important;
+  overflow: hidden;
+  background: transparent !important;
+}
+html.codex-skin-studio .skin-diff-row button {
+  border-radius: var(--skin-diff-radius) !important;
   background: color-mix(in oklab, var(--skin-diff-color) var(--skin-diff-opacity), transparent) !important;
 }
 html.codex-skin-studio .skin-diff-row .text-token-git-decoration-added-resource-foreground,
@@ -333,6 +339,9 @@ html.codex-skin-studio aside.app-shell-left-panel [aria-current="page"] {
 html.codex-skin-studio .skin-home .group\/home-suggestions button {
   color: var(--skin-text-primary) !important;
   transition: transform 160ms ease, border-color 160ms ease !important;
+}
+html.codex-skin-studio .skin-diff-row:hover button {
+  background: color-mix(in oklab, var(--skin-diff-color) var(--skin-diff-hover-opacity), transparent) !important;
 }
 html.codex-skin-studio .skin-home .group\/home-suggestions button:hover {
   transform: translateY(-2px);

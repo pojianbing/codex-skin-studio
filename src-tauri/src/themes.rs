@@ -33,6 +33,7 @@ const AURORA: &[u8] = include_bytes!("../assets/preset-midnight-aurora.jpg");
 const CODEX_OBSERVATORY: &[u8] = include_bytes!("../assets/preset-codex-observatory.jpg");
 const CYBER: &[u8] = include_bytes!("../assets/preset-cyber-neon.jpg");
 const FOREST: &[u8] = include_bytes!("../assets/preset-forest-mist.jpg");
+const GREENWOOD_WHISPERS: &[u8] = include_bytes!("../assets/preset-greenwood-whispers.jpg");
 const HARBOR_CITY: &[u8] = include_bytes!("../assets/preset-harbor-city.jpg");
 const MIDNIGHT_PAPER_OBSERVATORY: &[u8] =
     include_bytes!("../assets/preset-midnight-paper-observatory.jpg");
@@ -334,6 +335,7 @@ fn validate_ui(ui: &UiConfig) -> Result<()> {
         || !valid_hex_color(&ui.diff.added_color)
         || !valid_hex_color(&ui.diff.deleted_color)
         || !(0.0..=1.0).contains(&ui.diff.opacity)
+        || !(0.0..=1.0).contains(&ui.diff.hover_opacity)
         || ui.diff.radius > 24
     {
         return Err(StudioError::from("Diff 样式参数无效"));
@@ -1122,6 +1124,7 @@ fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
     ui.scrollbar.radius = 6;
     ui.diff.background = theme.raised.into();
     ui.diff.opacity = if light { 0.34 } else { 0.22 };
+    ui.diff.hover_opacity = if light { 0.46 } else { 0.34 };
     ui.diff.added_color = theme.added.into();
     ui.diff.deleted_color = theme.deleted.into();
     ui.diff.radius = theme.radius.min(8);
@@ -1208,6 +1211,28 @@ fn builtin_manifest(
     Ok(manifest)
 }
 
+fn greenwood_whispers_manifest() -> ThemeManifest {
+    ThemeManifest {
+        schema_version: 1,
+        id: "custom-9fc18f212a8a435289954b8792efc538".into(),
+        name: "绿野树语".into(),
+        version: BUILTIN_THEME_VERSION.into(),
+        author: "Codex Skin Studio contributors".into(),
+        image: "background.jpg".into(),
+        thumbnail: "thumbnail.jpg".into(),
+        appearance: "dark".into(),
+        art: ArtConfig::default(),
+        palette: Palette::default(),
+        level_slider: LevelSliderConfig::default(),
+        composer: ComposerConfig::default(),
+        environment: EnvironmentConfig::default(),
+        change_summary: ChangeSummaryConfig::default(),
+        tokens: SemanticTokens::default(),
+        ui: UiConfig::default(),
+        built_in: true,
+    }
+}
+
 fn seed_one(
     id: &str,
     name: &str,
@@ -1223,6 +1248,7 @@ fn seed_one(
 }
 
 pub fn ensure_library() -> Result<()> {
+    seed_manifest(greenwood_whispers_manifest(), GREENWOOD_WHISPERS)?;
     seed_one(
         "preset-alpine-lake",
         "云岭晨湖",
@@ -1573,10 +1599,20 @@ mod tests {
         HARBOR_CITY, MAX_IMAGE_BYTES, MIDNIGHT_PAPER_OBSERVATORY, MOONLIT_ALPINE_LAKE,
         PAPER_SKY_WORKSHOP, RAINY_HARBOR, RISO_SPRING_STREAM, ROMANTIC, SAKURA, SKY_LIGHT_STUDY,
         STRATA_FORGE, SUNLIT_SHORE, ThemeBundle, WINDREST_CLOUD_HOUSE, YELLOW_GADGETEERS,
-        builtin_manifest, decode_theme_bundle, encode_theme_bundle, image_info,
-        install_theme_bundle, should_upgrade_builtin, validate_manifest,
+        builtin_manifest, decode_theme_bundle, encode_theme_bundle, greenwood_whispers_manifest,
+        image_info, install_theme_bundle, should_upgrade_builtin, validate_manifest,
     };
     use crate::models::ThemeManifest;
+
+    #[test]
+    fn greenwood_whispers_is_a_protected_builtin_theme() {
+        let manifest = greenwood_whispers_manifest();
+        assert!(manifest.built_in);
+        assert_eq!(manifest.name, "绿野树语");
+        assert_eq!(manifest.composer.opacity, 0.2);
+        assert_eq!(manifest.ui.sidebar.opacity, 0.66);
+        assert_eq!(manifest.ui.diff.background, "#ffffff");
+    }
     use std::{
         fs,
         io::{Cursor, Write},

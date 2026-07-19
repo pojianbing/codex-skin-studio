@@ -98,6 +98,7 @@ type PreviewTheme = {
       visible: boolean
       background: string
       opacity: number
+      hoverOpacity: number
       addedColor: string
       deletedColor: string
       radius: number
@@ -308,11 +309,14 @@ export function CodexPreview({
   const levelTrackColor = theme.levelSlider.enabled
     ? theme.levelSlider.levelColors[previewLevelIndex]
     : '#339cff'
-  const diffRowStyle: CSSProperties = {
+  const diffRowStyle = (hovered = false): CSSProperties => ({
     display: theme.ui.diff.visible ? 'grid' : 'none',
-    background: mix(resolveColor(theme.ui.diff.background, fallbackSurface), theme.ui.diff.opacity),
+    background: mix(
+      resolveColor(theme.ui.diff.background, fallbackSurface),
+      hovered ? theme.ui.diff.hoverOpacity : theme.ui.diff.opacity,
+    ),
     borderRadius: `${theme.ui.diff.radius}px`,
-  }
+  })
   const backgroundPosition = `${percent(theme.art.focusX)}% ${percent(theme.art.focusY)}%`
   const safeAreaShade = safeArea === 'right'
     ? 'linear-gradient(to left, rgba(0,0,0,.5), transparent 58%)'
@@ -711,14 +715,14 @@ export function CodexPreview({
               ['src-tauri/src/models.rs', '+6', '-5'],
               ['src-tauri/src/storage.rs', '+49', '-13'],
               ['src/App.tsx', '+40', '-10'],
-            ].map(([path, added, deleted]) => (
+            ].map(([path, added, deleted], index) => (
               <div
                 key={path}
                 className={cn(
                   "grid grid-cols-[1fr_auto] items-center gap-[3px] px-[4px] py-[2px]",
                   targetClass('diff'),
                 )}
-                style={diffRowStyle}
+                style={diffRowStyle(index === 2)}
                 {...targetEvents('diff')}
               >
                 <span className="truncate">{path}</span>

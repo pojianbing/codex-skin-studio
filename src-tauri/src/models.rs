@@ -109,10 +109,10 @@ impl Default for ComposerConfig {
     fn default() -> Self {
         Self {
             background: "auto".into(),
-            opacity: 0.88,
+            opacity: 0.2,
             blur: 12,
-            border_opacity: 0.65,
-            shadow: "soft".into(),
+            border_opacity: 0.01,
+            shadow: "none".into(),
             show_footer_backdrop: false,
             radius: default_composer_radius(),
             placeholder_color: automatic_color(),
@@ -174,10 +174,10 @@ impl Default for EnvironmentConfig {
         Self {
             visible: true,
             background: "auto".into(),
-            opacity: 0.92,
+            opacity: 0.2,
             blur: 12,
-            border_opacity: 0.55,
-            shadow: "soft".into(),
+            border_opacity: 0.01,
+            shadow: "none".into(),
             radius: 24,
         }
     }
@@ -200,10 +200,10 @@ impl Default for ChangeSummaryConfig {
         Self {
             visible: true,
             background: "auto".into(),
-            opacity: 0.72,
+            opacity: 0.2,
             blur: 8,
             border_opacity: 0.45,
-            shadow: "soft".into(),
+            shadow: "none".into(),
             radius: 12,
         }
     }
@@ -287,6 +287,8 @@ pub struct DiffConfig {
     pub visible: bool,
     pub background: String,
     pub opacity: f64,
+    #[serde(default = "default_diff_hover_opacity")]
+    pub hover_opacity: f64,
     pub added_color: String,
     pub deleted_color: String,
     pub radius: u32,
@@ -296,11 +298,12 @@ impl Default for DiffConfig {
     fn default() -> Self {
         Self {
             visible: true,
-            background: "auto".into(),
-            opacity: 0.12,
+            background: "#ffffff".into(),
+            opacity: 0.03,
+            hover_opacity: default_diff_hover_opacity(),
             added_color: "#22c55e".into(),
             deleted_color: "#ef4444".into(),
-            radius: 6,
+            radius: 1,
         }
     }
 }
@@ -385,7 +388,7 @@ impl Default for UiConfig {
     fn default() -> Self {
         Self {
             sidebar: SurfaceConfig {
-                opacity: 0.76,
+                opacity: 0.66,
                 blur: 8,
                 border_opacity: 0.25,
                 radius: 0,
@@ -399,20 +402,20 @@ impl Default for UiConfig {
                 ..SurfaceConfig::default()
             },
             user_bubble: SurfaceConfig {
-                opacity: 0.62,
+                opacity: 0.2,
                 blur: 4,
                 border_opacity: 0.25,
                 radius: 20,
                 ..SurfaceConfig::default()
             },
             code_block: SurfaceConfig {
-                opacity: 0.82,
-                border_opacity: 0.35,
-                shadow: "soft".into(),
+                opacity: 0.17,
+                border_opacity: 0.0,
+                shadow: "none".into(),
                 ..SurfaceConfig::default()
             },
             activity_card: SurfaceConfig {
-                opacity: 0.68,
+                opacity: 0.2,
                 blur: 4,
                 border_opacity: 0.3,
                 ..SurfaceConfig::default()
@@ -442,13 +445,17 @@ impl Default for UiConfig {
     }
 }
 
+fn default_diff_hover_opacity() -> f64 {
+    0.01
+}
+
 fn default_home_suggestions() -> SurfaceConfig {
     SurfaceConfig {
-        opacity: 0.72,
+        opacity: 0.2,
         blur: 8,
-        border_opacity: 0.58,
-        shadow: "soft".into(),
-        radius: 16,
+        border_opacity: 0.16,
+        shadow: "none".into(),
+        radius: 4,
         ..SurfaceConfig::default()
     }
 }
@@ -560,7 +567,28 @@ pub struct CodexInstall {
 
 #[cfg(test)]
 mod tests {
-    use super::{ComposerConfig, ThemeManifest};
+    use super::{ComposerConfig, ThemeManifest, UiConfig};
+
+    #[test]
+    fn default_configuration_matches_greenwood_theme() {
+        let composer = ComposerConfig::default();
+        assert_eq!(composer.opacity, 0.2);
+        assert_eq!(composer.border_opacity, 0.01);
+        assert_eq!(composer.shadow, "none");
+
+        let ui = UiConfig::default();
+        assert_eq!(ui.sidebar.opacity, 0.66);
+        assert_eq!(ui.user_bubble.opacity, 0.2);
+        assert_eq!(ui.code_block.opacity, 0.17);
+        assert_eq!(ui.code_block.border_opacity, 0.0);
+        assert_eq!(ui.home_suggestions.opacity, 0.2);
+        assert_eq!(ui.home_suggestions.border_opacity, 0.16);
+        assert_eq!(ui.home_suggestions.radius, 4);
+        assert_eq!(ui.diff.background, "#ffffff");
+        assert_eq!(ui.diff.opacity, 0.03);
+        assert_eq!(ui.diff.hover_opacity, 0.01);
+        assert_eq!(ui.diff.radius, 1);
+    }
 
     #[test]
     fn legacy_manifest_uses_default_composer_settings() {
@@ -586,16 +614,16 @@ mod tests {
         .expect("legacy manifest should deserialize");
 
         assert_eq!(manifest.composer.background, "auto");
-        assert_eq!(manifest.composer.opacity, 0.88);
+        assert_eq!(manifest.composer.opacity, 0.2);
         assert_eq!(manifest.composer.blur, 12);
-        assert_eq!(manifest.composer.border_opacity, 0.65);
-        assert_eq!(manifest.composer.shadow, "soft");
+        assert_eq!(manifest.composer.border_opacity, 0.01);
+        assert_eq!(manifest.composer.shadow, "none");
         assert!(!manifest.composer.show_footer_backdrop);
         assert!(manifest.environment.visible);
         assert_eq!(manifest.environment.background, "auto");
         assert_eq!(manifest.environment.radius, 24);
         assert!(manifest.change_summary.visible);
-        assert_eq!(manifest.change_summary.opacity, 0.72);
+        assert_eq!(manifest.change_summary.opacity, 0.2);
         assert_eq!(manifest.change_summary.radius, 12);
         assert_eq!(manifest.ui.content.max_width, 768);
         assert_eq!(manifest.ui.user_bubble.radius, 20);

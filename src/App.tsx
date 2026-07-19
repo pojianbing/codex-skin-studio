@@ -103,6 +103,7 @@ type DiffStyle = {
   visible: boolean
   background: string
   opacity: number
+  hoverOpacity: number
   addedColor: string
   deletedColor: string
   radius: number
@@ -1594,6 +1595,17 @@ function App() {
                                   changeSummary: { ...selected.changeSummary, shadow },
                                 })}
                               />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  selectElementTab('styles')
+                                  setSelectedElement('diff')
+                                }}
+                                className="flex h-9 w-full items-center justify-between rounded-md border border-zinc-800 bg-zinc-950 px-3 text-xs font-semibold text-zinc-300 transition-colors hover:border-zinc-700 hover:bg-zinc-900 cursor-pointer"
+                              >
+                                <span>配置文件内容区域</span>
+                                <span className="text-zinc-500">背景、行状态与增删颜色</span>
+                              </button>
                             </>
                           )}
                         </ConfigSection>
@@ -1823,7 +1835,7 @@ function App() {
                           )}
                         </ConfigSection>
 
-                        <ConfigSection title="Diff 文件行" {...configSectionProps('diff')}>
+                        <ConfigSection title="变更摘要文件区" {...configSectionProps('diff')}>
                           <ToggleSetting
                             label="显示"
                             checked={selected.ui.diff.visible}
@@ -1838,13 +1850,22 @@ function App() {
                                 onChange={(background) => void updateUi('diff', { ...selected.ui.diff, background })}
                               />
                               <SliderSetting
-                                label="背景强度"
+                                label="背景不透明度"
                                 value={selected.ui.diff.opacity}
                                 min={0}
                                 max={1}
                                 step={0.01}
                                 unit="%"
                                 onChange={(opacity) => void updateUi('diff', { ...selected.ui.diff, opacity })}
+                              />
+                              <SliderSetting
+                                label="悬停背景不透明度"
+                                value={selected.ui.diff.hoverOpacity}
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                unit="%"
+                                onChange={(hoverOpacity) => void updateUi('diff', { ...selected.ui.diff, hoverOpacity })}
                               />
                               <ColorSetting
                                 label="新增颜色"

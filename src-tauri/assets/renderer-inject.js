@@ -159,10 +159,10 @@
       strong: '0 18px 48px color-mix(in oklab, #080b0a 34%, transparent), 0 3px 10px color-mix(in oklab, #080b0a 18%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 64%, transparent)',
     };
     root.style.setProperty('--skin-composer-color', composerColor);
-    root.style.setProperty('--skin-composer-opacity', `${Math.round(clamp(composer.opacity, 0, 1, 0.88) * 100)}%`);
-    root.style.setProperty('--skin-composer-border-opacity', `${Math.round(clamp(composer.borderOpacity, 0, 1, 0.65) * 100)}%`);
+    root.style.setProperty('--skin-composer-opacity', `${Math.round(clamp(composer.opacity, 0, 1, 0.2) * 100)}%`);
+    root.style.setProperty('--skin-composer-border-opacity', `${Math.round(clamp(composer.borderOpacity, 0, 1, 0.01) * 100)}%`);
     root.style.setProperty('--skin-composer-blur', `${Math.round(clamp(composer.blur, 0, 32, 12))}px`);
-    root.style.setProperty('--skin-composer-shadow', composerShadows[composer.shadow] || composerShadows.soft);
+    root.style.setProperty('--skin-composer-shadow', composerShadows[composer.shadow] || composerShadows.none);
     root.style.setProperty('--skin-composer-radius', `${Math.round(clamp(composer.radius, 8, 32, 16))}px`);
     root.style.setProperty('--skin-composer-placeholder', resolvedColor(composer.placeholderColor, 'var(--skin-text-muted)'));
     root.style.setProperty('--skin-composer-control-color', resolvedColor(composer.controlColor, 'var(--skin-accent)'));
@@ -213,11 +213,11 @@
       strong: '0 22px 58px color-mix(in oklab, #080b0a 38%, transparent), 0 4px 12px color-mix(in oklab, #080b0a 20%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 62%, transparent)',
     };
     root.style.setProperty('--skin-environment-color', environmentColor);
-    root.style.setProperty('--skin-environment-opacity', `${Math.round(clamp(environment.opacity, 0, 1, 0.92) * 100)}%`);
-    root.style.setProperty('--skin-environment-border-opacity', `${Math.round(clamp(environment.borderOpacity, 0, 1, 0.55) * 100)}%`);
+    root.style.setProperty('--skin-environment-opacity', `${Math.round(clamp(environment.opacity, 0, 1, 0.2) * 100)}%`);
+    root.style.setProperty('--skin-environment-border-opacity', `${Math.round(clamp(environment.borderOpacity, 0, 1, 0.01) * 100)}%`);
     root.style.setProperty('--skin-environment-blur', `${Math.round(clamp(environment.blur, 0, 32, 12))}px`);
     root.style.setProperty('--skin-environment-radius', `${Math.round(clamp(environment.radius, 8, 32, 24))}px`);
-    root.style.setProperty('--skin-environment-shadow', environmentShadows[environment.shadow] || environmentShadows.soft);
+    root.style.setProperty('--skin-environment-shadow', environmentShadows[environment.shadow] || environmentShadows.none);
     for (const panel of document.querySelectorAll('[data-pip-obstacle="thread-summary-panel"]')) {
       panel.classList.toggle('skin-environment-panel-hidden', environment.visible === false);
       panel.firstElementChild?.firstElementChild?.classList.add('skin-environment-panel-surface');
@@ -232,11 +232,11 @@
       strong: '0 18px 46px color-mix(in oklab, #080b0a 34%, transparent), 0 3px 10px color-mix(in oklab, #080b0a 18%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 58%, transparent)',
     };
     root.style.setProperty('--skin-change-summary-color', changeSummaryColor);
-    root.style.setProperty('--skin-change-summary-opacity', `${Math.round(clamp(changeSummary.opacity, 0, 1, 0.72) * 100)}%`);
+    root.style.setProperty('--skin-change-summary-opacity', `${Math.round(clamp(changeSummary.opacity, 0, 1, 0.2) * 100)}%`);
     root.style.setProperty('--skin-change-summary-border-opacity', `${Math.round(clamp(changeSummary.borderOpacity, 0, 1, 0.45) * 100)}%`);
     root.style.setProperty('--skin-change-summary-blur', `${Math.round(clamp(changeSummary.blur, 0, 32, 8))}px`);
     root.style.setProperty('--skin-change-summary-radius', `${Math.round(clamp(changeSummary.radius, 8, 32, 12))}px`);
-    root.style.setProperty('--skin-change-summary-shadow', changeSummaryShadows[changeSummary.shadow] || changeSummaryShadows.soft);
+    root.style.setProperty('--skin-change-summary-shadow', changeSummaryShadows[changeSummary.shadow] || changeSummaryShadows.none);
     for (const header of document.querySelectorAll('[class~="group/turn-diff-header"]')) {
       const card = header.parentElement;
       card?.classList.add('skin-change-summary-card');
@@ -260,7 +260,7 @@
     }
     const ui = theme.ui || {};
     applyConfigurableSurface(sidebar, 'skin-sidebar-surface', ui.sidebar, {
-      color: 'var(--skin-sidebar)', opacity: 0.76, borderOpacity: 0.25,
+      color: 'var(--skin-sidebar)', opacity: 0.66, borderOpacity: 0.25,
       blur: 8, radius: 0, shadow: 'none',
     });
     const headerDefaults = {
@@ -289,7 +289,7 @@
     );
     for (const bubble of document.querySelectorAll('[data-user-message-bubble="true"]')) {
       applyConfigurableSurface(bubble, 'skin-user-bubble-surface', ui.userBubble, {
-        color: 'var(--skin-surface)', opacity: 0.62, borderOpacity: 0.25,
+        color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.25,
         blur: 4, radius: 20, shadow: 'none',
       });
     }
@@ -302,20 +302,20 @@
     }
     for (const codeBlock of codeBlocks) {
       applyConfigurableSurface(codeBlock, 'skin-code-block-surface', ui.codeBlock, {
-        color: 'var(--skin-surface)', opacity: 0.82, borderOpacity: 0.35,
-        blur: 6, radius: 12, shadow: 'soft',
+        color: 'var(--skin-surface)', opacity: 0.17, borderOpacity: 0,
+        blur: 6, radius: 12, shadow: 'none',
       });
     }
     for (const activityHeader of document.querySelectorAll('[class~="group/activity-header"]')) {
       applyConfigurableSurface(activityHeader.parentElement, 'skin-activity-card-surface', ui.activityCard, {
-        color: 'var(--skin-surface)', opacity: 0.68, borderOpacity: 0.3,
+        color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.3,
         blur: 4, radius: 12, shadow: 'none',
       });
     }
     for (const suggestion of document.querySelectorAll('[class~="group/home-suggestions"] button')) {
       applyConfigurableSurface(suggestion, 'skin-home-suggestion-surface', ui.homeSuggestions, {
-        color: 'var(--skin-surface)', opacity: 0.72, borderOpacity: 0.58,
-        blur: 8, radius: 16, shadow: 'soft',
+        color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.16,
+        blur: 8, radius: 4, shadow: 'none',
       });
     }
 
@@ -368,11 +368,12 @@
     root.style.setProperty('--skin-scrollbar-radius', `${Math.round(clamp(scrollbar.radius, 0, 16, 8))}px`);
 
     const diff = ui.diff || {};
-    root.style.setProperty('--skin-diff-color', /^#[0-9a-f]{6}$/i.test(diff.background || '') ? diff.background : 'var(--skin-surface)');
-    root.style.setProperty('--skin-diff-opacity', `${Math.round(clamp(diff.opacity, 0, 1, 0.12) * 100)}%`);
+    root.style.setProperty('--skin-diff-color', /^#[0-9a-f]{6}$/i.test(diff.background || '') ? diff.background : '#ffffff');
+    root.style.setProperty('--skin-diff-opacity', `${Math.round(clamp(diff.opacity, 0, 1, 0.03) * 100)}%`);
+    root.style.setProperty('--skin-diff-hover-opacity', `${Math.round(clamp(diff.hoverOpacity, 0, 1, 0.01) * 100)}%`);
     root.style.setProperty('--skin-diff-added', /^#[0-9a-f]{6}$/i.test(diff.addedColor || '') ? diff.addedColor : '#22c55e');
     root.style.setProperty('--skin-diff-deleted', /^#[0-9a-f]{6}$/i.test(diff.deletedColor || '') ? diff.deletedColor : '#ef4444');
-    root.style.setProperty('--skin-diff-radius', `${Math.round(clamp(diff.radius, 0, 24, 6))}px`);
+    root.style.setProperty('--skin-diff-radius', `${Math.round(clamp(diff.radius, 0, 24, 1))}px`);
     for (const row of document.querySelectorAll('.thread-diff-virtualized')) {
       row.classList.add('skin-diff-row');
       row.classList.toggle('skin-diff-row-hidden', diff.visible === false);
@@ -445,7 +446,7 @@
       '--skin-summary-row-radius',
       '--skin-navigation-rail-opacity', '--skin-scrollbar-color', '--skin-scrollbar-opacity',
       '--skin-scrollbar-width', '--skin-scrollbar-radius', '--skin-diff-color',
-      '--skin-diff-opacity', '--skin-diff-added', '--skin-diff-deleted', '--skin-diff-radius',
+      '--skin-diff-opacity', '--skin-diff-hover-opacity', '--skin-diff-added', '--skin-diff-deleted', '--skin-diff-radius',
       '--thread-content-max-width', '--skin-content-font-scale', '--skin-message-gap',
       '--skin-link-color', '--skin-inline-code-color', '--skin-inline-code-opacity',
       '--skin-inline-code-radius', '--skin-quote-accent', '--skin-quote-color',

@@ -17,7 +17,7 @@ export const previewElementMeta = {
   homeSuggestions: { tab: 'components', label: '主页建议卡片' },
   summaryRows: { tab: 'components', label: '环境面板项目' },
   navigation: { tab: 'styles', label: '导航轨与滚动条' },
-  diff: { tab: 'styles', label: 'Diff 文件行' },
+  diff: { tab: 'styles', label: '变更摘要文件区' },
   richText: { tab: 'styles', label: '富文本内容' },
   tokens: { tab: 'styles', label: '语义文字与状态' },
 } as const satisfies Record<string, { tab: ElementTab; label: string }>
