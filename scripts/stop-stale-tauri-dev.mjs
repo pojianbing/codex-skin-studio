@@ -11,10 +11,14 @@ const executablePath = resolve(
   "debug",
   "codex-skin-studio.exe",
 ).replace(/'/g, "''");
+const projectPath = resolve().replace(/'/g, "''");
+const devServerPort = 1420;
 
 const command = `
 $ErrorActionPreference = 'Stop'
 $target = '${executablePath}'
+$project = '${projectPath}'
+$port = ${devServerPort}
 $matchingProcesses = @(
   Get-CimInstance Win32_Process -Filter "Name = 'codex-skin-studio.exe'" |
     Where-Object {
@@ -29,6 +33,21 @@ $matchingProcesses = @(
 foreach ($process in $matchingProcesses) {
   Write-Host "Stopping stale desktop process (PID $($process.ProcessId))."
   Stop-Process -Id $process.ProcessId -Force
+}
+
+$listeners = @(Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)
+foreach ($listener in $listeners) {
+  $process = Get-CimInstance Win32_Process -Filter "ProcessId = $($listener.OwningProcess)"
+  $isProjectVite = $process -and
+    $process.Name -ieq 'node.exe' -and
+    $process.CommandLine -and
+    $process.CommandLine.IndexOf("$project\\node_modules\\", [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+    $process.CommandLine.IndexOf('vite\\bin\\vite.js', [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+
+  if ($isProjectVite) {
+    Write-Host "Stopping stale project Vite server on port $port (PID $($process.ProcessId))."
+    Stop-Process -Id $process.ProcessId -Force
+  }
 }
 `;
 
