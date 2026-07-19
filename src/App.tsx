@@ -915,9 +915,11 @@ function App() {
       <aside className="w-[218px] flex-none flex flex-col p-5 bg-zinc-900/35 backdrop-blur-xl text-zinc-200 border-r border-zinc-850/40">
         {/* Brand mark */}
         <div className="flex gap-3 align-middle items-center px-2 pb-6 border-b border-zinc-850/40 mb-4" aria-label="Codex Skin Studio">
-          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-50 to-zinc-250 text-zinc-950 font-black text-sm tracking-wider shadow-[0_4px_12px_rgba(255,255,255,0.06)] hover:shadow-[0_4px_18px_rgba(255,255,255,0.15)] hover:scale-[1.04] transition-all duration-300 select-none">
-            CS
-          </span>
+          <img
+            src="/app-icon.png"
+            className="w-9 h-9 select-none hover:scale-[1.04] transition-all duration-300 object-contain"
+            alt="Codex Skin Studio Logo"
+          />
           <div className="flex flex-col leading-none">
             <span className="font-bold text-sm text-zinc-50">Skin Studio</span>
             <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold mt-1">Codex themes</span>
