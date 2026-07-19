@@ -312,6 +312,12 @@
         blur: 4, radius: 12, shadow: 'none',
       });
     }
+    for (const suggestion of document.querySelectorAll('[class~="group/home-suggestions"] button')) {
+      applyConfigurableSurface(suggestion, 'skin-home-suggestion-surface', ui.homeSuggestions, {
+        color: 'var(--skin-surface)', opacity: 0.72, borderOpacity: 0.58,
+        blur: 8, radius: 16, shadow: 'soft',
+      });
+    }
 
     const overlayConfig = { ...(ui.overlays || {}), visible: true };
     const overlayDefaults = {
@@ -462,7 +468,7 @@
       node.classList.remove(
         'skin-configurable-surface', 'skin-configurable-hidden', 'skin-sidebar-surface',
         'skin-header-surface', 'skin-application-menu-surface', 'skin-user-bubble-surface',
-        'skin-code-block-surface', 'skin-activity-card-surface', 'skin-overlay-surface',
+        'skin-code-block-surface', 'skin-activity-card-surface', 'skin-home-suggestion-surface', 'skin-overlay-surface',
       );
       for (const property of configurableSurfaceProperties) node.style.removeProperty(property);
     });

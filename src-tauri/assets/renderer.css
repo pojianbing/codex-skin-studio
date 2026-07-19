@@ -331,10 +331,12 @@ html.codex-skin-studio aside.app-shell-left-panel [aria-current="page"] {
   background: color-mix(in oklab, var(--skin-accent) 18%, transparent) !important;
 }
 html.codex-skin-studio .skin-home .group\/home-suggestions button {
-  color: var(--skin-text) !important;
-  border-color: color-mix(in oklab, var(--skin-line) 58%, transparent) !important;
-  background: color-mix(in oklab, var(--skin-surface) 72%, transparent) !important;
-  backdrop-filter: blur(8px) !important;
+  color: var(--skin-text-primary) !important;
+  transition: transform 160ms ease, border-color 160ms ease !important;
+}
+html.codex-skin-studio .skin-home .group\/home-suggestions button:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--skin-accent) 42%, var(--skin-border)) !important;
 }
 html.codex-skin-studio .skin-task { position: relative; isolation: isolate; background: transparent !important; }
 html.codex-skin-studio .skin-task::before {

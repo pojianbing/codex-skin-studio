@@ -14,6 +14,7 @@ export const previewElementMeta = {
   overlays: { tab: 'components', label: '弹层与菜单' },
   levelSlider: { tab: 'components', label: '级别滑块' },
   threadRows: { tab: 'components', label: '任务列表行' },
+  homeSuggestions: { tab: 'components', label: '主页建议卡片' },
   summaryRows: { tab: 'components', label: '环境面板项目' },
   navigation: { tab: 'styles', label: '导航轨与滚动条' },
   diff: { tab: 'styles', label: 'Diff 文件行' },

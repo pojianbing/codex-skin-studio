@@ -278,6 +278,7 @@ fn validate_ui(ui: &UiConfig) -> Result<()> {
         ("用户消息", &ui.user_bubble),
         ("代码块", &ui.code_block),
         ("活动卡片", &ui.activity_card),
+        ("主页建议卡片", &ui.home_suggestions),
         ("弹层与菜单", &ui.overlays),
     ] {
         if surface.background != "auto" && !valid_hex_color(&surface.background) {
@@ -1092,6 +1093,12 @@ fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
     ui.activity_card.border_opacity = border_opacity - 0.04;
     ui.activity_card.shadow = theme.shadow.into();
     ui.activity_card.radius = theme.radius;
+    ui.home_suggestions.background = theme.raised.into();
+    ui.home_suggestions.opacity = raised_opacity;
+    ui.home_suggestions.blur = theme.blur.saturating_sub(2);
+    ui.home_suggestions.border_opacity = border_opacity;
+    ui.home_suggestions.shadow = theme.shadow.into();
+    ui.home_suggestions.radius = (theme.radius + 4).min(32);
     ui.overlays.background = theme.surface.into();
     ui.overlays.opacity = raised_opacity;
     ui.overlays.blur = theme.blur;

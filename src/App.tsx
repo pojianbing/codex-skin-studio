@@ -144,6 +144,7 @@ type UiConfig = {
   userBubble: SurfaceStyle
   codeBlock: SurfaceStyle
   activityCard: SurfaceStyle
+  homeSuggestions: SurfaceStyle
   overlays: SurfaceStyle
   threadRows: RowStyle
   summaryRows: RowStyle
@@ -1735,6 +1736,17 @@ function App() {
                             autoColor={selected.accent}
                             onChange={(value) => void updateUi('summaryRows', value)}
                           />
+                        </ConfigSection>
+
+                        <ConfigSection title="主页建议卡片" {...configSectionProps('homeSuggestions')}>
+                          <SurfaceStyleEditor
+                            value={selected.ui.homeSuggestions}
+                            autoColor={resolvedAppearance === 'light' ? '#ffffff' : '#121620'}
+                            onChange={(value) => void updateUi('homeSuggestions', value)}
+                          />
+                          <p className="text-[11px] leading-relaxed text-zinc-500">
+                            卡片文字继承“主文字”语义色，图标颜色由 Codex 保持原生状态色。
+                          </p>
                         </ConfigSection>
                       </>
                     )}

@@ -367,6 +367,8 @@ pub struct UiConfig {
     pub user_bubble: SurfaceConfig,
     pub code_block: SurfaceConfig,
     pub activity_card: SurfaceConfig,
+    #[serde(default = "default_home_suggestions")]
+    pub home_suggestions: SurfaceConfig,
     #[serde(default)]
     pub overlays: SurfaceConfig,
     pub thread_rows: RowConfig,
@@ -415,6 +417,7 @@ impl Default for UiConfig {
                 border_opacity: 0.3,
                 ..SurfaceConfig::default()
             },
+            home_suggestions: default_home_suggestions(),
             overlays: SurfaceConfig {
                 opacity: 0.92,
                 blur: 14,
@@ -436,6 +439,17 @@ impl Default for UiConfig {
             content: ContentLayoutConfig::default(),
             rich_text: RichTextConfig::default(),
         }
+    }
+}
+
+fn default_home_suggestions() -> SurfaceConfig {
+    SurfaceConfig {
+        opacity: 0.72,
+        blur: 8,
+        border_opacity: 0.58,
+        shadow: "soft".into(),
+        radius: 16,
+        ..SurfaceConfig::default()
     }
 }
 
