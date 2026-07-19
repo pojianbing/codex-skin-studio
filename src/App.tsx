@@ -900,12 +900,12 @@ function App() {
       : dashboard.mode === 'error' ? '需要处理' : '官方主题'
 
   return (
-    <div className="flex w-full h-full min-h-0 overflow-hidden bg-zinc-950 text-zinc-50 font-sans selection:bg-primary/20">
+    <div className="flex w-full h-full min-h-0 overflow-hidden bg-transparent text-zinc-50 font-sans selection:bg-primary/20">
       {/* Sidebar */}
-      <aside className="w-[218px] flex-none flex flex-col p-5 bg-zinc-900 text-zinc-200 border-r border-zinc-800">
+      <aside className="w-[218px] flex-none flex flex-col p-5 bg-zinc-900/35 backdrop-blur-xl text-zinc-200 border-r border-zinc-850/40">
         {/* Brand mark */}
-        <div className="flex gap-3 align-middle items-center px-2 pb-6 border-b border-zinc-800 mb-4" aria-label="Codex Skin Studio">
-          <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-zinc-50 text-zinc-950 font-extrabold text-sm tracking-wider shadow-inner select-none">
+        <div className="flex gap-3 align-middle items-center px-2 pb-6 border-b border-zinc-850/40 mb-4" aria-label="Codex Skin Studio">
+          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-50 to-zinc-250 text-zinc-950 font-black text-sm tracking-wider shadow-[0_4px_12px_rgba(255,255,255,0.06)] hover:shadow-[0_4px_18px_rgba(255,255,255,0.15)] hover:scale-[1.04] transition-all duration-300 select-none">
             CS
           </span>
           <div className="flex flex-col leading-none">
@@ -919,8 +919,10 @@ function App() {
           <button
             onClick={() => setActiveView('library')}
             className={cn(
-              'flex h-10 w-full items-center gap-3 rounded-lg border px-3 text-sm font-medium transition-all cursor-pointer',
-              activeView === 'library' ? 'border-zinc-700 bg-zinc-800 text-zinc-50 shadow-sm' : 'border-transparent bg-transparent text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100',
+              'flex h-10 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold transition-all duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.99]',
+              activeView === 'library' 
+                ? 'border-zinc-800/50 bg-zinc-800/60 text-zinc-50 shadow-[0_4px_12px_rgba(0,0,0,0.15)] backdrop-blur-sm' 
+                : 'border-transparent bg-transparent text-zinc-400 hover:bg-zinc-800/35 hover:text-zinc-100',
             )}
           >
             <Library size={16} />
@@ -929,8 +931,10 @@ function App() {
           <button
             onClick={() => setActiveView('store')}
             className={cn(
-              'flex h-10 w-full items-center gap-3 rounded-lg border px-3 text-sm font-medium transition-all cursor-pointer',
-              activeView === 'store' ? 'border-zinc-700 bg-zinc-800 text-zinc-50 shadow-sm' : 'border-transparent bg-transparent text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100',
+              'flex h-10 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold transition-all duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.99]',
+              activeView === 'store' 
+                ? 'border-zinc-800/50 bg-zinc-800/60 text-zinc-50 shadow-[0_4px_12px_rgba(0,0,0,0.15)] backdrop-blur-sm' 
+                : 'border-transparent bg-transparent text-zinc-400 hover:bg-zinc-800/35 hover:text-zinc-100',
             )}
           >
             <Download size={16} />
@@ -939,13 +943,13 @@ function App() {
         </nav>
 
         {/* Runtime info block */}
-        <div className="mt-auto pt-4 border-t border-zinc-800">
-          <div className="flex gap-3 items-center p-3 rounded-lg bg-zinc-950/40 border border-zinc-800 mb-3">
+        <div className="mt-auto pt-4 border-t border-zinc-850/40">
+          <div className="flex gap-3 items-center p-3 rounded-xl bg-zinc-950/30 border border-zinc-850/40 mb-3 backdrop-blur-sm">
             <span className={cn(
               "w-2 h-2 rounded-full ring-4 flex-none",
-              dashboard.mode === 'active' ? "bg-emerald-400 ring-emerald-950/40"
+              dashboard.mode === 'active' ? "bg-emerald-400 ring-emerald-950/40 animate-pulse"
                 : dashboard.mode === 'paused' ? "bg-amber-400 ring-amber-950/40"
-                  : dashboard.mode === 'error' ? "bg-rose-400 ring-rose-950/40"
+                  : dashboard.mode === 'error' ? "bg-rose-400 ring-rose-950/40 animate-pulse"
                     : "bg-zinc-400 ring-zinc-950/40"
             )} />
             <div className="flex flex-col min-w-0">
@@ -956,20 +960,20 @@ function App() {
             </div>
           </div>
           <div className="flex gap-2 items-center px-2 text-[10px] text-zinc-500 font-medium tracking-wide uppercase">
-            <MonitorCog size={13} className="text-zinc-600" />
+            <MonitorCog size={13} className="text-zinc-650" />
             <span>{dashboard.platform}</span>
           </div>
         </div>
       </aside>
 
       {/* Main Workspace */}
-      <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-zinc-950">
+      <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-transparent">
         {activeView === 'store' ? (
           <ThemeStore onInstalled={handleStoreInstalled} />
         ) : (
           <>
         {/* Topbar */}
-        <header className="h-[68px] border-b border-zinc-800 bg-zinc-900 px-6 flex items-center justify-between flex-none">
+        <header className="h-[68px] border-b border-zinc-850/40 bg-zinc-900/35 backdrop-blur-md px-6 flex items-center justify-between flex-none">
           <div>
             <h1 className="text-lg font-bold tracking-tight text-zinc-50">主题库</h1>
             <p className="text-xs text-zinc-400 mt-0.5">{dashboard.themes.length} 个本地主题</p>
@@ -982,14 +986,14 @@ function App() {
               title="开机启动"
               onClick={() => void toggleAutostart()}
               disabled={Boolean(working)}
-              className="flex h-8 items-center gap-2 px-2.5 rounded-md border border-zinc-800 bg-zinc-900 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
+              className="flex h-8 items-center gap-2 px-2.5 rounded-lg border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-800/60 text-[11px] font-semibold text-zinc-350 hover:text-zinc-200 disabled:opacity-50 cursor-pointer transition-all duration-300"
             >
               <span className={cn(
-                "relative h-4 w-7 rounded-full transition-colors",
+                "relative h-4 w-7 rounded-full transition-colors duration-300",
                 dashboard.autostartEnabled ? "bg-emerald-500" : "bg-zinc-700",
               )}>
                 <span className={cn(
-                  "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
+                  "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300",
                   dashboard.autostartEnabled ? "translate-x-3" : "translate-x-0",
                 )} />
               </span>
@@ -1002,14 +1006,14 @@ function App() {
               title="启动 Skin Studio 时自动打开 Codex"
               onClick={() => void toggleCodexLaunchOnOpen()}
               disabled={Boolean(working)}
-              className="flex h-8 items-center gap-2 px-2.5 rounded-md border border-zinc-800 bg-zinc-900 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
+              className="flex h-8 items-center gap-2 px-2.5 rounded-lg border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-800/60 text-[11px] font-semibold text-zinc-350 hover:text-zinc-200 disabled:opacity-50 cursor-pointer transition-all duration-300"
             >
               <span className={cn(
-                "relative h-4 w-7 rounded-full transition-colors",
+                "relative h-4 w-7 rounded-full transition-colors duration-300",
                 dashboard.launchCodexOnOpen ? "bg-emerald-500" : "bg-zinc-700",
               )}>
                 <span className={cn(
-                  "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
+                  "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300",
                   dashboard.launchCodexOnOpen ? "translate-x-3" : "translate-x-0",
                 )} />
               </span>
@@ -1021,7 +1025,7 @@ function App() {
               title="刷新"
               onClick={() => void refresh()}
               disabled={Boolean(working)}
-              className="text-zinc-400 hover:text-zinc-50 bg-zinc-900 border-zinc-800 cursor-pointer"
+              className="text-zinc-400 hover:text-zinc-55 bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-700/60 cursor-pointer transition-all duration-300"
             >
               <RefreshCw size={15} />
             </Button>
@@ -1030,7 +1034,7 @@ function App() {
               size="sm"
               onClick={() => void importThemeBundle()}
               disabled={Boolean(working)}
-              className="border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-50 cursor-pointer"
+              className="border-zinc-800/60 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-50 hover:border-zinc-700/60 cursor-pointer transition-all duration-300 active:scale-95"
             >
               {working === 'import-theme' ? (
                 <LoaderCircle className="animate-spin" size={15} />
@@ -1043,7 +1047,7 @@ function App() {
               onClick={() => void importWallpaper()}
               disabled={Boolean(working)}
               size="sm"
-              className="bg-zinc-50 text-zinc-950 hover:bg-zinc-200 shadow-sm cursor-pointer"
+              className="bg-gradient-to-br from-zinc-50 to-zinc-200 text-zinc-950 hover:from-white hover:to-zinc-100 shadow-[0_2px_8px_rgba(255,255,255,0.03)] cursor-pointer transition-all duration-300 active:scale-95 font-semibold"
             >
               {working === 'import' ? (
                 <LoaderCircle className="animate-spin" size={15} />
@@ -1058,69 +1062,75 @@ function App() {
         {/* Content grid */}
         <section className="grid min-h-0 flex-1 grid-cols-[minmax(360px,1.05fr)_minmax(320px,0.95fr)] overflow-hidden">
           {/* Left panel: Theme browser */}
-          <div className="overflow-y-auto p-6 border-r border-zinc-800 bg-zinc-900/30">
-            <div className="flex justify-between items-center mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              <span>已安装</span>
-              <span>选择主题</span>
+          <div className="overflow-y-auto p-6 border-r border-zinc-850/40 bg-zinc-900/10">
+            <div className="flex justify-between items-center mb-4 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+              <span>已安装主题</span>
+              <span>选择主题进行编辑</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {dashboard.themes.map((theme) => (
                 <button
                   key={theme.id}
                   className={cn(
-                    "flex flex-col overflow-hidden text-left border rounded-lg bg-zinc-900 transition-all cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5",
+                    "flex flex-col overflow-hidden text-left border rounded-xl bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer group shadow-sm hover:shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:-translate-y-1",
                     selected?.id === theme.id
-                      ? "border-zinc-50 ring-1 ring-zinc-50"
-                      : "border-zinc-800 hover:border-zinc-700"
+                      ? "border-zinc-250 shadow-[0_0_15px_rgba(255,255,255,0.08)] ring-1 ring-zinc-200/50"
+                      : "border-zinc-800/80 hover:border-zinc-700/50"
                   )}
                   onClick={() => setSelectedId(theme.id)}
                 >
                   <span
-                    className="relative block w-full aspect-video bg-zinc-950 bg-center bg-cover"
+                    className="relative block w-full aspect-video bg-zinc-950 bg-center bg-cover transition-transform duration-500 group-hover:scale-[1.02]"
                     style={{ backgroundImage: `url(${theme.previewDataUrl})` }}
                   >
                     {/* Shadow overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 transition-opacity" />
                     {selected?.id === theme.id && (
-                      <i className="absolute z-10 top-2.5 right-2.5 flex items-center justify-center w-6 h-6 rounded-full bg-zinc-50 text-zinc-950 shadow-md">
-                        <Check size={13} strokeWidth={3} />
+                      <i className="absolute z-10 top-2.5 right-2.5 flex items-center justify-center w-6 h-6 rounded-full bg-zinc-50 text-zinc-950 shadow-md border border-white/20">
+                        <Check size={13} strokeWidth={3.5} />
                       </i>
                     )}
                   </span>
                   <span className="flex flex-col p-3.5">
-                    <b className="text-sm font-semibold text-zinc-100 truncate">{theme.name}</b>
-                    <small className="text-[10px] text-zinc-400 mt-1.5 flex items-center gap-1.5">
-                      <span>{theme.builtIn ? '内置主题' : '本地主题'}</span>
-                      <span>·</span>
-                      <span>{theme.version}</span>
-                    </small>
+                    <b className="text-sm font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">{theme.name}</b>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className={cn(
+                        "rounded-[4px] px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase",
+                        theme.builtIn 
+                          ? "bg-zinc-800/80 text-zinc-400 border border-zinc-700/30"
+                          : "bg-emerald-950/40 text-emerald-400 border border-emerald-900/30"
+                      )}>
+                        {theme.builtIn ? '内置' : '本地'}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 font-mono">v{theme.version}</span>
+                    </div>
                   </span>
                 </button>
               ))}
               <button
-                className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-zinc-800 rounded-lg bg-zinc-900/20 hover:bg-zinc-900/50 hover:border-zinc-700 transition-all cursor-pointer text-zinc-400 hover:text-zinc-100"
+                className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-zinc-800 hover:border-zinc-700/60 rounded-xl bg-zinc-900/10 hover:bg-zinc-900/30 transition-all duration-300 cursor-pointer text-zinc-500 hover:text-zinc-200 group hover:scale-[1.01]"
                 onClick={() => void importWallpaper()}
               >
-                <ImagePlus size={20} />
-                <span className="text-xs font-semibold">导入背景</span>
+                <ImagePlus size={20} className="group-hover:scale-110 transition-transform duration-300 text-zinc-500 group-hover:text-zinc-300" />
+                <span className="text-xs font-semibold">导入背景图片</span>
               </button>
             </div>
           </div>
 
           {/* Right panel: Inspector */}
-          <aside className="flex min-h-0 flex-col overflow-hidden bg-zinc-900">
+          <aside className="flex min-h-0 flex-col overflow-hidden bg-zinc-900/20 backdrop-blur-xl border-l border-zinc-800/40">
             {selected ? (
               <>
-                <div className="shrink-0 border-b border-zinc-800 bg-zinc-900 px-5 pt-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.16)] transition-all duration-300">
+                <div className="shrink-0 border-b border-zinc-850/40 bg-zinc-900/15 px-5 pt-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all duration-300">
                   <div className="mb-2.5 flex items-center justify-between gap-3">
                     <button
                       onClick={togglePreview}
                       className="flex min-w-0 items-center gap-2 hover:text-zinc-50 transition-colors cursor-pointer group"
                     >
-                      <span className="flex h-5 w-5 items-center justify-center rounded bg-zinc-800 text-zinc-300 group-hover:bg-zinc-700 transition-colors">
+                      <span className="flex h-5 w-5 items-center justify-center rounded bg-zinc-800/80 text-zinc-300 group-hover:bg-zinc-700 transition-colors">
                         <PanelRight size={11} />
                       </span>
-                      <span className="text-[11px] font-bold text-zinc-200 group-hover:text-zinc-50 transition-colors">Codex 实时预览</span>
+                      <span className="text-[11px] font-bold text-zinc-300 group-hover:text-zinc-50 transition-colors">Codex 实时预览</span>
                       <ChevronDown
                         size={11}
                         className={cn(
@@ -1192,22 +1202,22 @@ function App() {
 
 
                   {/* Advanced UI Settings */}
-                  <div className="flex flex-col gap-2 pb-5 border-b border-zinc-800">
-                    <label className="mb-1 flex items-center gap-2 text-xs font-bold text-zinc-400 tracking-wide uppercase">
-                      <SlidersHorizontal size={13} className="text-zinc-500" />
+                  <div className="flex flex-col gap-2 pb-5 border-b border-zinc-800/40">
+                    <label className="mb-1 flex items-center gap-2 text-xs font-bold text-zinc-450 tracking-wide uppercase">
+                      <SlidersHorizontal size={13} className="text-zinc-550" />
                       <span>界面元素</span>
                     </label>
 
                     {/* Inline Tab Selectors */}
-                    <div className="flex p-0.5 rounded-lg bg-zinc-950/60 border border-zinc-800 mb-2">
+                    <div className="flex p-0.5 rounded-lg bg-zinc-950/80 border border-zinc-850/50 mb-2">
                       <button
                         type="button"
                         onClick={() => selectElementTab('shell')}
                         className={cn(
-                          "flex-1 py-1 text-[11px] font-bold rounded transition-all cursor-pointer text-center",
+                          "flex-1 py-1.5 text-[11px] font-bold rounded transition-all duration-300 cursor-pointer text-center active:scale-98",
                           elementTab === 'shell'
-                            ? "bg-zinc-800 text-zinc-50 shadow-sm"
-                            : "text-zinc-400 hover:text-zinc-200"
+                            ? "bg-zinc-850 border border-zinc-700/20 text-zinc-50 shadow-md"
+                            : "text-zinc-450 hover:text-zinc-205"
                         )}
                       >
                         基础框架
@@ -1216,10 +1226,10 @@ function App() {
                         type="button"
                         onClick={() => selectElementTab('components')}
                         className={cn(
-                          "flex-1 py-1 text-[11px] font-bold rounded transition-all cursor-pointer text-center",
+                          "flex-1 py-1.5 text-[11px] font-bold rounded transition-all duration-300 cursor-pointer text-center active:scale-98",
                           elementTab === 'components'
-                            ? "bg-zinc-800 text-zinc-50 shadow-sm"
-                            : "text-zinc-400 hover:text-zinc-200"
+                            ? "bg-zinc-850 border border-zinc-700/20 text-zinc-50 shadow-md"
+                            : "text-zinc-450 hover:text-zinc-205"
                         )}
                       >
                         视图组件
@@ -1228,10 +1238,10 @@ function App() {
                         type="button"
                         onClick={() => selectElementTab('styles')}
                         className={cn(
-                          "flex-1 py-1 text-[11px] font-bold rounded transition-all cursor-pointer text-center",
+                          "flex-1 py-1.5 text-[11px] font-bold rounded transition-all duration-300 cursor-pointer text-center active:scale-98",
                           elementTab === 'styles'
-                            ? "bg-zinc-800 text-zinc-50 shadow-sm"
-                            : "text-zinc-400 hover:text-zinc-200"
+                            ? "bg-zinc-850 border border-zinc-700/20 text-zinc-50 shadow-md"
+                            : "text-zinc-450 hover:text-zinc-205"
                         )}
                       >
                         辅助样式

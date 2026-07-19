@@ -164,7 +164,7 @@ function surfaceStyle(
     display: value.visible ? undefined : 'none',
     background: mix(resolveColor(value.background, fallback), value.opacity),
     borderColor: mix(border, value.borderOpacity),
-    borderRadius: `${Math.max(0, value.radius * 0.38)}px`,
+    borderRadius: `${Math.max(0, value.radius * 0.46)}px`,
     backdropFilter: `blur(${Math.max(0, value.blur * 0.45)}px) saturate(1.06)`,
     boxShadow: shadow(value.shadow),
   }
@@ -201,7 +201,7 @@ function applicationMenuStyle(
     borderColor: mix(border, value.borderOpacity),
     borderRadius: '0px',
     backdropFilter: `blur(${Math.max(0, value.blur * 0.45)}px) saturate(1.06)`,
-    boxShadow: 'none',
+    boxShadow: 'inset 0 -1px 0 rgba(255, 255, 255, 0.03)',
   }
 }
 
@@ -216,7 +216,7 @@ function rowStyle(
   return {
     display: value.visible ? undefined : 'none',
     background: mix(resolveColor(value.background, fallback), opacity),
-    borderRadius: `${Math.max(0, value.radius * 0.38)}px`,
+    borderRadius: `${Math.max(0, value.radius * 0.46)}px`,
   }
 }
 
@@ -333,8 +333,10 @@ export function CodexPreview({
   return (
     <div
       className={cn(
-        "relative isolate w-full shrink-0 overflow-hidden rounded-md border shadow-lg",
-        light ? "border-zinc-300 bg-zinc-100 text-zinc-900" : "border-zinc-700/80 bg-zinc-950 text-zinc-100",
+        "relative isolate w-full shrink-0 overflow-hidden rounded-xl border transition-all duration-500 ease-out",
+        light 
+          ? "border-zinc-300/80 bg-zinc-150 text-zinc-900 shadow-[0_12px_32px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.02),inset_0_1px_0_rgba(255,255,255,0.7)]" 
+          : "border-zinc-800/80 bg-zinc-950 text-zinc-100 shadow-[0_24px_50px_rgba(0,0,0,0.45),0_1px_3px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.08)]",
         targetClass('canvas'),
       )}
       onClick={() => onSelectElement('canvas')}

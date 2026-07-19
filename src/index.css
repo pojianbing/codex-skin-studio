@@ -37,7 +37,7 @@
   --input: oklch(0.2 0 0);
   --ring: oklch(0.98 0 0);
 
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
   --sidebar: oklch(0.09 0 0);
   --sidebar-foreground: oklch(0.98 0 0);
@@ -50,7 +50,19 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #root { width: 100%; min-width: 980px; height: 100%; min-height: 680px; margin: 0; overflow: hidden; }
+
+html, body, #root {
+  width: 100%;
+  min-width: 980px;
+  height: 100%;
+  min-height: 680px;
+  margin: 0;
+  overflow: hidden;
+  /* 现代多层优雅径向渐变背景，使暗金属风格富于空间感 */
+  background: radial-gradient(ellipse 65% 45% at 30% 0%, oklch(0.16 0.02 240 / 0.12), transparent),
+              radial-gradient(ellipse 55% 55% at 85% 85%, oklch(0.15 0.03 290 / 0.09), transparent),
+              oklch(0.08 0 0);
+}
 
 @theme inline {
   --font-sans: 'Geist Variable', sans-serif;
@@ -87,7 +99,7 @@ html, body, #root { width: 100%; min-width: 980px; height: 100%; min-height: 680
 }
 
 .dark {
-  --background: oklch(0.09 0 0);
+  --background: oklch(0.08 0 0);
   --foreground: oklch(0.98 0 0);
   --card: oklch(0.12 0 0);
   --card-foreground: oklch(0.98 0 0);
@@ -107,8 +119,8 @@ html, body, #root { width: 100%; min-width: 980px; height: 100%; min-height: 680
   --accent-foreground: oklch(0.98 0 0);
 
   --destructive: oklch(0.4 0.18 20);
-  --border: oklch(0.2 0 0);
-  --input: oklch(0.2 0 0);
+  --border: oklch(0.18 0 0 / 0.7);
+  --input: oklch(0.18 0 0 / 0.7);
   --ring: oklch(0.98 0 0);
 }
 
@@ -133,35 +145,36 @@ html, body, #root { width: 100%; min-width: 980px; height: 100%; min-height: 680
   position: relative;
   margin-inline: -0.75rem;
   padding-inline: 0.75rem;
-  border-radius: 0.375rem;
-  transition: background-color 180ms ease, box-shadow 180ms ease;
+  border-radius: 0.5rem;
+  /* 平滑贝塞尔曲线 */
+  transition: background-color 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .config-section-link--active {
   background: var(--element-link-soft);
-  box-shadow: inset 2px 0 0 var(--element-link);
+  box-shadow: inset 3px 0 0 var(--element-link);
 }
 
 .preview-target {
   cursor: pointer;
-  transition: outline-color 160ms ease, filter 160ms ease;
+  transition: outline-color 220ms cubic-bezier(0.16, 1, 0.3, 1), filter 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .preview-target--active {
   outline: 1.5px solid var(--element-link);
-  outline-offset: 2px;
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--element-link) 74%, transparent));
-  animation: element-link-pulse 1.8s ease-in-out infinite;
+  outline-offset: 2.5px;
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--element-link) 70%, transparent));
+  animation: element-link-pulse 2s ease-in-out infinite;
 }
 
 @keyframes element-link-pulse {
   0%, 100% {
-    outline-color: color-mix(in oklab, var(--element-link) 60%, transparent);
-    filter: drop-shadow(0 0 3px color-mix(in oklab, var(--element-link) 45%, transparent));
+    outline-color: color-mix(in oklab, var(--element-link) 55%, transparent);
+    filter: drop-shadow(0 0 4px color-mix(in oklab, var(--element-link) 40%, transparent));
   }
   50% {
     outline-color: var(--element-link);
-    filter: drop-shadow(0 0 8px color-mix(in oklab, var(--element-link) 94%, transparent));
+    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--element-link) 90%, transparent));
   }
 }
 
@@ -173,8 +186,8 @@ html, body, #root { width: 100%; min-width: 980px; height: 100%; min-height: 680
 
 /* 滚动条美化 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -182,16 +195,16 @@ html, body, #root { width: 100%; min-width: 980px; height: 100%; min-height: 680
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.25 0 0);
+  background: oklch(0.24 0 0 / 0.85);
   border-radius: 9999px;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   background-clip: padding-box;
-  transition: background 0.2s ease;
+  transition: background 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.35 0 0);
-  border: 2px solid transparent;
+  background: oklch(0.36 0 0);
+  border: 1px solid transparent;
   background-clip: padding-box;
 }
 
@@ -202,5 +215,5 @@ html, body, #root { width: 100%; min-width: 980px; height: 100%; min-height: 680
 /* Firefox 兼容 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.25 0 0) transparent;
+  scrollbar-color: oklch(0.24 0 0 / 0.85) transparent;
 }

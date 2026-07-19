@@ -107,7 +107,7 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
 
   return (
     <>
-      <header className="flex h-[68px] shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-900 px-6">
+      <header className="flex h-[68px] shrink-0 items-center justify-between border-b border-zinc-850/40 bg-zinc-900/35 backdrop-blur-md px-6">
         <div className="min-w-0">
           <h1 className="text-lg font-bold tracking-tight text-zinc-50">主题商店</h1>
           <p className="mt-0.5 text-xs text-zinc-400">
@@ -117,10 +117,10 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
         <div className="flex items-center gap-2">
           {catalog && (
             <span className={cn(
-              'hidden items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-medium sm:flex',
+              'hidden items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-semibold sm:flex',
               catalog.source === 'network'
-                ? 'border-emerald-900/60 bg-emerald-950/20 text-emerald-300'
-                : 'border-amber-900/60 bg-amber-950/20 text-amber-300',
+                ? 'border-emerald-900/40 bg-emerald-950/30 text-emerald-300'
+                : 'border-amber-900/40 bg-amber-950/30 text-amber-300',
             )}>
               <ShieldCheck size={12} />
               {catalog.source === 'network' ? catalog.releaseTag : '离线目录'}
@@ -133,30 +133,30 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
             aria-label="刷新主题商店"
             onClick={() => void loadCatalog(true)}
             disabled={loading || installingId !== null}
-            className="border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-50 cursor-pointer"
+            className="border-zinc-800/60 bg-zinc-900/40 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-50 hover:border-zinc-700 cursor-pointer transition-all duration-300"
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : undefined} />
           </Button>
         </div>
       </header>
 
-      <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-zinc-950">
-        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-800 bg-zinc-900/40 px-6 py-3">
+      <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
+        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-850/40 bg-zinc-900/20 backdrop-blur-sm px-6 py-3">
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="搜索主题、作者或风格"
             aria-label="搜索主题"
-            className="h-8 w-56 rounded-md border border-zinc-800 bg-zinc-950 px-2.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-zinc-600"
+            className="h-8 w-56 rounded-lg border border-zinc-800/80 bg-zinc-950/60 backdrop-blur-sm px-2.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-550 focus:border-zinc-650 focus:shadow-[0_0_12px_rgba(255,255,255,0.03)] transition-all duration-300"
           />
           <button
             type="button"
             onClick={() => setTag(null)}
             className={cn(
-              'h-7 rounded-md border px-2.5 text-[11px] font-semibold transition-colors cursor-pointer',
+              'h-7 rounded-lg border px-2.5 text-[11px] font-bold transition-all duration-300 cursor-pointer active:scale-95',
               tag === null
-                ? 'border-zinc-500 bg-zinc-100 text-zinc-950'
-                : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100',
+                ? 'border-zinc-400 bg-zinc-100 text-zinc-950 shadow-sm'
+                : 'border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100',
             )}
           >
             全部
@@ -167,10 +167,10 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
               type="button"
               onClick={() => setTag((current) => current === item ? null : item)}
               className={cn(
-                'h-7 rounded-md border px-2.5 text-[11px] font-semibold transition-colors cursor-pointer',
+                'h-7 rounded-lg border px-2.5 text-[11px] font-bold transition-all duration-300 cursor-pointer active:scale-95',
                 tag === item
-                  ? 'border-amber-500/70 bg-amber-400 text-zinc-950'
-                  : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100',
+                  ? 'border-amber-500/50 bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 shadow-sm'
+                  : 'border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100',
               )}
             >
               {item}
@@ -180,29 +180,29 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
 
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {loading && !catalog ? (
-            <div className="flex h-full min-h-[280px] items-center justify-center gap-2 text-xs font-semibold text-zinc-500">
+            <div className="flex h-full min-h-[280px] items-center justify-center gap-2 text-xs font-semibold text-zinc-500 animate-pulse">
               <LoaderCircle size={18} className="animate-spin" />
-              正在读取主题目录
+              正在读取主题目录...
             </div>
           ) : catalog ? (
             visibleThemes.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                 {visibleThemes.map((theme) => (
-                  <article key={theme.id} className="group overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 shadow-sm transition-colors hover:border-zinc-700">
+                  <article key={theme.id} className="group overflow-hidden rounded-xl border border-zinc-850/60 bg-gradient-to-b from-zinc-900/55 to-zinc-950/80 backdrop-blur-sm shadow-sm hover:shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:-translate-y-1 hover:border-zinc-750 transition-all duration-300 ease-out">
                     <div className="relative aspect-video overflow-hidden bg-zinc-950">
                       <img
                         src={theme.previewUrl}
                         alt={`${theme.name} 预览`}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent opacity-90" />
                       {theme.installStatus === 'installed' && (
-                        <span className="absolute right-2.5 top-2.5 flex size-6 items-center justify-center rounded-full bg-emerald-400 text-zinc-950 shadow-md" title="已安装">
-                          <Check size={14} strokeWidth={3} />
+                        <span className="absolute right-2.5 top-2.5 flex size-6 items-center justify-center rounded-full bg-emerald-400 text-zinc-950 shadow-md border border-white/10 animate-fade-in" title="已安装">
+                          <Check size={14} strokeWidth={3.5} />
                         </span>
                       )}
                       {theme.installStatus === 'updateAvailable' && (
-                        <span className="absolute right-2.5 top-2.5 rounded-md border border-amber-300/40 bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-zinc-950 shadow-md">
+                        <span className="absolute right-2.5 top-2.5 rounded-lg border border-amber-300/30 bg-gradient-to-br from-amber-300 to-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-zinc-950 shadow-md">
                           有更新
                         </span>
                       )}
@@ -210,16 +210,16 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
                     <div className="flex min-h-[154px] flex-col p-3.5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <h2 className="truncate text-sm font-bold text-zinc-100">{theme.name}</h2>
-                          <p className="mt-1 truncate text-[10px] text-zinc-500">{theme.author} · v{theme.version}</p>
+                          <h2 className="truncate text-sm font-semibold text-zinc-100 group-hover:text-white transition-colors">{theme.name}</h2>
+                          <p className="mt-1 truncate text-[10px] text-zinc-500 font-mono">{theme.author} · v{theme.version}</p>
                         </div>
-                        <span className="shrink-0 rounded bg-zinc-800 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-400">{theme.license}</span>
+                        <span className="shrink-0 rounded bg-zinc-800/80 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-400 border border-zinc-700/20">{theme.license}</span>
                       </div>
-                      <p className="mt-3 line-clamp-2 text-[11px] leading-5 text-zinc-400">{theme.description}</p>
+                      <p className="mt-3 line-clamp-2 text-[11px] leading-5 text-zinc-400 group-hover:text-zinc-350 transition-colors">{theme.description}</p>
                       <div className="mt-auto flex items-end justify-between gap-2 pt-3">
                         <div className="flex min-w-0 flex-wrap gap-1">
                           {theme.tags.slice(0, 3).map((item) => (
-                            <span key={item} className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 text-[9px] font-medium text-zinc-500">{item}</span>
+                            <span key={item} className="rounded border border-zinc-800/60 bg-zinc-950/65 px-1.5 py-0.5 text-[9px] font-medium text-zinc-500">{item}</span>
                           ))}
                         </div>
                         {theme.installStatus === 'installed' ? (
@@ -227,9 +227,9 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
                             variant="outline"
                             size="xs"
                             disabled
-                            className="border-emerald-900/60 bg-emerald-950/20 text-emerald-300"
+                            className="border-emerald-900/40 bg-emerald-950/20 text-emerald-300"
                           >
-                            <Check size={12} />
+                            <Check size={12} strokeWidth={2.5} />
                             已安装
                           </Button>
                         ) : (
@@ -237,7 +237,7 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
                             size="xs"
                             onClick={() => theme.installStatus === 'updateAvailable' ? setUpdateTarget(theme) : void install(theme)}
                             disabled={installingId !== null}
-                            className="bg-zinc-100 text-zinc-950 hover:bg-white cursor-pointer"
+                            className="bg-gradient-to-br from-zinc-50 to-zinc-200 text-zinc-950 hover:from-white hover:to-zinc-100 font-bold shadow-[0_2px_8px_rgba(255,255,255,0.03)] active:scale-95 transition-all duration-300 cursor-pointer"
                           >
                             {installingId === theme.id ? <LoaderCircle size={12} className="animate-spin" /> : <Download size={12} />}
                             {installationLabel(theme.installStatus)}
