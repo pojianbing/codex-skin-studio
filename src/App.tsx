@@ -816,9 +816,14 @@ function App() {
 
   const applySelected = async (restartExisting = false) => {
     if (!selected) return
-    await run('apply', () => invoke('apply_theme', {
-      themeId: selected.id, restartExisting,
-    }), `${selected.name} 已应用`)
+    await run('apply', async () => {
+      await invoke('apply_theme', { themeId: selected.id, restartExisting })
+      try {
+        await invoke('activate_codex')
+      } catch (error) {
+        console.warn('Unable to activate Codex after applying the theme:', error)
+      }
+    }, `${selected.name} 已应用`)
   }
 
   const requestApply = async () => {

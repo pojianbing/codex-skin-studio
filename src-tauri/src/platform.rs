@@ -398,6 +398,78 @@ pub fn stop_codex(install: &CodexInstall) -> Result<()> {
 }
 
 #[cfg(target_os = "windows")]
+struct CodexWindowSearch<'a> {
+    process_ids: &'a [u32],
+    window: Option<windows::Win32::Foundation::HWND>,
+}
+
+#[cfg(target_os = "windows")]
+unsafe extern "system" fn find_codex_window(
+    window: windows::Win32::Foundation::HWND,
+    parameter: windows::Win32::Foundation::LPARAM,
+) -> windows::core::BOOL {
+    use windows::Win32::UI::WindowsAndMessaging::{GetWindowThreadProcessId, IsWindowVisible};
+    use windows::core::BOOL;
+
+    let search = unsafe { &mut *(parameter.0 as *mut CodexWindowSearch<'_>) };
+    let mut process_id = 0;
+    unsafe { GetWindowThreadProcessId(window, Some(&mut process_id)) };
+    if search.process_ids.contains(&process_id) && unsafe { IsWindowVisible(window).as_bool() } {
+        search.window = Some(window);
+        return BOOL(0);
+    }
+    BOOL(1)
+}
+
+#[cfg(target_os = "windows")]
+fn codex_window(process_ids: &[u32]) -> Option<windows::Win32::Foundation::HWND> {
+    use windows::Win32::{Foundation::LPARAM, UI::WindowsAndMessaging::EnumWindows};
+
+    let mut search = CodexWindowSearch {
+        process_ids,
+        window: None,
+    };
+    let parameter = LPARAM((&mut search as *mut CodexWindowSearch<'_>) as isize);
+    let _ = unsafe { EnumWindows(Some(find_codex_window), parameter) };
+    search.window
+}
+
+#[cfg(target_os = "windows")]
+pub fn activate_codex(install: &CodexInstall) -> Result<()> {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        BringWindowToTop, IsIconic, SW_RESTORE, SetForegroundWindow, ShowWindow,
+    };
+
+    let process_ids = main_pids(install)?;
+    let Some(window) = codex_window(&process_ids) else {
+        return Ok(());
+    };
+    unsafe {
+        if IsIconic(window).as_bool() {
+            let _ = ShowWindow(window, SW_RESTORE);
+        }
+        let _ = BringWindowToTop(window);
+        let _ = SetForegroundWindow(window);
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "macos")]
+pub fn activate_codex(install: &CodexInstall) -> Result<()> {
+    let bundle = install
+        .bundle
+        .as_ref()
+        .ok_or_else(|| StudioError::from("Codex bundle 路径缺失"))?;
+    Command::new("/usr/bin/open").arg(bundle).spawn()?;
+    Ok(())
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn activate_codex(_install: &CodexInstall) -> Result<()> {
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
 fn activate_windows_app(install: &CodexInstall, arguments: &str) -> Result<()> {
     use windows::{
         Win32::{

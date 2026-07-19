@@ -222,6 +222,18 @@ async fn apply_theme(
 }
 
 #[tauri::command]
+async fn activate_codex() -> std::result::Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let install = platform::find_codex()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "未找到 Codex Desktop".to_string())?;
+        platform::activate_codex(&install).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
 async fn pause_skin(runtime: tauri::State<'_, AppRuntime>) -> std::result::Result<(), String> {
     let runtime = runtime.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
@@ -373,6 +385,7 @@ pub fn run() {
             update_theme,
             delete_theme,
             apply_theme,
+            activate_codex,
             pause_skin,
             restore_official,
         ])
