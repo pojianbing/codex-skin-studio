@@ -28,7 +28,9 @@ const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_IMAGE_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
 const BUILTIN_THEME_VERSION: &str = "1.3.2";
 const GREENWOOD_WHISPERS: &[u8] = include_bytes!("../assets/preset-greenwood-whispers.jpg");
+const INK_SILHOUETTE: &[u8] = include_bytes!("../assets/preset-ink-silhouette.jpg");
 const STARLIT_DAWN: &[u8] = include_bytes!("../assets/preset-starlit-dawn.jpg");
+const BAMBOO_SKYLIGHT: &[u8] = include_bytes!("../assets/preset-bamboo-skylight.jpg");
 const VERDANT_SUMMIT: &[u8] = include_bytes!("../assets/preset-verdant-summit.jpg");
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -1231,10 +1233,20 @@ fn verdant_summit_manifest() -> ThemeManifest {
     default_builtin_manifest("custom-3e0ddebbad5c409eb4dd872eece571ee", "翠谷晴峰")
 }
 
+fn bamboo_skylight_manifest() -> ThemeManifest {
+    default_builtin_manifest("custom-da9d3b18bf414ac0be12f0080b94f041", "竹影天光")
+}
+
+fn ink_silhouette_manifest() -> ThemeManifest {
+    default_builtin_manifest("custom-11fd656b9d7f435186c707331bdde58f", "墨影霓裳")
+}
+
 pub fn ensure_library() -> Result<()> {
     seed_manifest(greenwood_whispers_manifest(), GREENWOOD_WHISPERS)?;
     seed_manifest(starlit_dawn_manifest(), STARLIT_DAWN)?;
     seed_manifest(verdant_summit_manifest(), VERDANT_SUMMIT)?;
+    seed_manifest(bamboo_skylight_manifest(), BAMBOO_SKYLIGHT)?;
+    seed_manifest(ink_silhouette_manifest(), INK_SILHOUETTE)?;
     Ok(())
 }
 
@@ -1421,9 +1433,10 @@ pub fn image_bytes(manifest: &ThemeManifest, directory: &Path) -> Result<Vec<u8>
 #[cfg(test)]
 mod tests {
     use super::{
-        BUILTIN_THEME_VERSION, GREENWOOD_WHISPERS, MAX_IMAGE_BYTES, STARLIT_DAWN, ThemeBundle,
-        VERDANT_SUMMIT, builtin_manifest, decode_theme_bundle, encode_theme_bundle,
-        greenwood_whispers_manifest, image_info, install_theme_bundle, should_upgrade_builtin,
+        BAMBOO_SKYLIGHT, BUILTIN_THEME_VERSION, GREENWOOD_WHISPERS, INK_SILHOUETTE,
+        MAX_IMAGE_BYTES, STARLIT_DAWN, ThemeBundle, VERDANT_SUMMIT, bamboo_skylight_manifest,
+        builtin_manifest, decode_theme_bundle, encode_theme_bundle, greenwood_whispers_manifest,
+        image_info, ink_silhouette_manifest, install_theme_bundle, should_upgrade_builtin,
         starlit_dawn_manifest, validate_manifest, verdant_summit_manifest,
     };
     use crate::models::ThemeManifest;
@@ -1455,6 +1468,24 @@ mod tests {
         assert_eq!(manifest.composer.opacity, 0.2);
         assert_eq!(manifest.ui.diff.background, "#ffffff");
     }
+
+    #[test]
+    fn bamboo_skylight_is_a_protected_builtin_theme() {
+        let manifest = bamboo_skylight_manifest();
+        assert!(manifest.built_in);
+        assert_eq!(manifest.name, "竹影天光");
+        assert_eq!(manifest.composer.opacity, 0.2);
+        assert_eq!(manifest.ui.diff.background, "#ffffff");
+    }
+
+    #[test]
+    fn ink_silhouette_is_a_protected_builtin_theme() {
+        let manifest = ink_silhouette_manifest();
+        assert!(manifest.built_in);
+        assert_eq!(manifest.name, "墨影霓裳");
+        assert_eq!(manifest.composer.opacity, 0.2);
+        assert_eq!(manifest.ui.diff.background, "#ffffff");
+    }
     use std::{
         fs,
         io::{Cursor, Write},
@@ -1464,7 +1495,13 @@ mod tests {
 
     #[test]
     fn validates_bundled_image_and_rejects_invalid_payloads() {
-        for bytes in [GREENWOOD_WHISPERS, STARLIT_DAWN, VERDANT_SUMMIT] {
+        for bytes in [
+            GREENWOOD_WHISPERS,
+            STARLIT_DAWN,
+            VERDANT_SUMMIT,
+            BAMBOO_SKYLIGHT,
+            INK_SILHOUETTE,
+        ] {
             let (_, width, height) = image_info(bytes).expect("bundled image should validate");
             assert!(width > 0 && height > 0);
         }
