@@ -10,7 +10,7 @@ const localPublicKey = await readFile(localPublicKeyPath, 'utf8')
 const publicKey = process.env.TAURI_UPDATER_PUBKEY?.trim() || localPublicKey
 const endpoint = (
   process.env.TAURI_UPDATE_ENDPOINT
-  ?? 'https://github.com/pojianbing/CodexSkinStudio/releases/latest/download/latest.json'
+  ?? 'https://github.com/pojianbing/codex-skin-studio/releases/latest/download/latest.json'
 ).trim()
 const macosSigningIdentity = process.env.TAURI_MACOS_SIGNING_IDENTITY?.trim() || '-'
 
