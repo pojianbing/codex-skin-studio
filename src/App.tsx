@@ -960,8 +960,19 @@ function App() {
           </button>
         </nav>
 
+        {/* User Profile */}
+        <div className="mt-auto flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-zinc-950/20 border border-zinc-850/40 mb-3 backdrop-blur-sm">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-[10px] font-bold text-zinc-950 shadow-sm ring-1 ring-white/10 select-none">
+            P
+          </div>
+          <div className="flex flex-col leading-none min-w-0">
+            <span className="text-xs font-semibold text-zinc-200 truncate">pojianbing</span>
+            <span className="text-[9px] text-zinc-500 mt-1 uppercase tracking-wider font-bold">作者</span>
+          </div>
+        </div>
+
         {/* Runtime info block */}
-        <div className="mt-auto pt-4 border-t border-zinc-850/40">
+        <div className="pt-3 border-t border-zinc-850/40">
           <div className="flex gap-3 items-center p-3 rounded-xl bg-zinc-950/30 border border-zinc-850/40 mb-3 backdrop-blur-sm">
             <span className={cn(
               "w-2 h-2 rounded-full ring-4 flex-none",
