@@ -32,12 +32,15 @@ jobs:
         include:
           - name: Windows x64
             platform: windows-latest
+            target: x86_64-pc-windows-msvc
             args: ''
           - name: macOS Apple Silicon
             platform: macos-latest
+            target: aarch64-apple-darwin
             args: '--target aarch64-apple-darwin'
           - name: macOS Intel
             platform: macos-latest
+            target: x86_64-apple-darwin
             args: '--target x86_64-apple-darwin'
     runs-on: ${{ matrix.platform }}
     env:
@@ -55,6 +58,8 @@ jobs:
       - run: npm ci
       - run: npm run release:verify-version -- "${{ github.ref_name }}"
       - run: npm run release:prepare
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
       - uses: tauri-apps/tauri-action@v0
         with:
           tagName: v__VERSION__
@@ -62,5 +67,5 @@ jobs:
           releaseBody: See the assets below to download and install this version.
           releaseDraft: true
           prerelease: false
-          releaseUpdaterJson: true
+          includeUpdaterJson: true
           args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json
