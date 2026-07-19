@@ -185,6 +185,7 @@ type Dashboard = {
   themes: ThemeRecord[]
 }
 type ApplyPlan = { action: 'hotSwitch' | 'launch' | 'restart' }
+type ThemeFilter = 'all' | 'builtIn' | 'custom'
 
 const fallbackDashboard: Dashboard = {
   platform: 'desktop', codexFound: false, mode: 'official',
@@ -608,6 +609,7 @@ function App() {
   const [activeView, setActiveView] = useState<'library' | 'store'>('library')
   const [dashboard, setDashboard] = useState<Dashboard>(fallbackDashboard)
   const [selectedId, setSelectedId] = useState<string>()
+  const [themeFilter, setThemeFilter] = useState<ThemeFilter>('all')
   const [working, setWorking] = useState<string>()
   const [confirmRestore, setConfirmRestore] = useState(false)
   const [confirmRestart, setConfirmRestart] = useState(false)
@@ -690,9 +692,15 @@ function App() {
     return () => window.cancelAnimationFrame(frame)
   }, [elementTab, pendingScrollElement])
 
+  const filteredThemes = useMemo(() => {
+    if (themeFilter === 'builtIn') return dashboard.themes.filter((theme) => theme.builtIn)
+    if (themeFilter === 'custom') return dashboard.themes.filter((theme) => !theme.builtIn)
+    return dashboard.themes
+  }, [dashboard.themes, themeFilter])
+
   const selected = useMemo(
-    () => dashboard.themes.find((theme) => theme.id === selectedId) ?? dashboard.themes[0],
-    [dashboard.themes, selectedId],
+    () => filteredThemes.find((theme) => theme.id === selectedId) ?? filteredThemes[0],
+    [filteredThemes, selectedId],
   )
 
   const resolvedSafeArea = useMemo(() => {
@@ -978,7 +986,11 @@ function App() {
         <header className="h-[68px] border-b border-zinc-850/40 bg-zinc-900/35 backdrop-blur-md px-6 flex items-center justify-between flex-none">
           <div>
             <h1 className="text-lg font-bold tracking-tight text-zinc-50">主题库</h1>
-            <p className="text-xs text-zinc-400 mt-0.5">{dashboard.themes.length} 个本地主题</p>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              {themeFilter === 'all'
+                ? `${dashboard.themes.length} 个本地主题`
+                : `${filteredThemes.length} / ${dashboard.themes.length} 个本地主题`}
+            </p>
           </div>
           <div className="flex gap-2 items-center">
             <button
@@ -1069,8 +1081,33 @@ function App() {
               <span>已安装主题</span>
               <span>选择主题进行编辑</span>
             </div>
+            <div className="mb-4 flex items-center gap-3 border-y border-zinc-850/45 py-2.5">
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-zinc-500">主题类型</span>
+              <div className="flex min-w-0 flex-1 rounded-lg border border-zinc-800/70 bg-zinc-950/45 p-0.5" role="group" aria-label="主题类型筛选">
+                {([
+                  ['all', '全部'],
+                  ['builtIn', '内置'],
+                  ['custom', '自定义'],
+                ] as const).map(([filter, label]) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    aria-pressed={themeFilter === filter}
+                    onClick={() => setThemeFilter(filter)}
+                    className={cn(
+                      'h-6 min-w-0 flex-1 rounded-md px-2 text-[10px] font-semibold transition-colors cursor-pointer',
+                      themeFilter === filter
+                        ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                        : 'text-zinc-500 hover:bg-zinc-800/70 hover:text-zinc-200',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              {dashboard.themes.map((theme) => (
+              {filteredThemes.map((theme) => (
                 <button
                   key={theme.id}
                   className={cn(
@@ -1102,20 +1139,43 @@ function App() {
                           ? "bg-zinc-800/80 text-zinc-400 border border-zinc-700/30"
                           : "bg-emerald-950/40 text-emerald-400 border border-emerald-900/30"
                       )}>
-                        {theme.builtIn ? '内置' : '本地'}
+                        {theme.builtIn ? '内置' : '自定义'}
                       </span>
                       <span className="text-[10px] text-zinc-500 font-mono">v{theme.version}</span>
                     </div>
                   </span>
                 </button>
               ))}
-              <button
-                className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-zinc-800 hover:border-zinc-700/60 rounded-xl bg-zinc-900/10 hover:bg-zinc-900/30 transition-all duration-300 cursor-pointer text-zinc-500 hover:text-zinc-200 group hover:scale-[1.01]"
-                onClick={() => void importWallpaper()}
-              >
-                <ImagePlus size={20} className="group-hover:scale-110 transition-transform duration-300 text-zinc-500 group-hover:text-zinc-300" />
-                <span className="text-xs font-semibold">导入背景图片</span>
-              </button>
+              {filteredThemes.length > 0 ? (
+                <button
+                  className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-zinc-800 hover:border-zinc-700/60 rounded-xl bg-zinc-900/10 hover:bg-zinc-900/30 transition-all duration-300 cursor-pointer text-zinc-500 hover:text-zinc-200 group hover:scale-[1.01]"
+                  onClick={() => void importWallpaper()}
+                >
+                  <ImagePlus size={20} className="group-hover:scale-110 transition-transform duration-300 text-zinc-500 group-hover:text-zinc-300" />
+                  <span className="text-xs font-semibold">导入背景图片</span>
+                </button>
+              ) : (
+                <div className="col-span-2 flex min-h-[190px] flex-col items-center justify-center gap-3 border border-dashed border-zinc-800 bg-zinc-900/10 px-6 text-center">
+                  <ImagePlus size={24} strokeWidth={1.5} className="text-zinc-600" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-zinc-300">
+                      {themeFilter === 'custom' ? '还没有自定义主题' : '主题库暂时为空'}
+                    </p>
+                    <p className="text-[10px] text-zinc-500">
+                      {themeFilter === 'custom' ? '导入背景图片或主题包后会显示在这里' : '正在读取本地主题'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void importWallpaper()}
+                    className="border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-50 cursor-pointer"
+                  >
+                    <ImagePlus size={13} />
+                    导入背景
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1994,7 +2054,9 @@ function App() {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-center text-zinc-500">
                 <Library size={32} strokeWidth={1.5} className="text-zinc-700" />
-                <span className="text-xs font-semibold">主题库为空</span>
+                <span className="text-xs font-semibold">
+                  {themeFilter === 'custom' ? '没有可编辑的自定义主题' : '主题库为空'}
+                </span>
               </div>
             )}
           </aside>
