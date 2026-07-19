@@ -28,6 +28,8 @@ const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_IMAGE_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
 const BUILTIN_THEME_VERSION: &str = "1.3.2";
 const GREENWOOD_WHISPERS: &[u8] = include_bytes!("../assets/preset-greenwood-whispers.jpg");
+const STARLIT_DAWN: &[u8] = include_bytes!("../assets/preset-starlit-dawn.jpg");
+const VERDANT_SUMMIT: &[u8] = include_bytes!("../assets/preset-verdant-summit.jpg");
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1195,11 +1197,11 @@ fn builtin_manifest(
     Ok(manifest)
 }
 
-fn greenwood_whispers_manifest() -> ThemeManifest {
+fn default_builtin_manifest(id: &str, name: &str) -> ThemeManifest {
     ThemeManifest {
         schema_version: 1,
-        id: "custom-9fc18f212a8a435289954b8792efc538".into(),
-        name: "绿野树语".into(),
+        id: id.into(),
+        name: name.into(),
         version: BUILTIN_THEME_VERSION.into(),
         author: "Codex Skin Studio contributors".into(),
         image: "background.jpg".into(),
@@ -1217,8 +1219,22 @@ fn greenwood_whispers_manifest() -> ThemeManifest {
     }
 }
 
+fn greenwood_whispers_manifest() -> ThemeManifest {
+    default_builtin_manifest("custom-9fc18f212a8a435289954b8792efc538", "绿野树语")
+}
+
+fn starlit_dawn_manifest() -> ThemeManifest {
+    default_builtin_manifest("custom-a92f80151e1a4b38bdb2c80159ed459b", "星河初光")
+}
+
+fn verdant_summit_manifest() -> ThemeManifest {
+    default_builtin_manifest("custom-3e0ddebbad5c409eb4dd872eece571ee", "翠谷晴峰")
+}
+
 pub fn ensure_library() -> Result<()> {
     seed_manifest(greenwood_whispers_manifest(), GREENWOOD_WHISPERS)?;
+    seed_manifest(starlit_dawn_manifest(), STARLIT_DAWN)?;
+    seed_manifest(verdant_summit_manifest(), VERDANT_SUMMIT)?;
     Ok(())
 }
 
@@ -1405,9 +1421,10 @@ pub fn image_bytes(manifest: &ThemeManifest, directory: &Path) -> Result<Vec<u8>
 #[cfg(test)]
 mod tests {
     use super::{
-        BUILTIN_THEME_VERSION, GREENWOOD_WHISPERS, MAX_IMAGE_BYTES, ThemeBundle, builtin_manifest,
-        decode_theme_bundle, encode_theme_bundle, greenwood_whispers_manifest, image_info,
-        install_theme_bundle, should_upgrade_builtin, validate_manifest,
+        BUILTIN_THEME_VERSION, GREENWOOD_WHISPERS, MAX_IMAGE_BYTES, STARLIT_DAWN, ThemeBundle,
+        VERDANT_SUMMIT, builtin_manifest, decode_theme_bundle, encode_theme_bundle,
+        greenwood_whispers_manifest, image_info, install_theme_bundle, should_upgrade_builtin,
+        starlit_dawn_manifest, validate_manifest, verdant_summit_manifest,
     };
     use crate::models::ThemeManifest;
 
@@ -1420,6 +1437,24 @@ mod tests {
         assert_eq!(manifest.ui.sidebar.opacity, 0.66);
         assert_eq!(manifest.ui.diff.background, "#ffffff");
     }
+
+    #[test]
+    fn starlit_dawn_is_a_protected_builtin_theme() {
+        let manifest = starlit_dawn_manifest();
+        assert!(manifest.built_in);
+        assert_eq!(manifest.name, "星河初光");
+        assert_eq!(manifest.composer.opacity, 0.2);
+        assert_eq!(manifest.ui.diff.background, "#ffffff");
+    }
+
+    #[test]
+    fn verdant_summit_is_a_protected_builtin_theme() {
+        let manifest = verdant_summit_manifest();
+        assert!(manifest.built_in);
+        assert_eq!(manifest.name, "翠谷晴峰");
+        assert_eq!(manifest.composer.opacity, 0.2);
+        assert_eq!(manifest.ui.diff.background, "#ffffff");
+    }
     use std::{
         fs,
         io::{Cursor, Write},
@@ -1429,9 +1464,10 @@ mod tests {
 
     #[test]
     fn validates_bundled_image_and_rejects_invalid_payloads() {
-        let (_, width, height) =
-            image_info(GREENWOOD_WHISPERS).expect("bundled image should validate");
-        assert!(width > 0 && height > 0);
+        for bytes in [GREENWOOD_WHISPERS, STARLIT_DAWN, VERDANT_SUMMIT] {
+            let (_, width, height) = image_info(bytes).expect("bundled image should validate");
+            assert!(width > 0 && height > 0);
+        }
         assert!(image_info(&[]).is_err());
         assert!(image_info(&vec![0; MAX_IMAGE_BYTES as usize + 1]).is_err());
     }

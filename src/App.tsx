@@ -2058,7 +2058,7 @@ function App() {
       </main>
 
       {/* Sonner Toaster component */}
-      <Toaster position="bottom-right" />
+      <Toaster position="top-right" />
 
       {/* Confirm Restart Dialog */}
       <Dialog open={confirmRestart} onOpenChange={setConfirmRestart}>
