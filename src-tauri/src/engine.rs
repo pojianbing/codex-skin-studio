@@ -383,7 +383,7 @@ mod tests {
         fs::create_dir_all(&directory).unwrap();
         fs::write(
             directory.join("background.jpg"),
-            include_bytes!("../assets/preset-midnight-aurora.jpg"),
+            include_bytes!("../assets/preset-greenwood-whispers.jpg"),
         )
         .unwrap();
         let manifest = ThemeManifest {

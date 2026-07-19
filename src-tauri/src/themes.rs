@@ -27,27 +27,7 @@ const MAX_THEME_BUNDLE_BYTES: u64 = MAX_IMAGE_BYTES + 256 * 1024;
 const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_IMAGE_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
 const BUILTIN_THEME_VERSION: &str = "1.3.2";
-const ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-alpine-lake.jpg");
-const AMBER: &[u8] = include_bytes!("../assets/preset-amber-dusk.jpg");
-const AURORA: &[u8] = include_bytes!("../assets/preset-midnight-aurora.jpg");
-const CODEX_OBSERVATORY: &[u8] = include_bytes!("../assets/preset-codex-observatory.jpg");
-const CYBER: &[u8] = include_bytes!("../assets/preset-cyber-neon.jpg");
-const FOREST: &[u8] = include_bytes!("../assets/preset-forest-mist.jpg");
 const GREENWOOD_WHISPERS: &[u8] = include_bytes!("../assets/preset-greenwood-whispers.jpg");
-const HARBOR_CITY: &[u8] = include_bytes!("../assets/preset-harbor-city.jpg");
-const MIDNIGHT_PAPER_OBSERVATORY: &[u8] =
-    include_bytes!("../assets/preset-midnight-paper-observatory.jpg");
-const MOONLIT_ALPINE_LAKE: &[u8] = include_bytes!("../assets/preset-moonlit-alpine-lake.jpg");
-const PAPER_SKY_WORKSHOP: &[u8] = include_bytes!("../assets/preset-paper-sky-workshop.jpg");
-const RAINY_HARBOR: &[u8] = include_bytes!("../assets/preset-rainy-harbor.jpg");
-const RISO_SPRING_STREAM: &[u8] = include_bytes!("../assets/preset-riso-spring-stream.jpg");
-const ROMANTIC: &[u8] = include_bytes!("../assets/preset-romantic-rose.jpg");
-const SAKURA: &[u8] = include_bytes!("../assets/preset-sakura-dawn.jpg");
-const SKY_LIGHT_STUDY: &[u8] = include_bytes!("../assets/preset-sky-light-study.jpg");
-const STRATA_FORGE: &[u8] = include_bytes!("../assets/preset-strata-forge.jpg");
-const SUNLIT_SHORE: &[u8] = include_bytes!("../assets/preset-sunlit-shore.jpg");
-const WINDREST_CLOUD_HOUSE: &[u8] = include_bytes!("../assets/preset-windrest-cloud-house.jpg");
-const YELLOW_GADGETEERS: &[u8] = include_bytes!("../assets/preset-yellow-gadgeteers.jpg");
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -631,6 +611,7 @@ fn install_theme_bundle(root: &Path, imported: ImportedThemeBundle) -> Result<Th
     )
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy)]
 struct ComponentTheme {
     appearance: &'static str,
@@ -651,6 +632,7 @@ struct ComponentTheme {
     content_width: u32,
 }
 
+#[cfg(test)]
 fn component_theme(id: &str) -> Option<ComponentTheme> {
     Some(match id {
         "preset-alpine-lake" => ComponentTheme {
@@ -1017,6 +999,7 @@ fn component_theme(id: &str) -> Option<ComponentTheme> {
     })
 }
 
+#[cfg(test)]
 fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
     let theme = component_theme(&manifest.id)
         .ok_or_else(|| StudioError::from(format!("内置主题 {} 缺少组件适配", manifest.id)))?;
@@ -1169,6 +1152,7 @@ fn seed_manifest(manifest: ThemeManifest, bytes: &[u8]) -> Result<()> {
     write_manifest(&directory, &manifest)
 }
 
+#[cfg(test)]
 fn builtin_manifest(
     id: &str,
     name: &str,
@@ -1233,182 +1217,8 @@ fn greenwood_whispers_manifest() -> ThemeManifest {
     }
 }
 
-fn seed_one(
-    id: &str,
-    name: &str,
-    accent: &str,
-    bytes: &[u8],
-    focus_x: f64,
-    safe_area: &str,
-) -> Result<()> {
-    seed_manifest(
-        builtin_manifest(id, name, accent, focus_x, safe_area)?,
-        bytes,
-    )
-}
-
 pub fn ensure_library() -> Result<()> {
     seed_manifest(greenwood_whispers_manifest(), GREENWOOD_WHISPERS)?;
-    seed_one(
-        "preset-alpine-lake",
-        "云岭晨湖",
-        "#69aebc",
-        ALPINE_LAKE,
-        0.8,
-        "left",
-    )?;
-    seed_one(
-        "preset-amber-dusk",
-        "琥珀黄昏",
-        "#ffb347",
-        AMBER,
-        0.5,
-        "center",
-    )?;
-    seed_one(
-        "preset-cyber-neon",
-        "赛博霓虹",
-        "#16e0ff",
-        CYBER,
-        0.5,
-        "center",
-    )?;
-    seed_one(
-        "preset-codex-observatory",
-        "代码观测站",
-        "#8ed8d5",
-        CODEX_OBSERVATORY,
-        0.82,
-        "left",
-    )?;
-    seed_one(
-        "preset-tidal-signal",
-        "潮汐信号舱",
-        "#72d6cf",
-        RAINY_HARBOR,
-        0.58,
-        "center",
-    )?;
-    seed_one(
-        "preset-midnight-aurora",
-        "午夜极光",
-        "#2de1c2",
-        AURORA,
-        0.7,
-        "left",
-    )?;
-    seed_one(
-        "preset-forest-mist",
-        "森野薄雾",
-        "#65b895",
-        FOREST,
-        0.66,
-        "left",
-    )?;
-    seed_one(
-        "preset-harbor-city",
-        "晨光海湾",
-        "#49aeb5",
-        HARBOR_CITY,
-        0.78,
-        "left",
-    )?;
-    seed_one(
-        "preset-midnight-paper-observatory",
-        "纸艺夜航",
-        "#c89a4b",
-        MIDNIGHT_PAPER_OBSERVATORY,
-        0.8,
-        "left",
-    )?;
-    seed_one(
-        "preset-moonlit-alpine-lake",
-        "月下云岭",
-        "#7897b2",
-        MOONLIT_ALPINE_LAKE,
-        0.79,
-        "left",
-    )?;
-    seed_one(
-        "preset-paper-sky-workshop",
-        "纸艺云端",
-        "#4aa4b7",
-        PAPER_SKY_WORKSHOP,
-        0.79,
-        "left",
-    )?;
-    seed_one(
-        "preset-rainy-harbor",
-        "雨夜海湾",
-        "#438b96",
-        RAINY_HARBOR,
-        0.79,
-        "left",
-    )?;
-    seed_one(
-        "preset-riso-spring-stream",
-        "春溪印语",
-        "#9bd66f",
-        RISO_SPRING_STREAM,
-        0.66,
-        "left",
-    )?;
-    seed_one(
-        "preset-romantic-rose",
-        "桥本有菜",
-        "#d86482",
-        ROMANTIC,
-        0.72,
-        "left",
-    )?;
-    seed_one(
-        "preset-sakura-dawn",
-        "樱粉晨曦",
-        "#f0607a",
-        SAKURA,
-        0.65,
-        "left",
-    )?;
-    seed_one(
-        "preset-sky-light-study",
-        "天光书房",
-        "#6fbfca",
-        SKY_LIGHT_STUDY,
-        0.79,
-        "left",
-    )?;
-    seed_one(
-        "preset-strata-forge",
-        "叠境工坊",
-        "#7ed8c5",
-        STRATA_FORGE,
-        0.81,
-        "left",
-    )?;
-    seed_one(
-        "preset-sunlit-shore",
-        "晴日海岸",
-        "#5baed1",
-        SUNLIT_SHORE,
-        0.79,
-        "left",
-    )?;
-    seed_one(
-        "preset-windrest-cloud-house",
-        "风栖云屋",
-        "#e2b35f",
-        WINDREST_CLOUD_HOUSE,
-        0.82,
-        "left",
-    )?;
-    seed_one(
-        "preset-yellow-gadgeteers",
-        "小黄人工坊",
-        "#f2c94c",
-        YELLOW_GADGETEERS,
-        0.78,
-        "left",
-    )?;
     Ok(())
 }
 
@@ -1595,12 +1405,9 @@ pub fn image_bytes(manifest: &ThemeManifest, directory: &Path) -> Result<Vec<u8>
 #[cfg(test)]
 mod tests {
     use super::{
-        ALPINE_LAKE, AMBER, AURORA, BUILTIN_THEME_VERSION, CODEX_OBSERVATORY, CYBER, FOREST,
-        HARBOR_CITY, MAX_IMAGE_BYTES, MIDNIGHT_PAPER_OBSERVATORY, MOONLIT_ALPINE_LAKE,
-        PAPER_SKY_WORKSHOP, RAINY_HARBOR, RISO_SPRING_STREAM, ROMANTIC, SAKURA, SKY_LIGHT_STUDY,
-        STRATA_FORGE, SUNLIT_SHORE, ThemeBundle, WINDREST_CLOUD_HOUSE, YELLOW_GADGETEERS,
-        builtin_manifest, decode_theme_bundle, encode_theme_bundle, greenwood_whispers_manifest,
-        image_info, install_theme_bundle, should_upgrade_builtin, validate_manifest,
+        BUILTIN_THEME_VERSION, GREENWOOD_WHISPERS, MAX_IMAGE_BYTES, ThemeBundle, builtin_manifest,
+        decode_theme_bundle, encode_theme_bundle, greenwood_whispers_manifest, image_info,
+        install_theme_bundle, should_upgrade_builtin, validate_manifest,
     };
     use crate::models::ThemeManifest;
 
@@ -1622,30 +1429,9 @@ mod tests {
 
     #[test]
     fn validates_bundled_image_and_rejects_invalid_payloads() {
-        for bytes in [
-            ALPINE_LAKE,
-            AMBER,
-            AURORA,
-            CODEX_OBSERVATORY,
-            CYBER,
-            FOREST,
-            HARBOR_CITY,
-            MIDNIGHT_PAPER_OBSERVATORY,
-            MOONLIT_ALPINE_LAKE,
-            PAPER_SKY_WORKSHOP,
-            RAINY_HARBOR,
-            RISO_SPRING_STREAM,
-            ROMANTIC,
-            SAKURA,
-            SKY_LIGHT_STUDY,
-            STRATA_FORGE,
-            SUNLIT_SHORE,
-            WINDREST_CLOUD_HOUSE,
-            YELLOW_GADGETEERS,
-        ] {
-            let (_, width, height) = image_info(bytes).expect("bundled image should validate");
-            assert!(width > 0 && height > 0);
-        }
+        let (_, width, height) =
+            image_info(GREENWOOD_WHISPERS).expect("bundled image should validate");
+        assert!(width > 0 && height > 0);
         assert!(image_info(&[]).is_err());
         assert!(image_info(&vec![0; MAX_IMAGE_BYTES as usize + 1]).is_err());
     }
@@ -1750,8 +1536,8 @@ mod tests {
         source.ui.content.max_width = 880;
         source.ui.rich_text.image_radius = 17;
 
-        let archive =
-            encode_theme_bundle(&source, ALPINE_LAKE).expect("theme bundle should be encoded");
+        let archive = encode_theme_bundle(&source, GREENWOOD_WHISPERS)
+            .expect("theme bundle should be encoded");
         let imported = decode_theme_bundle(&archive).expect("theme bundle should be decoded");
         let root = std::env::temp_dir().join(format!("skin-studio-theme-test-{}", Uuid::new_v4()));
         fs::create_dir_all(&root).expect("test root should be created");
@@ -1778,7 +1564,7 @@ mod tests {
         assert_eq!(stored.ui.rich_text.image_radius, 17);
         assert_eq!(
             fs::read(directory.join(&stored.image)).expect("stored background should exist"),
-            ALPINE_LAKE,
+            GREENWOOD_WHISPERS,
         );
         assert!(directory.join(&stored.thumbnail).is_file());
 
@@ -1802,7 +1588,7 @@ mod tests {
             .start_file("../background.jpg", options)
             .expect("unsafe entry should be written for the test");
         writer
-            .write_all(ALPINE_LAKE)
+            .write_all(GREENWOOD_WHISPERS)
             .expect("background should be written");
         let archive = writer.finish().expect("archive should finish").into_inner();
 
