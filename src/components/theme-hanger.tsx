@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'rea
 import {
   AppWindow, Check, Feather, Flame, GripVertical, Leaf, LoaderCircle,
   Moon, Mountain, Palette, RefreshCw, RotateCcw, Sparkles, Sprout,
-  Sun, Trees, Zap
+  Trees, Zap
 } from 'lucide-react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
@@ -284,7 +284,7 @@ export function ThemeHanger() {
         <button
           type="button"
           aria-label="展开主题挂件"
-          title="单击展开，右键打开菜单"
+          title="右键打开菜单"
           onClick={handleCollapsedClick}
           onContextMenu={(event) => {
             event.preventDefault()
@@ -519,4 +519,3 @@ export function ThemeHanger() {
     </div>
   )
 }
-
