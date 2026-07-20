@@ -135,26 +135,6 @@ cargo test --manifest-path src-tauri/Cargo.toml
 npm run desktop:build
 ```
 
-### Releases and automatic updates
-
-Pushing a `v<semver>` tag triggers GitHub Actions. It verifies the version, runs lint and the frontend build, then creates Windows x64, macOS Apple Silicon, and macOS Intel installers in a draft Release.
-
-Configure these repository Secrets before publishing:
-
-```text
-TAURI_SIGNING_PRIVATE_KEY
-TAURI_SIGNING_PRIVATE_KEY_PASSWORD
-TAURI_UPDATER_PUBKEY
-```
-
-Run the following command once to generate the updater key. The private key is written to the Git-ignored `.secrets/` directory and must never be committed.
-
-```powershell
-npm run secrets:generate-updater-key
-```
-
-macOS uses ad-hoc signing by default. Once you have an Apple Developer ID, set `TAURI_MACOS_SIGNING_IDENTITY` and extend the release workflow with certificate import and notarization.
-
 ## Contributing and Feedback
 
 Please use [Issues](https://github.com/pojianbing/codex-skin-studio/issues) to report bugs or suggest improvements, and feel free to submit pull requests. UI changes should be checked for readable text, focus states, and reduced-motion behavior in both light and dark themes.
