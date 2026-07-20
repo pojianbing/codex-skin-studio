@@ -188,12 +188,12 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
             visibleThemes.length > 0 ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                 {visibleThemes.map((theme) => (
-                  <article key={theme.id} className="group overflow-hidden rounded-xl border border-zinc-850/60 bg-gradient-to-b from-zinc-900/55 to-zinc-950/80 backdrop-blur-sm shadow-sm hover:shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:-translate-y-1 hover:border-zinc-750 transition-all duration-300 ease-out">
+                  <article key={theme.id} className="group overflow-hidden rounded-xl border border-zinc-850/60 bg-gradient-to-b from-zinc-900/55 to-zinc-950/80 backdrop-blur-sm shadow-sm hover:border-zinc-700 transition-colors duration-150">
                     <div className="relative aspect-video overflow-hidden bg-zinc-950">
                       <img
                         src={theme.previewUrl}
                         alt={`${theme.name} 预览`}
-                        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                        className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent opacity-90" />
                       {theme.installStatus === 'installed' && (

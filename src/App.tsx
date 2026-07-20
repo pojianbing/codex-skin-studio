@@ -1135,15 +1135,15 @@ function App() {
                 <button
                   key={theme.id}
                   className={cn(
-                    "flex flex-col overflow-hidden text-left border rounded-xl bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer group shadow-sm hover:shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:-translate-y-1",
+                    "flex flex-col overflow-hidden text-left border rounded-xl bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 backdrop-blur-sm transition-colors duration-150 cursor-pointer group shadow-sm",
                     selected?.id === theme.id
-                      ? "border-zinc-250 shadow-[0_0_15px_rgba(255,255,255,0.08)] ring-1 ring-zinc-200/50"
-                      : "border-zinc-800/80 hover:border-zinc-700/50"
+                      ? "border-zinc-250 shadow-[0_0_12px_rgba(255,255,255,0.06)] ring-1 ring-zinc-200/50"
+                      : "border-zinc-800/80 hover:border-zinc-700"
                   )}
                   onClick={() => setSelectedId(theme.id)}
                 >
                   <span
-                    className="relative block w-full aspect-video bg-zinc-950 bg-center bg-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                    className="relative block w-full aspect-video bg-zinc-950 bg-center bg-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
                     style={{ backgroundImage: `url(${theme.previewDataUrl})` }}
                   >
                     {/* Shadow overlay */}
@@ -1172,10 +1172,10 @@ function App() {
               ))}
               {filteredThemes.length > 0 ? (
                 <button
-                  className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-zinc-800 hover:border-zinc-700/60 rounded-xl bg-zinc-900/10 hover:bg-zinc-900/30 transition-all duration-300 cursor-pointer text-zinc-500 hover:text-zinc-200 group hover:scale-[1.01]"
+                  className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-zinc-800 hover:border-zinc-700/60 rounded-xl bg-zinc-900/10 hover:bg-zinc-900/30 transition-colors duration-150 cursor-pointer text-zinc-500 hover:text-zinc-200 group"
                   onClick={() => void importWallpaper()}
                 >
-                  <ImagePlus size={20} className="group-hover:scale-110 transition-transform duration-300 text-zinc-500 group-hover:text-zinc-300" />
+                  <ImagePlus size={20} className="transition-colors duration-150 text-zinc-500 group-hover:text-zinc-300" />
                   <span className="text-xs font-semibold">导入背景图片</span>
                 </button>
               ) : (
