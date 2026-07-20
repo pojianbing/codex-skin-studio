@@ -9,6 +9,16 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(target_os = "windows")]
+fn hidden_windows_command(program: &str) -> Command {
+    use std::os::windows::process::CommandExt;
+
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    let mut command = Command::new(program);
+    command.creation_flags(CREATE_NO_WINDOW);
+    command
+}
+
 fn is_main_codex_command(command: &str) -> bool {
     !command
         .split_ascii_whitespace()
@@ -33,7 +43,7 @@ pub fn platform_label() -> String {
 #[cfg(target_os = "windows")]
 pub fn find_codex() -> Result<Option<CodexInstall>> {
     let script = r#"[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); $p=Get-AppxPackage -Name OpenAI.Codex | Sort-Object Version -Descending | Select-Object -First 1; if($p -and $p.SignatureKind -eq 'Store' -and -not $p.IsDevelopmentMode){ $exe=Join-Path $p.InstallLocation 'app\ChatGPT.exe'; $app=@((Get-AppxPackageManifest -Package $p).Package.Applications.Application) | Where-Object { (($_.Executable -replace '/', '\') -ieq 'app\ChatGPT.exe') } | Select-Object -First 1; if((Test-Path -LiteralPath $exe) -and $app){ [pscustomobject]@{executable=$exe;version="$($p.Version)";appUserModelId="$($p.PackageFamilyName)!$($app.Id)"} | ConvertTo-Json -Compress } }"#;
-    let output = Command::new("powershell.exe")
+    let output = hidden_windows_command("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .output()?;
     if !output.status.success() {
@@ -161,7 +171,7 @@ pub fn select_port(preferred: u16) -> Result<u16> {
 #[cfg(target_os = "windows")]
 fn windows_processes(install: &CodexInstall) -> Result<Vec<(u32, String)>> {
     let script = r#"[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); @(Get-CimInstance Win32_Process -Filter "Name='ChatGPT.exe'" | Select-Object ProcessId,ExecutablePath,CommandLine) | ConvertTo-Json -Compress"#;
-    let output = Command::new("powershell.exe")
+    let output = hidden_windows_command("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .output()?;
     if !output.status.success() {
@@ -272,7 +282,7 @@ pub fn verify_cdp_owner(install: &CodexInstall, port: u16) -> Result<bool> {
     let script = format!(
         r#"[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); @((Get-NetTCPConnection -State Listen -LocalPort {port} -ErrorAction SilentlyContinue) | ForEach-Object {{ $p=Get-CimInstance Win32_Process -Filter "ProcessId = $($_.OwningProcess)" -ErrorAction SilentlyContinue; [pscustomobject]@{{address="$($_.LocalAddress)";path="$($p.ExecutablePath)"}} }}) | ConvertTo-Json -Compress"#
     );
-    let output = Command::new("powershell.exe")
+    let output = hidden_windows_command("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", &script])
         .output()?;
     if !output.status.success() {
@@ -346,7 +356,7 @@ pub fn stop_codex(install: &CodexInstall) -> Result<()> {
     let pids = running_pids(install)?;
     #[cfg(target_os = "windows")]
     for pid in &pids {
-        let _ = Command::new("taskkill.exe")
+        let _ = hidden_windows_command("taskkill.exe")
             .args(["/PID", &pid.to_string()])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -373,7 +383,7 @@ pub fn stop_codex(install: &CodexInstall) -> Result<()> {
     let remaining = running_pids(install)?;
     #[cfg(target_os = "windows")]
     for pid in &remaining {
-        let _ = Command::new("taskkill.exe")
+        let _ = hidden_windows_command("taskkill.exe")
             .args(["/PID", &pid.to_string(), "/F"])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
