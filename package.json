@@ -7,7 +7,7 @@
     "dev": "vite",
     "tauri": "tauri",
     "predesktop:dev": "node scripts/stop-stale-tauri-dev.mjs",
-    "desktop:dev": "tauri dev",
+    "desktop:dev": "npm run release:prepare && tauri dev --config src-tauri/tauri.release.conf.json",
     "desktop:build": "tauri build",
     "secrets:generate-updater-key": "node scripts/generate-updater-key.mjs",
     "release:prepare": "node scripts/prepare-release-config.mjs",

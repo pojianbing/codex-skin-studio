@@ -47,10 +47,6 @@ export function AppUpdater() {
 
   const checkForUpdate = useCallback(async (interactive: boolean) => {
     if (checkInFlight.current) return
-    if (import.meta.env.DEV) {
-      if (interactive) toast.info('开发模式下无法检查更新')
-      return
-    }
 
     checkInFlight.current = true
     setState('checking')
