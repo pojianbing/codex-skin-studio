@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils'
 
 type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'ready'
 
-const fallbackVersion = '0.2.0'
+const fallbackVersion = '0.2.1'
 
 function formatUpdateDate(value?: string) {
   if (!value) return '刚刚发布'
@@ -47,6 +47,10 @@ export function AppUpdater() {
 
   const checkForUpdate = useCallback(async (interactive: boolean) => {
     if (checkInFlight.current) return
+    if (import.meta.env.DEV) {
+      if (interactive) toast.info('开发模式下无法检查更新')
+      return
+    }
 
     checkInFlight.current = true
     setState('checking')
@@ -113,26 +117,26 @@ export function AppUpdater() {
           void checkForUpdate(true)
         }}
         disabled={state === 'checking' || state === 'downloading'}
-        title="检查应用更新"
+        title="点击检查更新"
         className={cn(
-          'group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+          'group flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 select-none',
           state === 'available' || state === 'ready'
-            ? 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15'
-            : 'text-zinc-500 hover:bg-zinc-800/40 hover:text-zinc-300',
+            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 animate-pulse'
+            : 'bg-zinc-900/80 text-zinc-300 border border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 hover:border-zinc-700',
         )}
       >
         {state === 'checking' || state === 'downloading' ? (
-          <LoaderCircle size={13} className="animate-spin" />
+          <LoaderCircle size={10} className="animate-spin text-zinc-400" />
         ) : state === 'available' || state === 'ready' ? (
-          <Sparkles size={13} />
+          <Sparkles size={10} className="text-emerald-400" />
         ) : (
-          <RefreshCw size={13} className="transition-transform group-hover:rotate-180" />
+          <RefreshCw size={10} className="text-zinc-500 group-hover:rotate-180 transition-transform duration-300" />
         )}
-        <span className="min-w-0 flex-1 truncate text-[10px] font-medium">
-          {state === 'available' ? `发现 v${update?.version} 更新`
-            : state === 'ready' ? '更新已就绪'
-              : state === 'checking' ? '正在检查更新'
-                : `Skin Studio v${currentVersion}`}
+        <span>
+          {state === 'available' ? `v${update?.version} 可更新`
+            : state === 'ready' ? '就绪'
+              : state === 'checking' ? '检查中'
+                : `v${currentVersion}`}
         </span>
       </button>
 

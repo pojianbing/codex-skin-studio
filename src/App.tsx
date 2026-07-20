@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import {
-  Check, ChevronDown, Download, ImagePlus, Library, LoaderCircle, MonitorCog,
+  Check, ChevronDown, Download, ImagePlus, Library, LoaderCircle,
   PanelRight, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Trash2,
   SlidersHorizontal, Upload,
 } from 'lucide-react'
@@ -960,40 +960,11 @@ function App() {
           </button>
         </nav>
 
-        {/* User Profile */}
-        <div className="mt-auto flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-zinc-950/20 border border-zinc-850/40 mb-3 backdrop-blur-sm">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-[10px] font-bold text-zinc-950 shadow-sm ring-1 ring-white/10 select-none">
-            P
-          </div>
-          <div className="flex flex-col leading-none min-w-0">
-            <span className="text-xs font-semibold text-zinc-200 truncate">pojianbing</span>
-            <span className="text-[9px] text-zinc-500 mt-1 uppercase tracking-wider font-bold">作者</span>
-          </div>
-        </div>
-
-        {/* Runtime info block */}
-        <div className="pt-3 border-t border-zinc-850/40">
-          <div className="flex gap-3 items-center p-3 rounded-xl bg-zinc-950/30 border border-zinc-850/40 mb-3 backdrop-blur-sm">
-            <span className={cn(
-              "w-2 h-2 rounded-full ring-4 flex-none",
-              dashboard.mode === 'active' ? "bg-emerald-400 ring-emerald-950/40 animate-pulse"
-                : dashboard.mode === 'paused' ? "bg-amber-400 ring-amber-950/40"
-                  : dashboard.mode === 'error' ? "bg-rose-400 ring-rose-950/40 animate-pulse"
-                    : "bg-zinc-400 ring-zinc-950/40"
-            )} />
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-semibold text-zinc-50 truncate">{modeLabel}</span>
-              <span className="text-[10px] text-zinc-400 truncate mt-0.5">
-                {dashboard.codexFound ? `Codex ${dashboard.codexVersion ?? ''}` : '未找到 Codex'}
-              </span>
-            </div>
-          </div>
-          <div className="flex gap-2 items-center px-2 text-[10px] text-zinc-500 font-medium tracking-wide uppercase">
-            <MonitorCog size={13} className="text-zinc-650" />
-            <span>{dashboard.platform}</span>
-          </div>
-          <div className="mt-2 border-t border-zinc-850/40 pt-2">
-            {!import.meta.env.DEV && <AppUpdater />}
+        {/* Compact app information */}
+        <div className="mt-auto pt-3 border-t border-zinc-850/40">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-850/50 bg-zinc-950/25 px-3 py-2.5 text-[10px] backdrop-blur-sm">
+            <span className="shrink-0 text-zinc-500">应用版本</span>
+            <AppUpdater />
           </div>
         </div>
       </aside>
