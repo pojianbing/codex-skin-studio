@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react'
-import { AppWindow, Check, GripVertical, LoaderCircle, Palette, RefreshCw, RotateCcw, Sparkles } from 'lucide-react'
+import {
+  AppWindow, Check, Feather, Flame, GripVertical, Leaf, LoaderCircle,
+  Moon, Mountain, Palette, RefreshCw, RotateCcw, Sparkles, Sprout,
+  Sun, Trees, Zap
+} from 'lucide-react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow, LogicalPosition, LogicalSize } from '@tauri-apps/api/window'
@@ -23,6 +27,87 @@ type ApplyPlan = { action: 'hotSwitch' | 'launch' | 'restart' }
 const compactSize = new LogicalSize(44, 44)
 const expandedSize = new LogicalSize(360, 580)
 const hangerWindow = getCurrentWindow()
+
+function getThemeMeta(theme: ThemeRecord) {
+  const name = theme.name.toLowerCase()
+  const id = theme.id.toLowerCase()
+
+  if (name.includes('墨影') || name.includes('silhouette') || id.includes('ink')) {
+    return {
+      Icon: Feather,
+      gradient: 'from-violet-600 via-indigo-600 to-purple-800',
+      accentColor: '#8b5cf6',
+      tag: '墨韵暗调',
+    }
+  }
+  if (name.includes('星河') || name.includes('starlit') || id.includes('star')) {
+    return {
+      Icon: Moon,
+      gradient: 'from-blue-600 via-indigo-600 to-cyan-500',
+      accentColor: '#3b82f6',
+      tag: '璀璨星空',
+    }
+  }
+  if (name.includes('竹影') || name.includes('bamboo')) {
+    return {
+      Icon: Leaf,
+      gradient: 'from-emerald-600 via-teal-600 to-cyan-700',
+      accentColor: '#10b981',
+      tag: '竹意清幽',
+    }
+  }
+  if (name.includes('绿野') || name.includes('greenwood') || id.includes('forest')) {
+    return {
+      Icon: Sprout,
+      gradient: 'from-emerald-500 via-green-600 to-lime-600',
+      accentColor: '#22c55e',
+      tag: '生机盎然',
+    }
+  }
+  if (name.includes('翠谷') || name.includes('summit') || name.includes('mountain')) {
+    return {
+      Icon: Mountain,
+      gradient: 'from-teal-600 via-emerald-700 to-green-800',
+      accentColor: '#14b8a6',
+      tag: '青翠峰峦',
+    }
+  }
+  if (name.includes('琥珀') || name.includes('amber') || name.includes('dusk')) {
+    return {
+      Icon: Flame,
+      gradient: 'from-amber-500 via-orange-600 to-rose-600',
+      accentColor: '#f59e0b',
+      tag: '暖阳落日',
+    }
+  }
+  if (name.includes('赛博') || name.includes('cyber') || name.includes('neon')) {
+    return {
+      Icon: Zap,
+      gradient: 'from-fuchsia-600 via-purple-600 to-cyan-500',
+      accentColor: '#d946ef',
+      tag: '赛博霓虹',
+    }
+  }
+  if (name.includes('高山') || name.includes('alpine') || name.includes('lake')) {
+    return {
+      Icon: Trees,
+      gradient: 'from-sky-500 via-blue-600 to-indigo-700',
+      accentColor: '#0ea5e9',
+      tag: '雪山清泉',
+    }
+  }
+
+  const color = theme.accent || '#10b981'
+  return {
+    Icon: Sparkles,
+    gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
+    accentColor: color,
+    customStyle: {
+      background: `linear-gradient(135deg, ${color}, #0f766e)`
+    },
+    tag: '主题精选',
+  }
+}
 
 export function ThemeHanger() {
   const [dashboard, setDashboard] = useState<Dashboard>()
@@ -188,9 +273,6 @@ export function ThemeHanger() {
 
   // 收起态悬浮球
   if (!expanded && !contextMenuOpen) {
-    const isModeActive = dashboard?.mode === 'active'
-    const isModePaused = dashboard?.mode === 'paused'
-
     return (
       <div
         className="theme-hanger flex cursor-grab items-center justify-center p-0.5 active:cursor-grabbing"
@@ -215,23 +297,8 @@ export function ThemeHanger() {
             src="/app-icon.png"
             alt="Theme Hanger"
             draggable={false}
-            className="pointer-events-none h-9 w-9 select-none object-contain transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105"
+            className="pointer-events-none h-9 w-9 select-none object-contain transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
           />
-
-          {/* 运行状态色同时作为窗口拖拽把手的提示。 */}
-          <span
-            aria-hidden="true"
-            title="拖动主题挂件"
-            className={`absolute -top-0.5 -right-0.5 flex h-4 w-3 items-center justify-center rounded-sm bg-zinc-950/75 text-zinc-500 shadow-sm transition-colors group-hover:bg-zinc-900/90 ${
-              isModeActive
-                ? 'text-emerald-400'
-                : isModePaused
-                  ? 'text-amber-400'
-                  : 'text-zinc-500'
-            }`}
-          >
-            <GripVertical size={10} strokeWidth={2.5} />
-          </span>
         </button>
       </div>
     )
@@ -354,6 +421,9 @@ export function ThemeHanger() {
           {dashboard?.themes.map((theme) => {
             const active = theme.id === dashboard.activeThemeId
             const working = theme.id === workingThemeId
+            const meta = getThemeMeta(theme)
+            const ThemeIcon = meta.Icon
+            const accent = theme.accent || meta.accentColor
 
             return (
               <button
@@ -363,38 +433,41 @@ export function ThemeHanger() {
                 onFocus={() => setPreviewThemeId(theme.id)}
                 onPointerEnter={() => setPreviewThemeId(theme.id)}
                 disabled={active || Boolean(workingThemeId)}
-                className={`group relative flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all duration-200 focus-visible:outline-2 focus-visible:outline-emerald-400 ${
+                className={`group relative flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all duration-200 focus-visible:outline-2 focus-visible:outline-emerald-400 ${
                   active
-                    ? 'border-emerald-500/40 bg-gradient-to-r from-emerald-950/30 via-zinc-900/60 to-zinc-900/40 shadow-[0_2px_12px_rgba(16,185,129,0.08)]'
-                    : 'border-zinc-800/50 bg-zinc-900/40 hover:border-zinc-700/70 hover:bg-zinc-800/60 active:scale-[0.99]'
+                    ? 'border-emerald-500/40 bg-gradient-to-r from-emerald-950/30 via-zinc-900/80 to-zinc-900/50 shadow-[0_4px_16px_rgba(16,185,129,0.1)]'
+                    : 'border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700/80 hover:bg-zinc-800/60 hover:shadow-md active:scale-[0.99]'
                 }`}
               >
                 {/* 激活指示条 */}
                 {active && (
                   <span
-                    className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-                    style={{ backgroundColor: theme.accent || '#10b981' }}
+                    className="absolute left-0 top-2.5 bottom-2.5 w-1 rounded-r-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"
+                    style={{ backgroundColor: accent }}
                   />
                 )}
 
-                {/* 主题 DNA 胶囊色块 */}
+                {/* 主题 DNA 胶囊色块 (绚丽多姿) */}
                 <div
-                  className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 shadow-sm transition-transform duration-200 group-hover:scale-105"
-                  style={{
-                    background: `linear-gradient(135deg, ${theme.accent}ee, ${theme.accent}66)`
-                  }}
+                  className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 shadow-md bg-gradient-to-br ${meta.gradient} transition-transform duration-200 group-hover:scale-105`}
+                  style={meta.customStyle}
                 >
-                  <Sparkles size={12} className="text-white/80 drop-shadow-sm" />
+                  <ThemeIcon size={14} className="text-white drop-shadow" />
                 </div>
 
-                {/* 主题名字 */}
+                {/* 主题名字与标签 */}
                 <div className="min-w-0 flex-1">
-                  <p
-                    className={`truncate text-xs ${
-                      active ? 'font-bold text-zinc-100' : 'font-medium text-zinc-300 group-hover:text-zinc-100'
-                    }`}
-                  >
-                    {theme.name}
+                  <div className="flex items-center gap-1.5">
+                    <p
+                      className={`truncate text-xs ${
+                        active ? 'font-bold text-zinc-100' : 'font-medium text-zinc-200 group-hover:text-zinc-100'
+                      }`}
+                    >
+                      {theme.name}
+                    </p>
+                  </div>
+                  <p className="truncate text-[10px] text-zinc-400/80 mt-0.5">
+                    {meta.tag}
                   </p>
                 </div>
 
@@ -403,11 +476,11 @@ export function ThemeHanger() {
                   {working ? (
                     <LoaderCircle size={15} className="animate-spin text-emerald-400" />
                   ) : active ? (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
                       <Check size={12} strokeWidth={2.5} />
                     </div>
                   ) : (
-                    <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 font-medium">
+                    <span className="rounded-md border border-zinc-700/80 bg-zinc-800/50 px-2 py-0.5 text-[10px] font-medium text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity hover:border-zinc-600 hover:text-zinc-200">
                       切换
                     </span>
                   )}
@@ -446,3 +519,4 @@ export function ThemeHanger() {
     </div>
   )
 }
+
