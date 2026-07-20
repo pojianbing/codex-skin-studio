@@ -21,6 +21,8 @@ import { AppUpdater } from '@/components/app-updater'
 import { AppearanceToggle } from '@/components/appearance-toggle'
 import { ThemeStore } from '@/components/theme-store'
 import { ThemeDnaEasterEgg } from '@/components/theme-dna-easter-egg'
+import { ThemeHanger } from '@/components/theme-hanger'
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -608,7 +610,7 @@ function RowStyleEditor({
   )
 }
 
-function App() {
+function SkinStudioApp() {
   const [activeView, setActiveView] = useState<'library' | 'store'>('library')
   const [dashboard, setDashboard] = useState<Dashboard>(fallbackDashboard)
   const [selectedId, setSelectedId] = useState<string>()
@@ -2226,6 +2228,10 @@ function App() {
       </Dialog>
     </div>
   )
+}
+
+function App() {
+  return getCurrentWebviewWindow().label === 'hanger' ? <ThemeHanger /> : <SkinStudioApp />
 }
 
 export default App

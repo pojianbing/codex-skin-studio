@@ -11,6 +11,17 @@ use uuid::Uuid;
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub launch_codex_on_open: bool,
+    #[serde(default)]
+    pub show_theme_hanger: bool,
+    #[serde(default)]
+    pub theme_hanger_position: Option<WindowPosition>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowPosition {
+    pub x: i32,
+    pub y: i32,
 }
 
 pub fn app_root() -> Result<PathBuf> {
@@ -87,5 +98,12 @@ mod tests {
     #[test]
     fn codex_launch_on_open_is_disabled_by_default() {
         assert!(!AppSettings::default().launch_codex_on_open);
+    }
+
+    #[test]
+    fn theme_hanger_is_hidden_by_default() {
+        let settings = AppSettings::default();
+        assert!(!settings.show_theme_hanger);
+        assert!(settings.theme_hanger_position.is_none());
     }
 }

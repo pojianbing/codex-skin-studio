@@ -12,17 +12,103 @@ use models::{
     ApplyPlan, ArtConfig, ChangeSummaryConfig, ComposerConfig, Dashboard, EnvironmentConfig,
     LevelSliderConfig, SemanticTokens, ThemeRecord, UiConfig,
 };
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+const HANGER_COMPACT_SIZE: u32 = 44;
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn hide_theme_hanger(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("hanger") {
+        let _ = window.hide();
+    }
+}
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn stored_hanger_position_is_visible(
+    window: &tauri::WebviewWindow,
+    position: &storage::WindowPosition,
+) -> bool {
+    window.available_monitors().is_ok_and(|monitors| {
+        monitors.into_iter().any(|monitor| {
+            let area = monitor.work_area();
+            position.x >= area.position.x
+                && position.x < area.position.x + area.size.width as i32
+                && position.y >= area.position.y
+                && position.y < area.position.y + area.size.height as i32
+        })
+    })
+}
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn default_hanger_position(window: &tauri::WebviewWindow) -> Option<tauri::PhysicalPosition<i32>> {
+    let monitor = window
+        .current_monitor()
+        .ok()
+        .flatten()
+        .or_else(|| window.primary_monitor().ok().flatten())?;
+    let area = monitor.work_area();
+    Some(tauri::PhysicalPosition::new(
+        area.position.x + area.size.width as i32 - HANGER_COMPACT_SIZE as i32 - 24,
+        area.position.y + 24,
+    ))
+}
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn show_theme_hanger(app: &tauri::AppHandle) {
+    let settings = storage::read_settings();
+    if !settings.show_theme_hanger {
+        return;
+    }
+    let Some(window) = app.get_webview_window("hanger") else {
+        return;
+    };
+
+    let _ = window.set_size(tauri::PhysicalSize::new(
+        HANGER_COMPACT_SIZE,
+        HANGER_COMPACT_SIZE,
+    ));
+    let position = settings
+        .theme_hanger_position
+        .filter(|position| stored_hanger_position_is_visible(&window, position))
+        .map(|position| tauri::PhysicalPosition::new(position.x, position.y))
+        .or_else(|| default_hanger_position(&window));
+    if let Some(position) = position {
+        let _ = window.set_position(position);
+    }
+    let _ = window.emit("theme-hanger-reset", ());
+    let _ = window.show();
+}
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn sync_theme_hanger(app: &tauri::AppHandle) {
+    let main_is_visible = app
+        .get_webview_window("main")
+        .and_then(|window| window.is_visible().ok())
+        .unwrap_or(false);
+    if main_is_visible {
+        hide_theme_hanger(app);
+    } else {
+        show_theme_hanger(app);
+    }
+}
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 use tauri_plugin_autostart::ManagerExt;
 
 fn show_main_window(app: &tauri::AppHandle) {
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    hide_theme_hanger(app);
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
     }
+}
+
+#[tauri::command]
+fn open_main_window(app: tauri::AppHandle) {
+    show_main_window(&app);
 }
 
 fn autostart_enabled(app: &tauri::AppHandle) -> std::result::Result<bool, String> {
@@ -259,19 +345,28 @@ async fn restore_official(
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {
     use tauri::{
-        menu::{Menu, MenuItem},
+        menu::{CheckMenuItem, Menu, MenuItem},
         tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     };
 
     let open = MenuItem::with_id(app, "open", "打开 Skin Studio", true, None::<&str>)?;
     let toggle = MenuItem::with_id(app, "toggle", "暂停/恢复主题", true, None::<&str>)?;
+    let theme_hanger = CheckMenuItem::with_id(
+        app,
+        "theme-hanger",
+        "显示主题挂件",
+        true,
+        storage::read_settings().show_theme_hanger,
+        None::<&str>,
+    )?;
     let quit = MenuItem::with_id(app, "quit", "退出后台", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &toggle, &quit])?;
+    let menu = Menu::with_items(app, &[&open, &toggle, &theme_hanger, &quit])?;
+    let theme_hanger_menu_item = theme_hanger.clone();
     let mut tray = TrayIconBuilder::with_id("skin-studio")
         .tooltip("Codex Skin Studio")
         .menu(&menu)
         .show_menu_on_left_click(false)
-        .on_menu_event(|app, event| match event.id().as_ref() {
+        .on_menu_event(move |app, event| match event.id().as_ref() {
             "open" => show_main_window(app),
             "toggle" => {
                 let runtime = app.state::<AppRuntime>().inner().clone();
@@ -291,6 +386,15 @@ fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {
                         eprintln!("[skin-studio] 托盘主题操作失败：{error}");
                     }
                 });
+            }
+            "theme-hanger" => {
+                let enabled = theme_hanger_menu_item.is_checked().unwrap_or(false);
+                let mut settings = storage::read_settings();
+                settings.show_theme_hanger = enabled;
+                if let Err(error) = storage::write_settings(&settings) {
+                    eprintln!("[skin-studio] 保存主题挂件设置失败：{error}");
+                }
+                sync_theme_hanger(app);
             }
             "quit" => app.exit(0),
             _ => {}
@@ -363,6 +467,9 @@ pub fn run() {
             let background = std::env::args_os().any(|argument| argument == "--background");
             if !background {
                 show_main_window(app.handle());
+            } else {
+                #[cfg(any(target_os = "windows", target_os = "macos"))]
+                sync_theme_hanger(app.handle());
             }
             Ok(())
         })
@@ -372,9 +479,23 @@ pub fn run() {
             {
                 api.prevent_close();
                 let _ = window.hide();
+                #[cfg(any(target_os = "windows", target_os = "macos"))]
+                sync_theme_hanger(window.app_handle());
+            } else if window.label() == "hanger"
+                && let tauri::WindowEvent::Moved(position) = event
+            {
+                let mut settings = storage::read_settings();
+                settings.theme_hanger_position = Some(storage::WindowPosition {
+                    x: position.x,
+                    y: position.y,
+                });
+                if let Err(error) = storage::write_settings(&settings) {
+                    eprintln!("[skin-studio] 保存主题挂件位置失败：{error}");
+                }
             }
         })
         .invoke_handler(tauri::generate_handler![
+            open_main_window,
             get_dashboard,
             get_apply_plan,
             set_autostart,
