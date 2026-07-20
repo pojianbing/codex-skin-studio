@@ -1,5 +1,7 @@
 # Codex Skin Studio
 
+<p align="center"><a href="README.md">简体中文</a> · <a href="README.en.md">English</a></p>
+
 <p align="center">
   <img src="public/app-icon.png" alt="Codex Skin Studio" width="150" />
 </p>
