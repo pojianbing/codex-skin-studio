@@ -1,40 +1,135 @@
 # Codex Skin Studio
 
-Windows 和 macOS 的 Codex Desktop 本地主题管理器。应用通过回环 CDP 在运行时注入统一维护的 CSS 与 renderer payload，不修改官方应用包、`app.asar` 或代码签名。
+<p align="center">
+  <img src="public/app-icon.png" alt="Codex Skin Studio" width="150" />
+</p>
 
-## 功能
+<p align="center">
+  <strong>把 Codex Desktop 调整成适合长期工作的界面。</strong><br />
+  一个运行于 Windows 和 macOS 的本地主题管理器：导入壁纸、精细调整界面，并随时恢复官方外观。
+</p>
 
-- 导入 JPG、PNG、WebP 壁纸并生成本地主题
-- 导入和导出单文件 `.codex-theme` 主题包，保留背景图和全部组件配置
-- 主题商店从官方 GitHub Release 读取签名目录，校验主题包 SHA-256 后安装或更新
-- 主题预览、浅色/深色外观、内容安全区和任务页模式
-- 本机 CDP 注入与 renderer 路由重注入
-- 已建立主题会话时无重启热切换
-- 托盘后台守护、会话自动恢复和可选的登录时后台运行
-- 暂停当前皮肤
-- 停止 watcher、移除实时 DOM、关闭 CDP 并正常重启 Codex
-- 主题文件只包含声明式 JSON 和图片，不执行主题自带代码
+<p align="center">
+  <a href="#快速开始">快速开始</a> ·
+  <a href="#主题工作流">主题工作流</a> ·
+  <a href="#安全与兼容性">安全与兼容性</a> ·
+  <a href="#开发">开发</a> ·
+  <a href="#许可证与致谢">许可证</a>
+</p>
 
-内置主题同步自 `Fei-Away/Codex-Dream-Skin` 的可运行 preset：琥珀黄昏、赛博霓虹、森野薄雾、午夜极光、桥本有菜和樱粉晨曦。仓库中的 UI 概念截图不作为背景导入。
+<p align="center">
+  <a href="https://github.com/pojianbing/codex-skin-studio/releases"><img src="https://img.shields.io/github/v/release/pojianbing/codex-skin-studio?display_name=tag&sort=semver" alt="Release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4c8bf5.svg" alt="MIT License" /></a>
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-3fb950.svg" alt="Windows and macOS" />
+</p>
+
+> 本项目不是 OpenAI 官方产品，也不会修改 Codex 的应用包、`app.asar`、代码签名或 `config.toml`。
+
+## 为什么使用它
+
+Codex Skin Studio 将主题保留在本机。选择内置主题、导入一张图片或加载一个主题包后，你可以针对实际工作界面调整侧栏、编辑区、代码块、差异视图、输入框和文字颜色。修改会立即反映在预览中；建立主题会话后，切换主题与参数调整无需重启 Codex。
+
+- **以图片生成主题**：导入 JPG、PNG 或 WebP 壁纸，自动生成缩略图和一个可继续编辑的本地主题。
+- **细调而非只换背景**：分别设置内容安全区、任务页背景、组件表面、透明度、模糊、圆角、滚动条、Diff、正文排版和语义颜色。
+- **带上完整配置分享**：导入或导出单文件 `.codex-theme` 包，保留背景图片和所有主题参数。
+- **本地主题商店**：从经过签名验证的主题目录中浏览、安装或更新主题。
+- **可逆的应用过程**：暂停皮肤或恢复官方外观时，应用会移除实时注入的 DOM、停止守护并以普通模式重启 Codex。
+- **适合长期运行**：支持系统托盘、会话自动恢复，以及可选的登录时后台运行。
+
+内置 5 款主题：绿野树语、星河初光、翠谷晴峰、竹影天光和墨影霓裳。
+
+## 快速开始
+
+### 1. 安装
+
+从 [GitHub Releases](https://github.com/pojianbing/codex-skin-studio/releases/latest) 下载与系统匹配的安装包。
+
+| 平台 | 已构建架构 | Codex 前置条件 |
+| --- | --- | --- |
+| Windows | x64 | 通过 Microsoft Store 安装的官方 Codex Desktop |
+| macOS | Apple Silicon、Intel | 位于 `/Applications` 或 `~/Applications` 的官方 Codex / ChatGPT 应用 |
+
+Linux 当前不受支持。应用会在操作前验证检测到的 Codex 安装；找不到或无法验证时不会进行注入。
+
+### 2. 选择主题并应用
+
+1. 启动 Codex Skin Studio，确认首页显示已检测到 Codex Desktop。
+2. 在「主题库」中选择一个内置主题，或点击导入按钮选择自己的图片或 `.codex-theme` 文件。
+3. 在预览中调整主题，再点击应用。
+
+首次将一个普通模式运行的 Codex 接入主题时，应用需要确认后重启 Codex，以便在启动时打开本机 CDP 端口。主题会话建立后，主题和参数均可热切换。
+
+### 3. 恢复官方外观
+
+在应用中选择「恢复官方主题」。Skin Studio 会清理已注入的内容、停止 watcher、关闭已验证的 Codex 进程，并正常重新启动 Codex。也可使用「暂停皮肤」临时关闭主题而保留当前会话。
+
+## 主题工作流
+
+### 从壁纸开始
+
+导入本地 JPG、PNG 或 WebP 后，应用会创建一个独立的本地主题副本。通过预览编辑器可调整：
+
+- 图片焦点、内容安全区及任务页显示方式；
+- 浅色、深色或自动外观；
+- 侧栏、顶部栏、会话行、用户气泡、代码块、活动卡片和弹层；
+- 输入框、环境面板、变更摘要和等级滑块；
+- 文本、边框、焦点环、成功、警告和错误等语义颜色；
+- 滚动条、Diff 样式、内容宽度、字号、间距和富文本元素。
+
+预览中的组件可直接定位到对应配置区，便于只调整影响阅读体验的部分，而不是在整张背景图上叠加不可控的透明层。
+
+### 导入与导出主题包
+
+`.codex-theme` 是 Skin Studio 使用的 ZIP 主题包，包含 `bundle.json` 及一张 JPG、PNG 或 WebP 背景图。导入时会验证清单、图片格式、尺寸和压缩包内容，并重新生成缩略图；主题包不会携带 CDP 连接、引擎状态或可执行代码。
+
+主题图片最大为 16 MB，最大边长为 16,384 像素，最大像素数为 5,000 万。导入的主题可再次导出，用于备份或分享。
+
+### 从主题商店安装
+
+主题商店从 [`pojianbing/codex-skin-themes`](https://github.com/pojianbing/codex-skin-themes) 的最新正式 Release 获取目录。客户端会校验 Ed25519 签名，并将下载包的大小和 SHA-256 与已验证目录交叉核对。网络不可用时仅使用上一次验证成功的目录缓存；不会自动安装或自动更新主题。
+
+## 安全与兼容性
+
+Skin Studio 通过绑定到 `127.0.0.1` 的 Chrome DevTools Protocol (CDP) 将统一维护的 CSS 与 renderer payload 注入正在运行的 Codex。它不写入官方应用目录，不替换资源文件，也不修改 Code Signing。
+
+- 应用只会对已验证的官方 Codex 进程建立主题会话。Windows 验证 Microsoft Store 包；macOS 验证应用标识和 OpenAI 签名团队。
+- CDP 只监听回环地址，但同一用户账户下的本地进程仍可能访问调试端口。主题会话运行时，请不要执行不可信的本机程序。
+- 当前版本不会修改 Codex 的 `config.toml`。恢复官方主题不会留下持久化补丁。
+- 关闭主窗口默认会最小化到系统托盘；选择「退出后台」才会退出 Skin Studio。启用登录时后台运行后，活动主题会在下次登录后恢复。
+- Codex Desktop 的内部 DOM 可能随版本变化。若官方更新导致界面异常，请先恢复官方主题并在 Issue 中附上版本与复现信息。
+
+## 本地数据
+
+| 平台 | 数据目录 |
+| --- | --- |
+| Windows | `%LOCALAPPDATA%\codex\CodexSkinStudio\data` |
+| macOS | `~/Library/Application Support/studio.codex.CodexSkinStudio` |
+
+主题位于 `themes/<theme-id>`，主题会话状态位于 `engine-state.json`。写入采用同目录临时文件与可恢复替换，避免中断操作留下半写入状态。
 
 ## 开发
+
+开发环境需要 Node.js 22、Rust stable，以及 [Tauri v2 的系统依赖](https://v2.tauri.app/start/prerequisites/)。
 
 ```powershell
 npm install
 npm run desktop:dev
 ```
 
-检查与构建：
+执行检查、测试与桌面构建：
 
 ```powershell
+npm run lint
 npm run build
 cargo test --manifest-path src-tauri/Cargo.toml
 npm run desktop:build
 ```
 
-## 发布与自动更新
+### 发布与自动更新
 
-推送 `v<semver>` 形式的版本 tag 后，GitHub Actions 会构建 Windows x64、macOS Apple Silicon 和 macOS Intel 安装包，并创建草稿 Release。正式发布前，需要在仓库的 Actions Secrets 中配置：
+推送 `v<semver>` 格式的 tag 会触发 GitHub Actions：先执行版本校验、lint 与前端构建，再生成 Windows x64、macOS Apple Silicon 和 macOS Intel 安装包，并创建草稿 Release。
+
+发布前在仓库 Secrets 中配置：
 
 ```text
 TAURI_SIGNING_PRIVATE_KEY
@@ -42,29 +137,20 @@ TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 TAURI_UPDATER_PUBKEY
 ```
 
-首次执行 `npm run secrets:generate-updater-key`，按提示为私钥设置密码。密钥会统一写入 `.secrets/codex-skin-studio-updater.key` 和 `.secrets/codex-skin-studio-updater.key.pub`，该目录被 Git 忽略。私钥完整内容放入 `TAURI_SIGNING_PRIVATE_KEY`，密码放入 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`，公钥文件内容放入 `TAURI_UPDATER_PUBKEY`。不要将私钥或密码提交到仓库。
+首次可运行以下命令生成更新密钥。生成的私钥位于已被 Git 忽略的 `.secrets/` 目录，绝不能提交到仓库。
 
-发布工作流会临时生成 updater 配置、创建 `latest.json`，并上传经签名的更新包。macOS 默认使用 ad-hoc 签名；取得 Apple Developer ID 证书后，可通过 `TAURI_MACOS_SIGNING_IDENTITY` 覆盖签名身份，再接入证书导入与 notarization。
+```powershell
+npm run secrets:generate-updater-key
+```
 
-## 本地数据
+macOS 默认使用 ad-hoc 签名。取得 Apple Developer ID 后，可设置 `TAURI_MACOS_SIGNING_IDENTITY`，并在发布流程中接入证书导入和 notarization。
 
-- Windows：`%LOCALAPPDATA%\codex\CodexSkinStudio\data`
-- macOS：`~/Library/Application Support/studio.codex.CodexSkinStudio`
+## 贡献与反馈
 
-主题存放在数据目录的 `themes/<theme-id>`。引擎状态写入 `engine-state.json`，采用同目录临时文件和可恢复替换。
+欢迎通过 [Issues](https://github.com/pojianbing/codex-skin-studio/issues) 报告问题、提出建议或提交 Pull Request。提交界面相关改动时，请同时验证浅色和深色主题下的文字可读性、焦点状态和 reduced-motion 行为。
 
-`.codex-theme` 是 Skin Studio 的 ZIP 主题包，固定包含 `bundle.json` 和一张 JPG、PNG 或 WebP 背景图。导入时应用会重新生成缩略图、验证组件配置及图片限制，并创建新的本地主题副本；主题包不包含引擎状态、CDP 连接信息或可执行代码。
+## 许可证与致谢
 
-主题商店仅连接 `pojianbing/codex-skin-themes` 最新正式 GitHub Release 的公开下载地址，不调用易受未认证配额限制的 REST API。客户端固定内置 Ed25519 公钥，要求 `catalog.json` 与 `catalog.sig` 验签通过，并将主题包的实际大小和 SHA-256 与目录交叉校验。网络不可用时使用上次验证成功的目录缓存；不会自动安装或自动更新主题。
+项目代码采用 [MIT License](LICENSE)。内置主题素材来自 [Fei-Away/Codex-Dream-Skin](https://github.com/Fei-Away/Codex-Dream-Skin) 的 MIT 许可预设；人物、肖像、商标及其他第三方 IP 的使用权需要由主题使用者自行确认，代码许可证并不自动授予相应的商业使用权。
 
-## 恢复保证
-
-当前版本不修改 Codex 的 `config.toml`。恢复官方主题时会停止应用内 watcher、仅连接保存的 Browser ID 清理实时 DOM、关闭已验证路径下的 Codex 进程，然后不带调试参数重新启动官方应用。
-
-首次接管一个以普通模式运行的 Codex 时仍需要重启，因为 Electron 的远程调试端口只能在主进程启动时开启。主题会话建立后，切换主题和调整参数都会直接热更新。关闭 Skin Studio 主窗口只会将它收进系统托盘；启用“登录时后台运行”后，守护进程会在登录时恢复活动会话，并在检测到 Codex 以普通模式重新打开后尽早重新接管。用户主动退出 Codex 时，守护进程不会自行再次打开它。
-
-CDP 只绑定回环地址，但同一用户下的本地进程仍可能访问调试端口。主题运行期间不要运行不可信程序。
-
-## 素材与许可
-
-内置主题素材来自 Fei-Away/Codex-Dream-Skin 的 MIT 许可预设。人物、肖像、商标和第三方 IP 素材仍需使用者自行确认权利，不因代码许可自动获得商业使用授权。应用代码使用 MIT License。Codex Skin Studio 不是 OpenAI 官方产品。
+Codex Skin Studio 与 OpenAI 没有关联、也未经其认可。
