@@ -322,7 +322,9 @@ pub fn run() {
         .get("updater")
         .is_some_and(serde_json::Value::is_object);
 
-    let builder = tauri::Builder::<tauri::Wry>::default().plugin(tauri_plugin_process::init());
+    let builder = tauri::Builder::<tauri::Wry>::default()
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::init());
     let builder = if has_updater_config {
         builder.plugin(tauri_plugin_updater::Builder::new().build())
     } else {

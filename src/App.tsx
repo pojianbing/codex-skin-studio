@@ -18,7 +18,9 @@ import {
 import { Toaster } from '@/components/ui/sonner'
 import { CodexPreview } from '@/components/codex-preview'
 import { AppUpdater } from '@/components/app-updater'
+import { AppearanceToggle } from '@/components/appearance-toggle'
 import { ThemeStore } from '@/components/theme-store'
+import { ThemeDnaEasterEgg } from '@/components/theme-dna-easter-egg'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -620,7 +622,9 @@ function App() {
   const [hoveredElement, setHoveredElement] = useState<PreviewElementId | null>(null)
   const [selectedElement, setSelectedElement] = useState<PreviewElementId | null>(null)
   const [pendingScrollElement, setPendingScrollElement] = useState<PreviewElementId | null>(null)
+  const [isThemeDnaOpen, setIsThemeDnaOpen] = useState(false)
   const configSectionRefs = useRef(new Map<PreviewElementId, HTMLDetailsElement>())
+  const brandClickRef = useRef({ count: 0, startedAt: 0 })
   const [showPreview, setShowPreview] = useState(() => {
     try {
       return localStorage.getItem('cs-show-preview') !== 'false'
@@ -703,6 +707,25 @@ function App() {
     () => filteredThemes.find((theme) => theme.id === selectedId) ?? filteredThemes[0],
     [filteredThemes, selectedId],
   )
+
+  const handleBrandMarkClick = () => {
+    if (!selected) return
+
+    const now = Date.now()
+    const clicks = brandClickRef.current
+    if (now - clicks.startedAt > 3000) {
+      clicks.count = 0
+      clicks.startedAt = now
+    }
+    if (clicks.count === 0) clicks.startedAt = now
+
+    clicks.count += 1
+    if (clicks.count === 7) {
+      clicks.count = 0
+      clicks.startedAt = 0
+      setIsThemeDnaOpen(true)
+    }
+  }
 
   const resolvedSafeArea = useMemo(() => {
     if (!selected) return 'left'
@@ -916,21 +939,26 @@ function App() {
       : dashboard.mode === 'error' ? '需要处理' : '官方主题'
 
   return (
-    <div className="flex w-full h-full min-h-0 overflow-hidden bg-transparent text-zinc-50 font-sans selection:bg-primary/20">
+    <div className="skin-studio flex w-full h-full min-h-0 overflow-hidden bg-transparent text-foreground font-sans selection:bg-primary/20">
       {/* Sidebar */}
       <aside className="w-[218px] flex-none flex flex-col p-5 bg-zinc-900/35 backdrop-blur-xl text-zinc-200 border-r border-zinc-850/40">
         {/* Brand mark */}
-        <div className="flex gap-3 align-middle items-center px-2 pb-6 border-b border-zinc-850/40 mb-4" aria-label="Codex Skin Studio">
+        <button
+          type="button"
+          onClick={handleBrandMarkClick}
+          aria-label="Skin Studio"
+          className="group flex w-full items-center gap-3 border-b border-zinc-850/40 px-2 pb-6 text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+        >
           <img
             src="/app-icon.png"
-            className="w-9 h-9 select-none hover:scale-[1.04] transition-all duration-300 object-contain"
+            className="w-9 h-9 select-none object-contain transition-all duration-300 group-hover:scale-[1.04]"
             alt="Codex Skin Studio Logo"
           />
           <div className="flex flex-col leading-none">
             <span className="font-bold text-sm text-zinc-50">Skin Studio</span>
             <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold mt-1">Codex themes</span>
           </div>
-        </div>
+        </button>
 
         {/* Navigation list */}
         <nav className="flex-1 flex flex-col gap-1" aria-label="主导航">
@@ -962,9 +990,12 @@ function App() {
 
         {/* Compact app information */}
         <div className="mt-auto pt-3 border-t border-zinc-850/40">
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-850/50 bg-zinc-950/25 px-3 py-2.5 text-[10px] backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-850/50 bg-zinc-950/25 px-2.5 py-2.5 text-[10px] backdrop-blur-sm">
             <span className="shrink-0 text-zinc-500">应用版本</span>
-            <AppUpdater />
+            <div className="flex items-center gap-1.5">
+              <AppearanceToggle />
+              <AppUpdater />
+            </div>
           </div>
         </div>
       </aside>
@@ -2112,12 +2143,18 @@ function App() {
         )}
       </main>
 
+      <ThemeDnaEasterEgg
+        open={isThemeDnaOpen}
+        onOpenChange={setIsThemeDnaOpen}
+        theme={selected}
+      />
+
       {/* Sonner Toaster component */}
       <Toaster position="top-right" />
 
       {/* Confirm Restart Dialog */}
       <Dialog open={confirmRestart} onOpenChange={setConfirmRestart}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="studio-dialog max-w-sm">
           <DialogHeader>
             <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
               <Play size={20} />
@@ -2140,7 +2177,7 @@ function App() {
 
       {/* Confirm Theme Deletion Dialog */}
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="studio-dialog max-w-sm">
           <DialogHeader>
             <div className="w-10 h-10 rounded-lg bg-rose-950/60 text-rose-400 flex items-center justify-center mb-2">
               <Trash2 size={20} />
@@ -2163,7 +2200,7 @@ function App() {
 
       {/* Confirm Restore Dialog */}
       <Dialog open={confirmRestore} onOpenChange={setConfirmRestore}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="studio-dialog max-w-sm">
           <DialogHeader>
             <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center mb-2">
               <RotateCcw size={20} />

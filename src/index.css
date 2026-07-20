@@ -7,46 +7,68 @@
 
 :root {
   font-family: 'Geist Variable', Inter, system-ui, sans-serif;
-  color: oklch(0.98 0 0);
-  background: oklch(0.09 0 0);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   letter-spacing: 0;
 
-  --background: oklch(0.09 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.12 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.98 0 0);
+  color: oklch(0.22 0.012 255);
+  background: oklch(0.985 0.004 255);
 
-  --primary: oklch(0.98 0 0);
-  --primary-foreground: oklch(0.09 0 0);
+  --background: oklch(0.985 0.004 255);
+  --foreground: oklch(0.22 0.012 255);
+  --card: oklch(0.995 0.002 255);
+  --card-foreground: oklch(0.22 0.012 255);
+  --popover: oklch(0.995 0.002 255);
+  --popover-foreground: oklch(0.22 0.012 255);
 
-  --secondary: oklch(0.2 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.28 0.017 255);
+  --primary-foreground: oklch(0.99 0.002 255);
 
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.65 0 0);
+  --secondary: oklch(0.94 0.008 255);
+  --secondary-foreground: oklch(0.28 0.017 255);
 
-  --accent: oklch(0.2 0 0);
-  --accent-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.94 0.008 255);
+  --muted-foreground: oklch(0.47 0.017 255);
 
-  --destructive: oklch(0.4 0.18 20);
-  --border: oklch(0.2 0 0);
-  --input: oklch(0.2 0 0);
-  --ring: oklch(0.98 0 0);
+  --accent: oklch(0.93 0.012 255);
+  --accent-foreground: oklch(0.23 0.014 255);
+
+  --destructive: oklch(0.56 0.21 25);
+  --border: oklch(0.88 0.01 255);
+  --input: oklch(0.88 0.01 255);
+  --ring: oklch(0.53 0.12 250);
 
   --radius: 0.75rem;
 
-  --sidebar: oklch(0.09 0 0);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.98 0 0);
-  --sidebar-primary-foreground: oklch(0.09 0 0);
-  --sidebar-accent: oklch(0.2 0 0);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.2 0 0);
-  --sidebar-ring: oklch(0.98 0 0);
+  --sidebar: oklch(0.97 0.006 255);
+  --sidebar-foreground: oklch(0.22 0.012 255);
+  --sidebar-primary: oklch(0.28 0.017 255);
+  --sidebar-primary-foreground: oklch(0.99 0.002 255);
+  --sidebar-accent: oklch(0.93 0.012 255);
+  --sidebar-accent-foreground: oklch(0.23 0.014 255);
+  --sidebar-border: oklch(0.88 0.01 255);
+  --sidebar-ring: oklch(0.53 0.12 250);
+
+  --app-surface: oklch(0.975 0.005 255);
+  --app-surface-raised: oklch(0.995 0.002 255);
+  --app-surface-muted: oklch(0.955 0.007 255);
+  --app-control: oklch(0.92 0.01 255);
+  --app-hover: oklch(0.9 0.012 255);
+  --app-selected: oklch(0.27 0.018 255);
+  --app-line: oklch(0.87 0.011 255);
+  --app-line-strong: oklch(0.79 0.014 255);
+  --app-text: oklch(0.22 0.012 255);
+  --app-text-soft: oklch(0.34 0.015 255);
+  --app-text-muted: oklch(0.47 0.017 255);
+  --app-text-faint: oklch(0.59 0.014 255);
+  --app-scrollbar: oklch(0.61 0.014 255 / 0.7);
+  --app-scrollbar-hover: oklch(0.48 0.016 255);
+  --app-success: oklch(0.52 0.15 150);
+  --app-success-soft: oklch(0.94 0.04 150);
+  --app-warning: oklch(0.6 0.14 75);
+  --app-warning-soft: oklch(0.95 0.045 75);
+  --app-danger: oklch(0.56 0.19 25);
+  --app-danger-soft: oklch(0.95 0.04 25);
 }
 
 * { box-sizing: border-box; }
@@ -58,10 +80,7 @@ html, body, #root {
   min-height: 680px;
   margin: 0;
   overflow: hidden;
-  /* 现代多层优雅径向渐变背景，使暗金属风格富于空间感 */
-  background: radial-gradient(ellipse 65% 45% at 30% 0%, oklch(0.16 0.02 240 / 0.12), transparent),
-              radial-gradient(ellipse 55% 55% at 85% 85%, oklch(0.15 0.03 290 / 0.09), transparent),
-              oklch(0.08 0 0);
+  background: var(--background);
 }
 
 @theme inline {
@@ -122,6 +141,36 @@ html, body, #root {
   --border: oklch(0.18 0 0 / 0.7);
   --input: oklch(0.18 0 0 / 0.7);
   --ring: oklch(0.98 0 0);
+
+  --sidebar: oklch(0.09 0.003 255);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.98 0 0);
+  --sidebar-primary-foreground: oklch(0.09 0 0);
+  --sidebar-accent: oklch(0.2 0.005 255);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.18 0.004 255 / 0.7);
+  --sidebar-ring: oklch(0.98 0 0);
+
+  --app-surface: oklch(0.12 0.005 255);
+  --app-surface-raised: oklch(0.1 0.004 255);
+  --app-surface-muted: oklch(0.145 0.006 255);
+  --app-control: oklch(0.19 0.006 255);
+  --app-hover: oklch(0.24 0.007 255);
+  --app-selected: oklch(0.98 0 0);
+  --app-line: oklch(0.22 0.006 255 / 0.75);
+  --app-line-strong: oklch(0.34 0.008 255);
+  --app-text: oklch(0.98 0 0);
+  --app-text-soft: oklch(0.86 0.006 255);
+  --app-text-muted: oklch(0.66 0.008 255);
+  --app-text-faint: oklch(0.49 0.009 255);
+  --app-scrollbar: oklch(0.3 0.006 255 / 0.85);
+  --app-scrollbar-hover: oklch(0.42 0.008 255);
+  --app-success: oklch(0.78 0.15 150);
+  --app-success-soft: oklch(0.24 0.05 150);
+  --app-warning: oklch(0.82 0.14 75);
+  --app-warning-soft: oklch(0.25 0.05 75);
+  --app-danger: oklch(0.7 0.18 25);
+  --app-danger-soft: oklch(0.25 0.06 25);
 }
 
 @layer base {
@@ -134,6 +183,241 @@ html, body, #root {
   html {
     @apply font-sans;
   }
+}
+
+/* Skin Studio keeps its existing dense layout, but routes its chrome through tokens
+   so the historical zinc utilities remain readable in both application modes. */
+.skin-studio {
+  color: var(--app-text);
+  background: var(--background);
+}
+
+.studio-dialog {
+  color: var(--app-text);
+  background-color: var(--app-surface-raised);
+  border-color: var(--app-line);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="text-zinc-50"],
+  [class~="text-zinc-100"],
+  [class~="text-zinc-200"],
+  [class~="text-zinc-205"],
+  [class~="text-zinc-300"]
+) {
+  color: var(--app-text-soft);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="text-zinc-350"],
+  [class~="text-zinc-400"],
+  [class~="text-zinc-450"]
+) {
+  color: var(--app-text-muted);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="text-zinc-500"],
+  [class~="text-zinc-550"],
+  [class~="text-zinc-600"],
+  [class~="text-zinc-700"]
+) {
+  color: var(--app-text-faint);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="bg-zinc-950"],
+  [class~="bg-zinc-950/25"],
+  [class~="bg-zinc-950/45"],
+  [class~="bg-zinc-950/60"],
+  [class~="bg-zinc-950/65"],
+  [class~="bg-zinc-950/75"],
+  [class~="bg-zinc-950/80"]
+) {
+  background-color: var(--app-surface-raised);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="bg-zinc-900"],
+  [class~="bg-zinc-900/10"],
+  [class~="bg-zinc-900/15"],
+  [class~="bg-zinc-900/20"],
+  [class~="bg-zinc-900/25"],
+  [class~="bg-zinc-900/35"],
+  [class~="bg-zinc-900/40"],
+  [class~="bg-zinc-900/45"],
+  [class~="bg-zinc-900/50"],
+  [class~="bg-zinc-900/55"],
+  [class~="bg-zinc-900/60"]
+) {
+  background-color: var(--app-surface);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="bg-zinc-850"],
+  [class~="bg-zinc-800"],
+  [class~="bg-zinc-800/60"],
+  [class~="bg-zinc-800/70"],
+  [class~="bg-zinc-800/80"]
+) {
+  background-color: var(--app-control);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="bg-zinc-100"],
+  [class~="bg-zinc-50"]
+) {
+  color: var(--primary-foreground);
+  background-color: var(--app-selected);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="border-zinc-850/40"],
+  [class~="border-zinc-850/45"],
+  [class~="border-zinc-850/50"],
+  [class~="border-zinc-850/60"],
+  [class~="border-zinc-800"],
+  [class~="border-zinc-800/40"],
+  [class~="border-zinc-800/50"],
+  [class~="border-zinc-800/60"],
+  [class~="border-zinc-800/70"],
+  [class~="border-zinc-800/80"]
+) {
+  border-color: var(--app-line);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="border-zinc-700"],
+  [class~="border-zinc-700/20"],
+  [class~="border-zinc-700/30"],
+  [class~="border-zinc-700/80"],
+  [class~="border-zinc-650"],
+  [class~="border-zinc-500"]
+) {
+  border-color: var(--app-line-strong);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="ring-zinc-200/50"],
+  [class~="ring-black/20"]
+) {
+  --tw-ring-color: var(--app-line-strong);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="hover:bg-zinc-800"],
+  [class~="hover:bg-zinc-800/35"],
+  [class~="hover:bg-zinc-800/60"],
+  [class~="hover:bg-zinc-800/70"],
+  [class~="hover:bg-zinc-900"],
+  [class~="hover:bg-zinc-900/30"],
+  [class~="hover:bg-zinc-900/40"]
+):hover {
+  background-color: var(--app-hover);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="hover:text-zinc-50"],
+  [class~="hover:text-zinc-100"],
+  [class~="hover:text-zinc-200"],
+  [class~="group-hover:text-zinc-50"],
+  [class~="group-hover:text-zinc-100"],
+  [class~="group-hover:text-zinc-300"],
+  [class~="group-hover:text-white"]
+) {
+  color: var(--app-text-soft);
+}
+
+:is(.skin-studio, .studio-dialog) .group:hover :is(
+  [class~="group-hover:text-zinc-50"],
+  [class~="group-hover:text-zinc-100"],
+  [class~="group-hover:text-zinc-300"],
+  [class~="group-hover:text-white"]
+) {
+  color: var(--app-text);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="divide-zinc-800"]
+) > :not(:last-child) {
+  border-color: var(--app-line);
+}
+
+.appearance-toggle {
+  color: var(--app-text-muted);
+  border-color: var(--app-line);
+  background-color: var(--app-surface-raised);
+}
+
+.appearance-toggle:hover {
+  color: var(--app-text);
+  border-color: var(--app-line-strong);
+  background-color: var(--app-hover);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="bg-emerald-950/20"],
+  [class~="bg-emerald-950/30"],
+  [class~="bg-emerald-950/40"],
+  [class~="bg-emerald-500/10"],
+  [class~="bg-emerald-500/20"]
+) {
+  background-color: var(--app-success-soft);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="text-emerald-300"],
+  [class~="text-emerald-400"]
+) {
+  color: var(--app-success);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="border-emerald-900/30"],
+  [class~="border-emerald-900/40"],
+  [class~="border-emerald-500/20"],
+  [class~="border-emerald-500/30"],
+  [class~="border-emerald-400/20"]
+) {
+  border-color: color-mix(in oklab, var(--app-success) 38%, var(--app-line));
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="bg-amber-950/20"],
+  [class~="bg-amber-950/30"],
+  [class~="bg-amber-950/40"],
+  [class~="bg-amber-950/60"]
+) {
+  background-color: var(--app-warning-soft);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="text-amber-300"],
+  [class~="text-amber-400"]
+) {
+  color: var(--app-warning);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="border-amber-900/40"],
+  [class~="border-amber-900/50"]
+) {
+  border-color: color-mix(in oklab, var(--app-warning) 38%, var(--app-line));
+}
+
+:is(.skin-studio, .studio-dialog) [class~="bg-rose-950/60"] {
+  background-color: var(--app-danger-soft);
+}
+
+:is(.skin-studio, .studio-dialog) [class~="text-rose-400"] {
+  color: var(--app-danger);
+}
+
+:is(.skin-studio, .studio-dialog) :is(
+  [class~="bg-gradient-to-b"][class~="from-zinc-900/55"],
+  [class~="bg-gradient-to-b"][class~="from-zinc-900/60"]
+) {
+  background-image: linear-gradient(180deg, var(--app-surface), var(--app-surface-raised));
 }
 
 :root {
@@ -153,6 +437,42 @@ html, body, #root {
 .config-section-link--active {
   background: var(--element-link-soft);
   box-shadow: inset 3px 0 0 var(--element-link);
+}
+
+.theme-dna-field::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.035) 48%, transparent 52%);
+  animation: theme-dna-scan 5s linear infinite;
+}
+
+.theme-dna-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.48;
+  background-image:
+    linear-gradient(rgb(161 161 170 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(161 161 170 / 0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.theme-dna-signal-bar {
+  transform-origin: bottom;
+  animation-name: theme-dna-signal;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes theme-dna-scan {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes theme-dna-signal {
+  0%, 100% { transform: scaleY(0.8); }
+  50% { transform: scaleY(1); }
 }
 
 .preview-target {
@@ -182,6 +502,11 @@ html, body, #root {
   .preview-target--active {
     animation: none;
   }
+
+  .theme-dna-field::after,
+  .theme-dna-signal-bar {
+    animation: none;
+  }
 }
 
 /* 滚动条美化 */
@@ -195,7 +520,7 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.24 0 0 / 0.85);
+  background: var(--app-scrollbar);
   border-radius: 9999px;
   border: 1px solid transparent;
   background-clip: padding-box;
@@ -203,7 +528,7 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.36 0 0);
+  background: var(--app-scrollbar-hover);
   border: 1px solid transparent;
   background-clip: padding-box;
 }
@@ -215,5 +540,5 @@ html, body, #root {
 /* Firefox 兼容 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.24 0 0 / 0.85) transparent;
+  scrollbar-color: var(--app-scrollbar) transparent;
 }

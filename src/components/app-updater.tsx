@@ -122,7 +122,7 @@ export function AppUpdater() {
           'group flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 select-none',
           state === 'available' || state === 'ready'
             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 animate-pulse'
-            : 'bg-zinc-900/80 text-zinc-300 border border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 hover:border-zinc-700',
+            : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border',
         )}
       >
         {state === 'checking' || state === 'downloading' ? (
@@ -146,7 +146,7 @@ export function AppUpdater() {
           if (state !== 'downloading') setDialogOpen(open)
         }}
       >
-        <DialogContent className="max-w-sm border-emerald-500/20 bg-zinc-950 p-0 text-zinc-100" showCloseButton={state !== 'downloading'}>
+        <DialogContent className="studio-dialog max-w-sm border-emerald-500/20 bg-zinc-950 p-0 text-zinc-100" showCloseButton={state !== 'downloading'}>
           <DialogHeader className="gap-3 border-b border-zinc-800 px-5 pt-5 pb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-500/10 text-emerald-300">
               {state === 'ready' ? <RotateCw size={19} /> : <Download size={19} />}

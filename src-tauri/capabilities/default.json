@@ -8,6 +8,12 @@
     "dialog:allow-open",
     "dialog:allow-save",
     "process:default",
-    "updater:default"
+    "updater:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://github.com/pojianbing" }
+      ]
+    }
   ]
 }

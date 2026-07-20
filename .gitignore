@@ -31,3 +31,4 @@ output/
 
 # Generated only by the release workflow. It embeds the public updater key.
 src-tauri/tauri.release.conf.json
+artifacts/
