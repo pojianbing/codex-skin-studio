@@ -145,6 +145,11 @@ fn show_theme_hanger(app: &tauri::AppHandle) {
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 fn sync_theme_hanger(app: &tauri::AppHandle) {
+    if !storage::read_settings().show_theme_hanger {
+        hide_theme_hanger(app);
+        return;
+    }
+
     let main_is_visible = app
         .get_webview_window("main")
         .and_then(|window| window.is_visible().ok())
