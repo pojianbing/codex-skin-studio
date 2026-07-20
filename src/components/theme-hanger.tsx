@@ -31,7 +31,6 @@ export function ThemeHanger() {
   const [workingThemeId, setWorkingThemeId] = useState<string>()
   const [restartTheme, setRestartTheme] = useState<ThemeRecord>()
   const [error, setError] = useState<string>()
-  const [isHovered, setIsHovered] = useState(false)
   const [previewThemeId, setPreviewThemeId] = useState<string>()
   const dragRef = useRef<{
     startScreenX: number
@@ -102,7 +101,7 @@ export function ThemeHanger() {
     }
   }
 
-  const handleDragPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+  const handleDragPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (event.button !== 0) return
     event.currentTarget.setPointerCapture(event.pointerId)
     draggedRef.current = false
@@ -115,7 +114,7 @@ export function ThemeHanger() {
     }
   }
 
-  const handleDragPointerMove = (event: PointerEvent<HTMLButtonElement>) => {
+  const handleDragPointerMove = (event: PointerEvent<HTMLElement>) => {
     const drag = dragRef.current
     if (!drag) return
     const dx = event.screenX - drag.startScreenX
@@ -127,7 +126,7 @@ export function ThemeHanger() {
     )
   }
 
-  const handleDragPointerUp = (event: PointerEvent<HTMLButtonElement>) => {
+  const handleDragPointerUp = (event: PointerEvent<HTMLElement>) => {
     const drag = dragRef.current
     dragRef.current = null
     try { event.currentTarget.releasePointerCapture(event.pointerId) } catch { /* already released */ }
@@ -193,51 +192,45 @@ export function ThemeHanger() {
     const isModePaused = dashboard?.mode === 'paused'
 
     return (
-      <div className="theme-hanger flex items-center justify-center p-0.5">
+      <div
+        className="theme-hanger flex cursor-grab items-center justify-center p-0.5 active:cursor-grabbing"
+        onPointerDown={handleDragPointerDown}
+        onPointerMove={handleDragPointerMove}
+        onPointerUp={handleDragPointerUp}
+        onPointerCancel={handleDragPointerUp}
+      >
         <button
           type="button"
-          aria-label="展开或拖动主题挂件"
-          title="单击展开，拖动移动，右键打开菜单"
+          aria-label="展开主题挂件"
+          title="单击展开，右键打开菜单"
           onClick={handleCollapsedClick}
           onContextMenu={(event) => {
             event.preventDefault()
             void showContextMenu()
           }}
-          onPointerDown={handleDragPointerDown}
-          onPointerMove={handleDragPointerMove}
-          onPointerUp={handleDragPointerUp}
-          onPointerCancel={handleDragPointerUp}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className="group relative flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700/80 bg-zinc-950/90 backdrop-blur-xl transition-all duration-300 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-          style={{
-            borderColor: isHovered ? activeAccent : 'rgba(63, 63, 70, 0.8)',
-            boxShadow: isHovered
-              ? `0 0 18px ${activeAccent}45, 0 8px 24px rgba(0, 0, 0, 0.6)`
-              : '0 6px 20px rgba(0, 0, 0, 0.45)'
-          }}
+          className="group relative flex h-10 w-10 items-center justify-center bg-transparent transition-transform duration-300 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
         >
           {/* 应用图标 */}
           <img
             src="/app-icon.png"
             alt="Theme Hanger"
-            className="h-6 w-6 select-none object-contain transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110"
+            draggable={false}
+            className="pointer-events-none h-9 w-9 select-none object-contain transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105"
           />
 
-          {/* 守护健康状态呼吸点 */}
-          <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center">
-            {isModeActive && (
-              <>
-                <span className="hanger-status-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400/80" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-              </>
-            )}
-            {isModePaused && (
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]" />
-            )}
-            {!isModeActive && !isModePaused && (
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-zinc-500" />
-            )}
+          {/* 运行状态色同时作为窗口拖拽把手的提示。 */}
+          <span
+            aria-hidden="true"
+            title="拖动主题挂件"
+            className={`absolute -top-0.5 -right-0.5 flex h-4 w-3 items-center justify-center rounded-sm bg-zinc-950/75 text-zinc-500 shadow-sm transition-colors group-hover:bg-zinc-900/90 ${
+              isModeActive
+                ? 'text-emerald-400'
+                : isModePaused
+                  ? 'text-amber-400'
+                  : 'text-zinc-500'
+            }`}
+          >
+            <GripVertical size={10} strokeWidth={2.5} />
           </span>
         </button>
       </div>
@@ -248,36 +241,35 @@ export function ThemeHanger() {
   return (
     <div className="theme-hanger flex h-full flex-col overflow-hidden rounded-xl border border-zinc-800/90 bg-zinc-950/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.65)]">
       {/* 顶部 Header */}
-      <header className="flex h-13 shrink-0 items-center gap-2.5 border-b border-zinc-800/80 bg-zinc-900/50 px-3">
-        <button
-          type="button"
+      <header className="flex h-13 shrink-0 items-center border-b border-zinc-800/80 bg-zinc-900/50">
+        <div
           aria-label="拖动主题挂件"
           title="按住拖拽窗口"
           onPointerDown={handleDragPointerDown}
           onPointerMove={handleDragPointerMove}
           onPointerUp={handleDragPointerUp}
           onPointerCancel={handleDragPointerUp}
-          className="flex h-7 w-5 shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition focus-visible:outline-2 focus-visible:outline-emerald-400"
+          className="flex min-w-0 flex-1 cursor-grab items-center gap-2.5 px-3 active:cursor-grabbing self-stretch"
         >
-          <GripVertical size={14} />
-        </button>
+          <GripVertical size={14} className="shrink-0 text-zinc-500" />
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate text-xs font-semibold text-zinc-100">
-              {contextMenuOpen ? '快捷菜单' : '主题挂件'}
-            </span>
-            <span
-              className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
-              style={{ backgroundColor: activeAccent }}
-            />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-xs font-semibold text-zinc-100">
+                {contextMenuOpen ? '快捷菜单' : '主题挂件'}
+              </span>
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: activeAccent }}
+              />
+            </div>
+            <p className="truncate text-[10px] text-zinc-400/90">
+              {dashboard?.message ?? '正在读取主题库...'}
+            </p>
           </div>
-          <p className="truncate text-[10px] text-zinc-400/90">
-            {dashboard?.message ?? '正在读取主题库...'}
-          </p>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1 pr-3">
           <button
             type="button"
             aria-label="刷新主题列表"

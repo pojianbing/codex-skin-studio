@@ -98,21 +98,6 @@ html.theme-hanger-window #root {
   user-select: none;
 }
 
-@keyframes hangerPulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.15);
-  }
-}
-
-.hanger-status-pulse {
-  animation: hangerPulse 2.4s ease-in-out infinite;
-}
-
 @theme inline {
   --font-sans: 'Geist Variable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
