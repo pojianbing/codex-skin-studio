@@ -13,9 +13,72 @@ use models::{
     LevelSliderConfig, SemanticTokens, ThemeRecord, UiConfig,
 };
 use tauri::{Emitter, Manager};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
+use std::time::Duration;
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 const HANGER_COMPACT_SIZE: u32 = 44;
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+type HangerPositionQueue = Arc<(Mutex<Option<storage::WindowPosition>>, Condvar)>;
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+static HANGER_POSITION_QUEUE: OnceLock<HangerPositionQueue> = OnceLock::new();
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn hanger_position_queue() -> &'static HangerPositionQueue {
+    HANGER_POSITION_QUEUE.get_or_init(|| {
+        let queue = Arc::new((Mutex::new(None), Condvar::new()));
+        let worker_queue = queue.clone();
+        std::thread::spawn(move || loop {
+            let mut guard = worker_queue
+                .0
+                .lock()
+                .expect("主题挂件位置队列已损坏");
+            while guard.is_none() {
+                guard = worker_queue
+                    .1
+                    .wait(guard)
+                    .expect("主题挂件位置队列等待失败");
+            }
+
+            let mut latest = guard
+                .take()
+                .expect("主题挂件位置队列缺少待保存位置");
+            loop {
+                let (next_guard, timeout) = worker_queue
+                    .1
+                    .wait_timeout(guard, Duration::from_millis(300))
+                    .expect("主题挂件位置队列等待失败");
+                guard = next_guard;
+                if let Some(next) = guard.take() {
+                    latest = next;
+                    continue;
+                }
+                if timeout.timed_out() {
+                    break;
+                }
+            }
+            drop(guard);
+
+            let mut settings = storage::read_settings();
+            settings.theme_hanger_position = Some(latest);
+            if let Err(error) = storage::write_settings(&settings) {
+                eprintln!("[skin-studio] 保存主题挂件位置失败：{error}");
+            }
+        });
+        queue
+    })
+}
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn schedule_hanger_position_save(position: storage::WindowPosition) {
+    let queue = hanger_position_queue();
+    if let Ok(mut pending) = queue.0.lock() {
+        *pending = Some(position);
+        queue.1.notify_one();
+    }
+}
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 fn hide_theme_hanger(app: &tauri::AppHandle) {
@@ -484,14 +547,10 @@ pub fn run() {
             } else if window.label() == "hanger"
                 && let tauri::WindowEvent::Moved(position) = event
             {
-                let mut settings = storage::read_settings();
-                settings.theme_hanger_position = Some(storage::WindowPosition {
+                schedule_hanger_position_save(storage::WindowPosition {
                     x: position.x,
                     y: position.y,
                 });
-                if let Err(error) = storage::write_settings(&settings) {
-                    eprintln!("[skin-studio] 保存主题挂件位置失败：{error}");
-                }
             }
         })
         .invoke_handler(tauri::generate_handler![

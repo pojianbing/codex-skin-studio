@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'rea
 import { AppWindow, Check, GripVertical, LoaderCircle, Palette, RefreshCw, RotateCcw, Sparkles } from 'lucide-react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
+import { getCurrentWindow, LogicalPosition, LogicalSize } from '@tauri-apps/api/window'
 
 type ThemeRecord = {
   id: string
@@ -33,8 +33,13 @@ export function ThemeHanger() {
   const [error, setError] = useState<string>()
   const [isHovered, setIsHovered] = useState(false)
   const [previewThemeId, setPreviewThemeId] = useState<string>()
-  const dragOriginRef = useRef<{ x: number, y: number } | null>(null)
-  const dragTimerRef = useRef<number | null>(null)
+  const dragRef = useRef<{
+    startScreenX: number
+    startScreenY: number
+    windowX: number
+    windowY: number
+    moved: boolean
+  } | null>(null)
   const draggedRef = useRef(false)
 
   const activeTheme = dashboard?.themes.find((t) => t.id === dashboard.activeThemeId)
@@ -72,6 +77,7 @@ export function ThemeHanger() {
 
   useEffect(() => {
     const collapse = () => {
+      if (dragRef.current) return
       if (expanded || contextMenuOpen) void resize(false)
     }
     window.addEventListener('blur', collapse)
@@ -86,14 +92,6 @@ export function ThemeHanger() {
     return () => unlisten?.()
   }, [resize])
 
-  useEffect(() => () => {
-    if (dragTimerRef.current !== null) window.clearTimeout(dragTimerRef.current)
-  }, [])
-
-  const startDragging = () => {
-    void hangerWindow.startDragging().catch((reason) => setError(String(reason)))
-  }
-
   const showContextMenu = async () => {
     setExpanded(false)
     setContextMenuOpen(true)
@@ -104,41 +102,36 @@ export function ThemeHanger() {
     }
   }
 
-  const handleCollapsedPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+  const handleDragPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     if (event.button !== 0) return
     event.currentTarget.setPointerCapture(event.pointerId)
-    dragOriginRef.current = { x: event.clientX, y: event.clientY }
     draggedRef.current = false
-    dragTimerRef.current = window.setTimeout(() => {
-      dragTimerRef.current = null
-      dragOriginRef.current = null
-      draggedRef.current = true
-      startDragging()
-    }, 160)
+    dragRef.current = {
+      startScreenX: event.screenX,
+      startScreenY: event.screenY,
+      windowX: event.screenX - event.clientX,
+      windowY: event.screenY - event.clientY,
+      moved: false,
+    }
   }
 
-  const handleCollapsedPointerMove = (event: PointerEvent<HTMLButtonElement>) => {
-    const origin = dragOriginRef.current
-    if (!origin) return
-    if (Math.hypot(event.clientX - origin.x, event.clientY - origin.y) < 5) return
-    if (dragTimerRef.current !== null) {
-      window.clearTimeout(dragTimerRef.current)
-      dragTimerRef.current = null
-    }
-    dragOriginRef.current = null
-    draggedRef.current = true
-    startDragging()
+  const handleDragPointerMove = (event: PointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current
+    if (!drag) return
+    const dx = event.screenX - drag.startScreenX
+    const dy = event.screenY - drag.startScreenY
+    if (!drag.moved && Math.hypot(dx, dy) < 5) return
+    drag.moved = true
+    void hangerWindow.setPosition(
+      new LogicalPosition(drag.windowX + dx, drag.windowY + dy)
+    )
   }
 
-  const handleCollapsedPointerUp = (event: PointerEvent<HTMLButtonElement>) => {
-    dragOriginRef.current = null
-    if (dragTimerRef.current !== null) {
-      window.clearTimeout(dragTimerRef.current)
-      dragTimerRef.current = null
-    }
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    }
+  const handleDragPointerUp = (event: PointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current
+    dragRef.current = null
+    try { event.currentTarget.releasePointerCapture(event.pointerId) } catch { /* already released */ }
+    draggedRef.current = drag?.moved ?? false
   }
 
   const handleCollapsedClick = () => {
@@ -210,9 +203,10 @@ export function ThemeHanger() {
             event.preventDefault()
             void showContextMenu()
           }}
-          onPointerDown={handleCollapsedPointerDown}
-          onPointerMove={handleCollapsedPointerMove}
-          onPointerUp={handleCollapsedPointerUp}
+          onPointerDown={handleDragPointerDown}
+          onPointerMove={handleDragPointerMove}
+          onPointerUp={handleDragPointerUp}
+          onPointerCancel={handleDragPointerUp}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           className="group relative flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700/80 bg-zinc-950/90 backdrop-blur-xl transition-all duration-300 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
@@ -259,7 +253,10 @@ export function ThemeHanger() {
           type="button"
           aria-label="拖动主题挂件"
           title="按住拖拽窗口"
-          onPointerDown={startDragging}
+          onPointerDown={handleDragPointerDown}
+          onPointerMove={handleDragPointerMove}
+          onPointerUp={handleDragPointerUp}
+          onPointerCancel={handleDragPointerUp}
           className="flex h-7 w-5 shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition focus-visible:outline-2 focus-visible:outline-emerald-400"
         >
           <GripVertical size={14} />
