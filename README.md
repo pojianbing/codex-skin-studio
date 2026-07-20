@@ -34,7 +34,7 @@ npm run desktop:build
 
 ## 发布与自动更新
 
-推送 `v0.2.1` 形式的版本 tag 后，GitHub Actions 会构建 Windows x64、macOS Apple Silicon 和 macOS Intel 安装包，并创建草稿 Release。正式发布前，需要在仓库的 Actions Secrets 中配置：
+推送 `v<semver>` 形式的版本 tag 后，GitHub Actions 会构建 Windows x64、macOS Apple Silicon 和 macOS Intel 安装包，并创建草稿 Release。正式发布前，需要在仓库的 Actions Secrets 中配置：
 
 ```text
 TAURI_SIGNING_PRIVATE_KEY
