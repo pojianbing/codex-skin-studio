@@ -23,6 +23,14 @@
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-3fb950.svg" alt="Windows and macOS" />
 </p>
 
+<p align="center">
+  <img src="public/screenshots/theme-library.png" alt="Codex Skin Studio 的主题库、实时预览与主题编辑界面" width="100%" />
+</p>
+
+<p align="center">
+  <sub>主题库、Codex 实时预览与可逐项调整的编辑面板。</sub>
+</p>
+
 > 本项目不是 OpenAI 官方产品，也不会修改 Codex 的应用包、`app.asar`、代码签名或 `config.toml`。
 
 ## 为什么使用它
