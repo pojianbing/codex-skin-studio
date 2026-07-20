@@ -11,6 +11,8 @@
   A local theme manager for Windows and macOS: import wallpaper, tune the interface, and return to the official appearance at any time.
 </p>
 
+<p align="center"><sub>This project was developed 100% with Codex.</sub></p>
+
 <p align="center">
   <a href="#quick-start">Quick Start</a> ·
   <a href="#theme-workflows">Theme Workflows</a> ·

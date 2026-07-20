@@ -11,6 +11,8 @@
   一个运行于 Windows 和 macOS 的本地主题管理器：导入壁纸、精细调整界面，并随时恢复官方外观。
 </p>
 
+<p align="center"><sub>本项目 100% 使用 Codex 开发。</sub></p>
+
 <p align="center">
   <a href="#快速开始">快速开始</a> ·
   <a href="#主题工作流">主题工作流</a> ·
