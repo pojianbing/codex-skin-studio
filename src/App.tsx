@@ -992,13 +992,11 @@ function SkinStudioApp() {
         </nav>
 
         {/* Compact app information */}
-        <div className="mt-auto pt-3 border-t border-zinc-850/40">
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-850/50 bg-zinc-950/25 px-2.5 py-2.5 text-[10px] backdrop-blur-sm">
-            <span className="shrink-0 text-zinc-500">应用版本</span>
-            <div className="flex items-center gap-1.5">
-              <AppearanceToggle />
-              <AppUpdater />
-            </div>
+        <div className="mt-auto pt-3 border-t border-zinc-850/40 flex items-center justify-between gap-2 px-1 text-[10px]">
+          <span className="shrink-0 text-zinc-500">应用版本</span>
+          <div className="flex items-center gap-1.5">
+            <AppearanceToggle />
+            <AppUpdater />
           </div>
         </div>
       </aside>
