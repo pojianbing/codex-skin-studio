@@ -134,6 +134,7 @@ export type ThemeRecord = {
   changeSummary: ChangeSummaryConfig
   tokens: SemanticTokens
   ui: UiConfig
+  backgroundKind: 'image' | 'video'
   previewDataUrl: string
   builtIn: boolean
 }

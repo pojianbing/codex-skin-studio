@@ -211,13 +211,13 @@ export function SkinStudioApp() {
   const importWallpaper = async () => {
     const selectedPath = await open({
       multiple: false, directory: false,
-      filters: [{ name: '主题背景', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
+      filters: [{ name: '主题背景', extensions: ['jpg', 'jpeg', 'png', 'webp', 'mp4'] }],
     })
     if (!selectedPath) return
     await run('import', async () => {
       const theme = await invoke<ThemeRecord>('import_wallpaper', { path: selectedPath })
       setSelectedId(theme.id)
-    }, '主题已加入本地主题库')
+    }, '背景主题已加入本地主题库')
   }
 
   const importThemeBundle = async () => {

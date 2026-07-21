@@ -144,15 +144,19 @@ fn write_state(state: &EngineState) -> Result<()> {
 
 fn payload_for(manifest: &ThemeManifest, directory: &std::path::Path) -> Result<(String, String)> {
     let image = themes::image_bytes(manifest, directory)?;
-    let extension = std::path::Path::new(&manifest.image)
-        .extension()
-        .and_then(|value| value.to_str())
-        .unwrap_or("jpg")
-        .to_ascii_lowercase();
-    let mime = match extension.as_str() {
-        "png" => "image/png",
-        "webp" => "image/webp",
-        _ => "image/jpeg",
+    let mime = match manifest.background_kind.as_str() {
+        "video" => "video/mp4",
+        _ => match std::path::Path::new(&manifest.image)
+            .extension()
+            .and_then(|value| value.to_str())
+            .unwrap_or("jpg")
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "png" => "image/png",
+            "webp" => "image/webp",
+            _ => "image/jpeg",
+        },
     };
     let theme_json = serde_json::to_string(manifest)?;
     let mut hasher = Sha256::new();
@@ -393,6 +397,7 @@ mod tests {
             version: "1.0.0".into(),
             author: "Test".into(),
             image: "background.jpg".into(),
+            background_kind: "image".into(),
             thumbnail: "background.jpg".into(),
             appearance: "auto".into(),
             art: ArtConfig::default(),

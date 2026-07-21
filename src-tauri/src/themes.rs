@@ -7,7 +7,8 @@ use crate::{
     storage::{atomic_write, themes_root},
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD};
-use image::{ImageFormat, ImageReader, codecs::jpeg::JpegEncoder, imageops::FilterType};
+use image::{ImageFormat, ImageReader, Rgb, RgbImage, codecs::jpeg::JpegEncoder, imageops::FilterType};
+use mp4::{MediaType, Mp4Reader, TrackType};
 use std::{
     collections::HashSet,
     fs,
@@ -18,14 +19,16 @@ use uuid::Uuid;
 use zip::{CompressionMethod, ZipArchive, ZipWriter, write::SimpleFileOptions};
 
 const MAX_IMAGE_BYTES: u64 = 16 * 1024 * 1024;
+const MAX_VIDEO_BYTES: u64 = 50 * 1024 * 1024;
+const MAX_VIDEO_DURATION_SECONDS: u64 = 60;
 const MAX_DIMENSION: u32 = 16_384;
 const MAX_PIXELS: u64 = 50_000_000;
 const THEME_BUNDLE_SCHEMA_VERSION: u32 = 1;
 const THEME_BUNDLE_EXTENSION: &str = "codex-theme";
 const THEME_BUNDLE_MANIFEST: &str = "bundle.json";
-const MAX_THEME_BUNDLE_BYTES: u64 = MAX_IMAGE_BYTES + 256 * 1024;
+const MAX_THEME_BUNDLE_BYTES: u64 = MAX_VIDEO_BYTES + 256 * 1024;
 const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
-const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_IMAGE_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
+const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_VIDEO_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
 const BUILTIN_THEME_VERSION: &str = "1.3.2";
 const GREENWOOD_WHISPERS: &[u8] = include_bytes!("../assets/preset-greenwood-whispers.jpg");
 const INK_SILHOUETTE: &[u8] = include_bytes!("../assets/preset-ink-silhouette.jpg");
@@ -48,6 +51,8 @@ struct ThemeBundleConfig {
     version: String,
     author: String,
     appearance: String,
+    #[serde(default)]
+    background_kind: String,
     art: ArtConfig,
     palette: Palette,
     #[serde(default)]
@@ -74,6 +79,7 @@ impl ThemeBundle {
                 version: manifest.version.clone(),
                 author: manifest.author.clone(),
                 appearance: manifest.appearance.clone(),
+                background_kind: manifest.background_kind.clone(),
                 art: manifest.art.clone(),
                 palette: manifest.palette.clone(),
                 level_slider: manifest.level_slider.clone(),
@@ -94,6 +100,7 @@ impl ThemeBundle {
             version: self.theme.version,
             author: self.theme.author,
             image,
+            background_kind: self.theme.background_kind,
             thumbnail: "thumbnail.jpg".into(),
             appearance: self.theme.appearance,
             art: self.theme.art,
@@ -370,6 +377,7 @@ fn validate_manifest(manifest: &ThemeManifest) -> Result<()> {
     if !valid_hex_color(&manifest.palette.accent) {
         return Err(StudioError::from("主题强调色必须为十六进制颜色"));
     }
+    background_kind(manifest)?;
     validate_art(&manifest.art)?;
     validate_level_slider(&manifest.level_slider)?;
     validate_composer(&manifest.composer)?;
@@ -377,6 +385,22 @@ fn validate_manifest(manifest: &ThemeManifest) -> Result<()> {
     validate_change_summary(&manifest.change_summary)?;
     validate_tokens(&manifest.tokens)?;
     validate_ui(&manifest.ui)
+}
+
+fn background_kind(manifest: &ThemeManifest) -> Result<&'static str> {
+    match manifest.background_kind.as_str() {
+        "" | "image" => Ok("image"),
+        "video" => Ok("video"),
+        _ => Err(StudioError::from("背景类型必须是图片或视频")),
+    }
+}
+
+fn background_kind_for_bundle(value: &str) -> Result<&'static str> {
+    match value {
+        "" | "image" => Ok("image"),
+        "video" => Ok("video"),
+        _ => Err(bundle_error("背景类型必须是图片或视频")),
+    }
 }
 
 fn image_info(bytes: &[u8]) -> Result<(ImageFormat, u32, u32)> {
@@ -405,6 +429,38 @@ fn image_info(bytes: &[u8]) -> Result<(ImageFormat, u32, u32)> {
     Ok((format, width, height))
 }
 
+fn video_info(bytes: &[u8]) -> Result<(u16, u16)> {
+    if bytes.is_empty() || bytes.len() as u64 > MAX_VIDEO_BYTES {
+        return Err(StudioError::from("背景视频必须小于 50 MB"));
+    }
+    let reader = Mp4Reader::read_header(Cursor::new(bytes), bytes.len() as u64)
+        .map_err(|_| StudioError::from("无法读取 MP4 视频"))?;
+    if reader.duration().as_millis() > u128::from(MAX_VIDEO_DURATION_SECONDS) * 1_000 {
+        return Err(StudioError::from("背景视频最长为 60 秒"));
+    }
+    let track = reader
+        .tracks()
+        .values()
+        .find(|track| matches!(track.track_type(), Ok(TrackType::Video)))
+        .ok_or_else(|| StudioError::from("MP4 文件不包含视频轨道"))?;
+    if !matches!(track.media_type(), Ok(MediaType::H264)) {
+        return Err(StudioError::from("背景视频只支持 H.264 编码的 MP4"));
+    }
+    let (width, height) = (track.width(), track.height());
+    if width == 0 || height == 0 {
+        return Err(StudioError::from("视频尺寸无效"));
+    }
+    Ok((width, height))
+}
+
+fn background_info(kind: &str, bytes: &[u8]) -> Result<()> {
+    match kind {
+        "image" => image_info(bytes).map(|_| ()),
+        "video" => video_info(bytes).map(|_| ()),
+        _ => Err(StudioError::from("背景类型必须是图片或视频")),
+    }
+}
+
 fn extension_for(format: ImageFormat) -> &'static str {
     match format {
         ImageFormat::Jpeg => "jpg",
@@ -418,6 +474,25 @@ fn make_thumbnail(bytes: &[u8]) -> Result<Vec<u8>> {
     let mut output = Vec::new();
     JpegEncoder::new_with_quality(&mut output, 84).encode_image(&image)?;
     Ok(output)
+}
+
+fn make_video_thumbnail() -> Result<Vec<u8>> {
+    let mut image = RgbImage::from_pixel(640, 360, Rgb([15, 23, 42]));
+    for (x, y, pixel) in image.enumerate_pixels_mut() {
+        let glow = ((x / 8 + y / 12) % 36) as u8;
+        *pixel = Rgb([15 + glow / 3, 23 + glow / 2, 42 + glow]);
+    }
+    let mut output = Vec::new();
+    JpegEncoder::new_with_quality(&mut output, 84).encode_image(&image)?;
+    Ok(output)
+}
+
+fn make_background_thumbnail(kind: &str, bytes: &[u8]) -> Result<Vec<u8>> {
+    match kind {
+        "image" => make_thumbnail(bytes),
+        "video" => make_video_thumbnail(),
+        _ => Err(StudioError::from("背景类型必须是图片或视频")),
+    }
 }
 
 fn write_manifest(directory: &Path, manifest: &ThemeManifest) -> Result<()> {
@@ -444,6 +519,10 @@ fn bundle_background_name(format: ImageFormat) -> String {
     format!("background.{}", extension_for(format))
 }
 
+fn bundle_video_name() -> String {
+    "background.mp4".into()
+}
+
 fn read_bundle_entry<R: Read + Seek>(
     archive: &mut ZipArchive<R>,
     name: &str,
@@ -468,8 +547,13 @@ fn read_bundle_entry<R: Read + Seek>(
 
 fn encode_theme_bundle(manifest: &ThemeManifest, image: &[u8]) -> Result<Vec<u8>> {
     validate_manifest(manifest)?;
-    let (format, _, _) = image_info(image)?;
-    let background = bundle_background_name(format);
+    let kind = background_kind(manifest)?;
+    background_info(kind, image)?;
+    let background = match kind {
+        "image" => bundle_background_name(image_info(image)?.0),
+        "video" => bundle_video_name(),
+        _ => unreachable!(),
+    };
     let bundle = ThemeBundle::from_manifest(manifest, background.clone());
     let manifest_bytes = serde_json::to_vec_pretty(&bundle)?;
     if manifest_bytes.len() as u64 > MAX_THEME_BUNDLE_MANIFEST_BYTES {
@@ -489,14 +573,14 @@ fn encode_theme_bundle(manifest: &ThemeManifest, image: &[u8]) -> Result<Vec<u8>
     writer.write_all(image)?;
     let output = writer.finish().map_err(bundle_error)?.into_inner();
     if output.len() as u64 > MAX_THEME_BUNDLE_BYTES {
-        return Err(bundle_error("主题包超过 16 MB 限制"));
+        return Err(bundle_error("主题包超过 50 MB 限制"));
     }
     Ok(output)
 }
 
 fn decode_theme_bundle(bytes: &[u8]) -> Result<ImportedThemeBundle> {
     if bytes.is_empty() || bytes.len() as u64 > MAX_THEME_BUNDLE_BYTES {
-        return Err(bundle_error("主题包必须小于 16 MB"));
+        return Err(bundle_error("主题包必须小于 50 MB"));
     }
     let mut archive = ZipArchive::new(Cursor::new(bytes)).map_err(bundle_error)?;
     if archive.len() != 2 {
@@ -538,9 +622,18 @@ fn decode_theme_bundle(bytes: &[u8]) -> Result<ImportedThemeBundle> {
         return Err(bundle_error("主题包文件与配置不一致"));
     }
 
-    let image_bytes = read_bundle_entry(&mut archive, &bundle.background, MAX_IMAGE_BYTES)?;
-    let (format, _, _) = image_info(&image_bytes)?;
-    let image_name = bundle_background_name(format);
+    let kind = background_kind_for_bundle(&bundle.theme.background_kind)?;
+    let image_bytes = read_bundle_entry(
+        &mut archive,
+        &bundle.background,
+        if kind == "video" { MAX_VIDEO_BYTES } else { MAX_IMAGE_BYTES },
+    )?;
+    background_info(kind, &image_bytes)?;
+    let image_name = match kind {
+        "image" => bundle_background_name(image_info(&image_bytes)?.0),
+        "video" => bundle_video_name(),
+        _ => unreachable!(),
+    };
     if bundle.background != image_name {
         return Err(bundle_error("背景文件扩展名与图片格式不一致"));
     }
@@ -586,7 +679,10 @@ fn install_theme_bundle_with_id(
         fs::write(temporary.join(&manifest.image), imported.image_bytes)?;
         fs::write(
             temporary.join(&manifest.thumbnail),
-            make_thumbnail(&fs::read(temporary.join(&manifest.image))?)?,
+            make_background_thumbnail(
+                background_kind(&manifest)?,
+                &fs::read(temporary.join(&manifest.image))?,
+            )?,
         )?;
         write_manifest(&temporary, &manifest)?;
         if directory.exists() {
@@ -1200,6 +1296,7 @@ fn builtin_manifest(
         version: BUILTIN_THEME_VERSION.into(),
         author: "Fei-Away/Codex-Dream-Skin contributors".into(),
         image: "background.jpg".into(),
+        background_kind: "image".into(),
         thumbnail: "thumbnail.jpg".into(),
         appearance: "dark".into(),
         art: ArtConfig {
@@ -1236,6 +1333,7 @@ fn default_builtin_manifest(id: &str, name: &str) -> ThemeManifest {
         version: BUILTIN_THEME_VERSION.into(),
         author: "Codex Skin Studio contributors".into(),
         image: "background.jpg".into(),
+        background_kind: "image".into(),
         thumbnail: "thumbnail.jpg".into(),
         appearance: "dark".into(),
         art: ArtConfig::default(),
@@ -1325,6 +1423,7 @@ pub fn load_manifest(id: &str) -> Result<(ThemeManifest, PathBuf)> {
 
 fn record_from(manifest: ThemeManifest, directory: &Path) -> Result<ThemeRecord> {
     let thumbnail = fs::read(directory.join(&manifest.thumbnail))?;
+    let background_kind = background_kind(&manifest)?.into();
     Ok(ThemeRecord {
         id: manifest.id,
         name: manifest.name,
@@ -1338,6 +1437,7 @@ fn record_from(manifest: ThemeManifest, directory: &Path) -> Result<ThemeRecord>
         change_summary: manifest.change_summary,
         tokens: manifest.tokens,
         ui: manifest.ui,
+        background_kind,
         preview_data_url: format!("data:image/jpeg;base64,{}", STANDARD.encode(thumbnail)),
         built_in: manifest.built_in,
     })
@@ -1402,17 +1502,33 @@ pub fn replace_theme_bundle(id: &str, bytes: &[u8]) -> Result<ThemeRecord> {
 pub fn import_wallpaper(path: &str) -> Result<ThemeRecord> {
     let source = Path::new(path);
     if !source.is_file() {
-        return Err(StudioError::from("请选择一个本地图片文件"));
+        return Err(StudioError::from("请选择一个本地图片或 MP4 视频文件"));
     }
     let bytes = fs::read(source)?;
-    let (format, _, _) = image_info(&bytes)?;
+    let extension = source
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    let (background_kind, image_name) = match extension.as_str() {
+        "mp4" => {
+            video_info(&bytes)?;
+            ("video", "background.mp4".into())
+        }
+        _ => {
+            let (format, _, _) = image_info(&bytes)?;
+            let extension = extension_for(format);
+            ("image", format!("background.{extension}"))
+        }
+    };
     let id = format!("custom-{}", Uuid::new_v4().simple());
     let directory = theme_dir(&id)?;
     fs::create_dir_all(&directory)?;
-    let extension = extension_for(format);
-    let image_name = format!("background.{extension}");
     fs::write(directory.join(&image_name), &bytes)?;
-    fs::write(directory.join("thumbnail.jpg"), make_thumbnail(&bytes)?)?;
+    fs::write(
+        directory.join("thumbnail.jpg"),
+        make_background_thumbnail(background_kind, &bytes)?,
+    )?;
     let fallback_name = "自定义主题".to_string();
     let name = source
         .file_stem()
@@ -1430,6 +1546,7 @@ pub fn import_wallpaper(path: &str) -> Result<ThemeRecord> {
         version: "1.0.0".into(),
         author: "本地用户".into(),
         image: image_name,
+        background_kind: background_kind.into(),
         thumbnail: "thumbnail.jpg".into(),
         appearance: "dark".into(),
         art: ArtConfig::default(),
@@ -1486,7 +1603,7 @@ pub fn delete_theme(id: &str) -> Result<()> {
 
 pub fn image_bytes(manifest: &ThemeManifest, directory: &Path) -> Result<Vec<u8>> {
     let bytes = fs::read(directory.join(&manifest.image))?;
-    image_info(&bytes)?;
+    background_info(background_kind(manifest)?, &bytes)?;
     Ok(bytes)
 }
 
@@ -1495,12 +1612,24 @@ mod tests {
     use super::{
         BAMBOO_SKYLIGHT, BUILTIN_THEME_VERSION, GREENWOOD_WHISPERS, INK_SILHOUETTE,
         MAX_IMAGE_BYTES, STARLIT_DAWN, ThemeBundle, VERDANT_SUMMIT, bamboo_skylight_manifest,
+        background_kind,
         builtin_manifest, builtin_theme, decode_theme_bundle, encode_theme_bundle,
         greenwood_whispers_manifest, image_info, ink_silhouette_manifest, install_theme_bundle,
         replace_builtin_theme, should_upgrade_builtin, starlit_dawn_manifest, validate_manifest,
         verdant_summit_manifest,
     };
     use crate::models::ThemeManifest;
+
+    #[test]
+    fn legacy_themes_default_to_image_backgrounds_and_video_themes_are_recognized() {
+        let mut manifest = greenwood_whispers_manifest();
+        manifest.background_kind.clear();
+        assert_eq!(background_kind(&manifest).unwrap(), "image");
+
+        manifest.background_kind = "video".into();
+        manifest.image = "background.mp4".into();
+        assert_eq!(background_kind(&manifest).unwrap(), "video");
+    }
 
     #[test]
     fn greenwood_whispers_is_a_protected_builtin_theme() {

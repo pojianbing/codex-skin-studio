@@ -469,6 +469,8 @@ pub struct ThemeManifest {
     pub version: String,
     pub author: String,
     pub image: String,
+    #[serde(default)]
+    pub background_kind: String,
     pub thumbnail: String,
     pub appearance: String,
     pub art: ArtConfig,
@@ -504,6 +506,7 @@ pub struct ThemeRecord {
     pub change_summary: ChangeSummaryConfig,
     pub tokens: SemanticTokens,
     pub ui: UiConfig,
+    pub background_kind: String,
     pub preview_data_url: String,
     pub built_in: bool,
 }

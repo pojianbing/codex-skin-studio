@@ -47,6 +47,7 @@ type RowStyle = {
 type PreviewTheme = {
   name: string
   accent: string
+  backgroundKind: 'image' | 'video'
   previewDataUrl: string
   art: {
     focusX: number

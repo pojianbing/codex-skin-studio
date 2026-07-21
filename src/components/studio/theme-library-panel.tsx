@@ -1,4 +1,4 @@
-import { Check, Download, ImagePlus } from 'lucide-react'
+import { Check, Download, ImagePlus, Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { type ThemeFilter, type ThemeRecord } from '@/lib/theme-types'
@@ -74,6 +74,11 @@ export function ThemeLibraryPanel({
                     style={{ backgroundImage: `url(${theme.previewDataUrl})` }}
                   >
                     <div className="absolute inset-0 bg-black/30" />
+                    {theme.backgroundKind === 'video' && (
+                      <span className="absolute bottom-2 right-2 flex size-6 items-center justify-center rounded-md border border-white/20 bg-zinc-950/70 text-white shadow-sm">
+                        <Video size={13} aria-label="视频背景" />
+                      </span>
+                    )}
                     
                     {/* 选中指示标记 */}
                     {selected?.id === theme.id && (
@@ -105,6 +110,9 @@ export function ThemeLibraryPanel({
                         {theme.builtIn ? '内置' : '自定义'}
                       </span>
                       <span className="font-mono text-[10px] text-muted-foreground">v{theme.version}</span>
+                      {theme.backgroundKind === 'video' && (
+                        <span className="rounded-sm border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-medium text-sky-700 dark:text-sky-300">视频</span>
+                      )}
                     </div>
                   </span>
                 </article>
@@ -115,7 +123,7 @@ export function ThemeLibraryPanel({
                   onClick={() => void onImportWallpaper()}
                 >
                   <ImagePlus size={20} />
-                  <span className="text-xs font-medium">导入背景图片</span>
+                  <span className="text-xs font-medium">导入图片或视频背景</span>
                 </button>
               ) : (
                 <div className="col-span-full flex min-h-[190px] flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/30 px-6 text-center">
@@ -125,7 +133,7 @@ export function ThemeLibraryPanel({
                       {themeFilter === 'custom' ? '还没有自定义主题' : '主题库暂时为空'}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                      {themeFilter === 'custom' ? '导入背景图片或主题包后会显示在这里' : '正在读取本地主题'}
+                      {themeFilter === 'custom' ? '导入图片、MP4 视频或主题包后会显示在这里' : '正在读取本地主题'}
                     </p>
                   </div>
                   <Button

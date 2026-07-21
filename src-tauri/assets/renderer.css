@@ -130,6 +130,24 @@ html.codex-skin-studio body {
   background-repeat: no-repeat !important;
   background-attachment: fixed !important;
 }
+html.codex-skin-studio.skin-background-video body {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html.codex-skin-studio #codex-skin-studio-video {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--skin-art-position);
+  pointer-events: none;
+}
+html.codex-skin-studio.skin-background-video body > :not(#codex-skin-studio-video) {
+  position: relative;
+  z-index: 1;
+}
 html.codex-skin-studio .skin-configurable-hidden {
   display: none !important;
 }
@@ -355,6 +373,9 @@ html.codex-skin-studio .skin-task::before {
 html.codex-skin-studio.skin-task-banner .skin-task::before {
   background-image: linear-gradient(to bottom, transparent, var(--skin-wash)), var(--skin-art);
   background-size: 100% 46vh, 100% auto; background-repeat: no-repeat; background-position: center top;
+}
+html.codex-skin-studio.skin-background-video.skin-task-banner .skin-task::before {
+  background-image: linear-gradient(to bottom, transparent, var(--skin-wash));
 }
 html.codex-skin-studio.skin-task-off .skin-task::before { background: var(--skin-surface); }
 html.codex-skin-studio [data-message-author-role], html.codex-skin-studio article { color: var(--skin-text); }

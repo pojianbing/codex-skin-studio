@@ -14,14 +14,17 @@
   for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
   const mime = /^data:([^;,]+)/.exec(artDataUrl)?.[1] || 'image/jpeg';
   const artUrl = URL.createObjectURL(new Blob([bytes], { type: mime }));
+  const isVideo = mime === 'video/mp4';
   const classes = [
     'codex-skin-studio', 'skin-theme-light', 'skin-theme-dark', 'skin-safe-left',
     'skin-safe-right', 'skin-safe-center', 'skin-safe-none', 'skin-task-ambient',
     'skin-task-banner', 'skin-task-off', 'skin-scrollbars-hidden', 'skin-level-slider-custom',
+    'skin-background-video',
   ];
   let observer;
   let timer;
   let scheduled;
+  let videoLayer;
   const levelSliderBindings = new Map();
 
   const clamp = (value, minimum, maximum, fallback) => {
@@ -89,6 +92,29 @@
     try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch { return 'light'; }
   };
 
+  const syncVideoPlayback = () => {
+    if (!videoLayer) return;
+    void videoLayer.play().catch(() => {});
+  };
+
+  const ensureVideoLayer = () => {
+    if (!isVideo) return;
+    videoLayer = document.getElementById('codex-skin-studio-video');
+    if (!videoLayer) {
+      videoLayer = document.createElement('video');
+      videoLayer.id = 'codex-skin-studio-video';
+      videoLayer.src = artUrl;
+      videoLayer.autoplay = true;
+      videoLayer.loop = true;
+      videoLayer.muted = true;
+      videoLayer.playsInline = true;
+      videoLayer.preload = 'auto';
+      videoLayer.setAttribute('aria-hidden', 'true');
+      document.body.prepend(videoLayer);
+    }
+    syncVideoPlayback();
+  };
+
   const ensure = () => {
     const shell = document.querySelector('main.main-surface');
     const sidebar = document.querySelector('aside.app-shell-left-panel');
@@ -101,6 +127,7 @@
     }
     if (style.textContent !== cssText) style.textContent = cssText;
     root.classList.add('codex-skin-studio');
+    root.classList.toggle('skin-background-video', isVideo);
     const appearance = theme.appearance === 'auto' ? nativeAppearance() : theme.appearance;
     root.classList.toggle('skin-theme-light', appearance === 'light');
     root.classList.toggle('skin-theme-dark', appearance === 'dark');
@@ -120,7 +147,12 @@
     for (const value of ['ambient', 'banner', 'off']) {
       root.classList.toggle(`skin-task-${value}`, taskMode === value);
     }
-    root.style.setProperty('--skin-art', `url("${artUrl}")`);
+    if (isVideo) {
+      root.style.removeProperty('--skin-art');
+      ensureVideoLayer();
+    } else {
+      root.style.setProperty('--skin-art', `url("${artUrl}")`);
+    }
     root.style.setProperty('--skin-art-position', `${Math.round(theme.art.focusX * 100)}% ${Math.round(theme.art.focusY * 100)}%`);
     root.style.setProperty('--skin-accent', theme.palette.accent || '#3b82f6');
     const resolvedColor = (value, fallback) => /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
@@ -493,6 +525,8 @@
       slider.querySelector('[class*="_Thumb_"]')?.classList.remove('skin-level-slider-thumb');
     }
     levelSliderBindings.clear();
+    videoLayer?.pause();
+    videoLayer?.remove();
     URL.revokeObjectURL(artUrl);
     if (window[STATE]?.revision === revision) delete window[STATE];
     return true;
