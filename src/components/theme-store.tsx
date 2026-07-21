@@ -119,8 +119,8 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
             <span className={cn(
               'hidden items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-semibold sm:flex',
               catalog.source === 'network'
-                ? 'border-emerald-900/40 bg-emerald-950/30 text-emerald-300'
-                : 'border-amber-900/40 bg-amber-950/30 text-amber-300',
+                ? 'border-zinc-700/60 bg-zinc-800/40 text-zinc-300'
+                : 'border-zinc-800 bg-zinc-900/60 text-zinc-400',
             )}>
               <ShieldCheck size={12} />
               {catalog.source === 'network' ? catalog.releaseTag : '离线目录'}
@@ -169,7 +169,7 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
               className={cn(
                 'h-7 rounded-lg border px-2.5 text-[11px] font-bold transition-all duration-300 cursor-pointer active:scale-95',
                 tag === item
-                  ? 'border-amber-500/50 bg-gradient-to-br from-amber-300 to-amber-500 text-zinc-950 shadow-sm'
+                  ? 'border-zinc-400 bg-zinc-100 text-zinc-950 shadow-sm'
                   : 'border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100',
               )}
             >
@@ -227,7 +227,7 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
                             variant="outline"
                             size="xs"
                             disabled
-                            className="border-emerald-900/40 bg-emerald-950/20 text-emerald-300"
+                            className="border-zinc-800 bg-zinc-900/60 text-zinc-400 opacity-80"
                           >
                             <Check size={12} strokeWidth={2.5} />
                             已安装

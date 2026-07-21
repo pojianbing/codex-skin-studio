@@ -382,7 +382,7 @@ export function ThemeHanger() {
               type="button"
               onClick={() => void completeApply(restartTheme, true)}
               disabled={Boolean(workingThemeId)}
-              className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 text-xs font-semibold text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50 transition focus-visible:outline-2 focus-visible:outline-emerald-400"
+              className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-zinc-100 text-xs font-bold text-zinc-950 shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 transition active:scale-95 cursor-pointer"
             >
               {workingThemeId ? (
                 <LoaderCircle size={14} className="animate-spin" />
@@ -433,9 +433,9 @@ export function ThemeHanger() {
                 onFocus={() => setPreviewThemeId(theme.id)}
                 onPointerEnter={() => setPreviewThemeId(theme.id)}
                 disabled={active || Boolean(workingThemeId)}
-                className={`group relative flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all duration-200 focus-visible:outline-2 focus-visible:outline-emerald-400 ${
+                className={`group relative flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all duration-200 focus-visible:outline-2 focus-visible:outline-zinc-400 ${
                   active
-                    ? 'border-emerald-500/40 bg-gradient-to-r from-emerald-950/30 via-zinc-900/80 to-zinc-900/50 shadow-[0_4px_16px_rgba(16,185,129,0.1)]'
+                    ? 'border-zinc-600 bg-gradient-to-r from-zinc-800/90 via-zinc-900/90 to-zinc-900/50 shadow-md'
                     : 'border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700/80 hover:bg-zinc-800/60 hover:shadow-md active:scale-[0.99]'
                 }`}
               >

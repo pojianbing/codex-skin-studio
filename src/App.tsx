@@ -1169,7 +1169,7 @@ function SkinStudioApp() {
                         void exportTheme(theme)
                       }}
                       disabled={Boolean(working)}
-                      className="absolute z-20 top-2.5 right-2.5 flex items-center gap-1 rounded-md border border-emerald-500/40 bg-zinc-950/85 px-2 py-1 text-[10px] font-semibold text-emerald-300 backdrop-blur-md opacity-0 group-hover:opacity-100 hover:bg-emerald-500/20 hover:text-emerald-200 hover:border-emerald-500/60 transition-all duration-200 shadow-md cursor-pointer active:scale-95"
+                      className="absolute z-20 top-2.5 right-2.5 flex items-center gap-1 rounded-md border border-zinc-700/60 bg-zinc-950/85 px-2 py-1 text-[10px] font-semibold text-zinc-200 backdrop-blur-md opacity-0 group-hover:opacity-100 hover:bg-zinc-800 hover:text-white hover:border-zinc-500 transition-all duration-200 shadow-md cursor-pointer active:scale-95"
                     >
                       <Download size={11} />
                       <span>导出</span>
@@ -1277,13 +1277,12 @@ function SkinStudioApp() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Button
-                        variant="outline"
                         size="sm"
                         title="导出当前主题包"
                         aria-label="导出当前主题包"
                         onClick={() => void exportTheme()}
                         disabled={Boolean(working)}
-                        className="border-emerald-500/40 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-100 hover:border-emerald-500/60 cursor-pointer transition-all duration-300 shadow-[0_2px_8px_rgba(16,185,129,0.12)] font-semibold"
+                        className="bg-gradient-to-br from-zinc-50 to-zinc-200 text-zinc-950 hover:from-white hover:to-zinc-100 font-bold shadow-[0_2px_8px_rgba(255,255,255,0.03)] cursor-pointer transition-all duration-300 active:scale-95"
                       >
                         {working === 'export' ? (
                           <LoaderCircle className="animate-spin" size={13} />
