@@ -39,9 +39,9 @@
 
 ## Why Codex Skin Studio
 
-Codex Skin Studio keeps themes local to your machine. Start with a built-in theme, a wallpaper, or a theme bundle, then tune the sidebar, editor, code blocks, diff view, composer, and text colors for the interface you actually work in. Changes appear immediately in the preview. Once a themed session is established, switching themes and settings does not restart Codex.
+Codex Skin Studio keeps themes local to your machine. Start with a built-in theme, a wallpaper, an MP4 video, or a theme bundle, then tune the sidebar, editor, code blocks, diff view, composer, and text colors for the interface you actually work in. Changes appear immediately in the preview. Once a themed session is established, switching themes and settings does not restart Codex.
 
-- **Build a theme from an image**: Import a JPG, PNG, or WebP wallpaper to create an editable local theme with an automatic thumbnail.
+- **Build a theme from an image or video**: Import a JPG, PNG, WebP wallpaper, or MP4 video to create an editable local theme with an automatic thumbnail.
 - **Tune more than the background**: Configure safe areas, task-page art, surfaces, opacity, blur, corner radius, scrollbars, diff styling, typography, and semantic colors.
 - **Share the full configuration**: Import or export a single `.codex-theme` file containing the wallpaper and every theme setting.
 - **Use a local theme store**: Browse, install, and update themes from a signed catalog.
@@ -77,7 +77,7 @@ Linux is not currently supported. Skin Studio verifies the Codex installation be
 ### 2. Choose and apply a theme
 
 1. Open Codex Skin Studio and confirm that its home screen detects Codex Desktop.
-2. Select a built-in theme in the **Theme Library**, or import an image or `.codex-theme` file.
+2. Select a built-in theme in the **Theme Library**, or import an image, MP4 video, or `.codex-theme` file.
 3. Adjust the theme in the preview, then apply it.
 
 The first time Skin Studio takes over a normally running Codex instance, it needs confirmation to restart Codex so it can open a local CDP port at launch. Once the themed session exists, themes and settings hot-switch without a restart.
@@ -90,7 +90,7 @@ Choose **Restore Official Theme** in the app. Skin Studio cleans up injected con
 
 ### Start with a wallpaper
 
-Import a local JPG, PNG, or WebP image and Skin Studio creates an independent local theme copy. The preview editor lets you control:
+Import a local JPG, PNG, WebP image, or MP4 video and Skin Studio creates an independent local theme copy. The preview editor lets you control:
 
 - Image focus, content safe area, and task-page presentation;
 - Light, dark, or automatic appearance;
@@ -103,9 +103,9 @@ Elements in the preview point directly to their corresponding configuration sect
 
 ### Import and export theme bundles
 
-A `.codex-theme` file is a ZIP theme bundle used by Skin Studio. It contains `bundle.json` and one JPG, PNG, or WebP background image. Import validates the manifest, image format, image dimensions, and archive contents before rebuilding the thumbnail. A theme bundle never contains CDP connections, engine state, or executable code.
+A `.codex-theme` file is a ZIP theme bundle used by Skin Studio. It contains `bundle.json` and one JPG, PNG, WebP background image, or MP4 background video. Import validates the manifest, media format, dimensions or duration, and archive contents before rebuilding the thumbnail. A theme bundle never contains CDP connections, engine state, or executable code.
 
-Theme images are limited to 16 MB, 16,384 pixels on either dimension, and 50 million pixels in total. Imported themes can be exported again for backups or sharing.
+Theme images are limited to 16 MB, 16,384 pixels on either dimension, and 50 million pixels in total. MP4 video backgrounds must use H.264, are limited to 50 MB, and may be at most 60 seconds long. Imported themes can be exported again for backups or sharing.
 
 ### Install from the theme store
 

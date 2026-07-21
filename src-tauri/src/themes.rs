@@ -32,7 +32,7 @@ const MAX_THEME_BUNDLE_BYTES: u64 = MAX_VIDEO_BYTES + 256 * 1024;
 const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_VIDEO_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
 const MAX_THUMBNAIL_BYTES: usize = 2 * 1024 * 1024;
-const BUILTIN_THEME_VERSION: &str = "1.3.3";
+const BUILTIN_THEME_VERSION: &str = "1.3.4";
 const BAMBOO_SKYLIGHT: &[u8] = include_bytes!("../assets/preset-bamboo-skylight.jpg");
 const WILDERNESS: &[u8] = include_bytes!("../assets/preset-wilderness.mp4");
 const RETIRED_BUILTIN_THEME_IDS: &[&str] = &[
@@ -1372,6 +1372,9 @@ fn wilderness_manifest() -> ThemeManifest {
     manifest.image = "background.mp4".into();
     manifest.background_kind = "video".into();
     manifest.art.focus_x = 0.68;
+    manifest.ui.home_welcome.icon_visible = false;
+    manifest.ui.home_welcome.title_visible = false;
+    manifest.ui.home_suggestions.visible = false;
     manifest
 }
 
@@ -1690,6 +1693,9 @@ mod tests {
         assert_eq!(manifest.author, "哲风壁纸");
         assert_eq!(manifest.background_kind, "video");
         assert_eq!(manifest.image, "background.mp4");
+        assert!(!manifest.ui.home_welcome.icon_visible);
+        assert!(!manifest.ui.home_welcome.title_visible);
+        assert!(!manifest.ui.home_suggestions.visible);
     }
 
     #[test]
