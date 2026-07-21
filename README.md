@@ -143,6 +143,6 @@ npm run desktop:build
 
 ## 许可证与致谢
 
-项目代码采用 [MIT License](LICENSE)。内置主题素材来自 [Fei-Away/Codex-Dream-Skin](https://github.com/Fei-Away/Codex-Dream-Skin) 的 MIT 许可预设；人物、肖像、商标及其他第三方 IP 的使用权需要由主题使用者自行确认，代码许可证并不自动授予相应的商业使用权。
+项目代码采用 [MIT License](LICENSE)。人物、肖像、商标及其他第三方 IP 的使用权需要由主题使用者自行确认，代码许可证并不自动授予相应的商业使用权。
 
 Codex Skin Studio 与 OpenAI 没有关联、也未经其认可。

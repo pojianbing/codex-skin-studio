@@ -143,6 +143,6 @@ Please use [Issues](https://github.com/pojianbing/codex-skin-studio/issues) to r
 
 ## License and Credits
 
-The application code is released under the [MIT License](LICENSE). Built-in theme assets are based on MIT-licensed presets from [Fei-Away/Codex-Dream-Skin](https://github.com/Fei-Away/Codex-Dream-Skin). Users are responsible for confirming their rights to use people, portraits, trademarks, and other third-party IP; the code license does not grant commercial rights to those materials.
+The application code is released under the [MIT License](LICENSE). Users are responsible for confirming their rights to use people, portraits, trademarks, and other third-party IP; the code license does not grant commercial rights to those materials.
 
 Codex Skin Studio is not affiliated with or endorsed by OpenAI.
