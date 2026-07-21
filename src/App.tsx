@@ -804,11 +804,12 @@ function SkinStudioApp() {
     }, '主题包已加入本地主题库')
   }
 
-  const exportSelected = async () => {
-    if (!selected) return
+  const exportTheme = async (themeToExport?: ThemeRecord) => {
+    const target = themeToExport ?? selected
+    if (!target) return
     const selectedPath = await save({
-      title: '导出主题包',
-      defaultPath: themeBundleFilename(selected),
+      title: `导出主题包 - ${target.name}`,
+      defaultPath: themeBundleFilename(target),
       filters: [{ name: 'Codex Skin Studio 主题包', extensions: ['codex-theme'] }],
     })
     if (!selectedPath) return
@@ -817,7 +818,7 @@ function SkinStudioApp() {
       : `${selectedPath}.codex-theme`
     await run(
       'export',
-      () => invoke('export_theme', { themeId: selected.id, path }),
+      () => invoke('export_theme', { themeId: target.id, path }),
       '主题包已导出',
     )
   }
@@ -1134,10 +1135,10 @@ function SkinStudioApp() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {filteredThemes.map((theme) => (
-                <button
+                <div
                   key={theme.id}
                   className={cn(
-                    "flex flex-col overflow-hidden text-left border rounded-xl bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 backdrop-blur-sm transition-colors duration-150 cursor-pointer group shadow-sm",
+                    "group relative flex flex-col overflow-hidden text-left border rounded-xl bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 backdrop-blur-sm transition-colors duration-150 cursor-pointer shadow-sm",
                     selected?.id === theme.id
                       ? "border-zinc-250 shadow-[0_0_12px_rgba(255,255,255,0.06)] ring-1 ring-zinc-200/50"
                       : "border-zinc-800/80 hover:border-zinc-700"
@@ -1150,11 +1151,29 @@ function SkinStudioApp() {
                   >
                     {/* Shadow overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 transition-opacity" />
+                    
+                    {/* 选中指示标记 */}
                     {selected?.id === theme.id && (
-                      <i className="absolute z-10 top-2.5 right-2.5 flex items-center justify-center w-6 h-6 rounded-full bg-zinc-50 text-zinc-950 shadow-md border border-white/20">
+                      <i className="absolute z-10 top-2.5 left-2.5 flex items-center justify-center w-6 h-6 rounded-full bg-zinc-50 text-zinc-950 shadow-md border border-white/20">
                         <Check size={13} strokeWidth={3.5} />
                       </i>
                     )}
+
+                    {/* 快捷导出按钮 */}
+                    <button
+                      type="button"
+                      title={`导出主题包 ${theme.name}`}
+                      aria-label={`导出主题包 ${theme.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        void exportTheme(theme)
+                      }}
+                      disabled={Boolean(working)}
+                      className="absolute z-20 top-2.5 right-2.5 flex items-center gap-1 rounded-md border border-emerald-500/40 bg-zinc-950/85 px-2 py-1 text-[10px] font-semibold text-emerald-300 backdrop-blur-md opacity-0 group-hover:opacity-100 hover:bg-emerald-500/20 hover:text-emerald-200 hover:border-emerald-500/60 transition-all duration-200 shadow-md cursor-pointer active:scale-95"
+                    >
+                      <Download size={11} />
+                      <span>导出</span>
+                    </button>
                   </span>
                   <span className="flex flex-col p-3.5">
                     <b className="text-sm font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">{theme.name}</b>
@@ -1170,7 +1189,7 @@ function SkinStudioApp() {
                       <span className="text-[10px] text-zinc-500 font-mono">v{theme.version}</span>
                     </div>
                   </span>
-                </button>
+                </div>
               ))}
               {filteredThemes.length > 0 ? (
                 <button
@@ -1256,21 +1275,22 @@ function SkinStudioApp() {
                       <h2 className="text-base font-bold text-zinc-50">{selected.name}</h2>
 
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <Button
                         variant="outline"
-                        size="icon-xs"
-                        title="导出主题包"
-                        aria-label="导出主题包"
-                        onClick={() => void exportSelected()}
+                        size="sm"
+                        title="导出当前主题包"
+                        aria-label="导出当前主题包"
+                        onClick={() => void exportTheme()}
                         disabled={Boolean(working)}
-                        className="border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-50 cursor-pointer"
+                        className="border-emerald-500/40 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-100 hover:border-emerald-500/60 cursor-pointer transition-all duration-300 shadow-[0_2px_8px_rgba(16,185,129,0.12)] font-semibold"
                       >
                         {working === 'export' ? (
                           <LoaderCircle className="animate-spin" size={13} />
                         ) : (
                           <Download size={13} />
                         )}
+                        <span>导出主题包</span>
                       </Button>
                       {!selected.builtIn && (
                         <Button
