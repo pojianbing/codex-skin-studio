@@ -508,6 +508,8 @@ pub struct ThemeRecord {
     pub ui: UiConfig,
     pub background_kind: String,
     pub preview_data_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub background_path: Option<String>,
     pub built_in: bool,
 }
 

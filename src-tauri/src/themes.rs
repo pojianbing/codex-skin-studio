@@ -29,6 +29,7 @@ const THEME_BUNDLE_MANIFEST: &str = "bundle.json";
 const MAX_THEME_BUNDLE_BYTES: u64 = MAX_VIDEO_BYTES + 256 * 1024;
 const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_VIDEO_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
+const MAX_THUMBNAIL_BYTES: usize = 2 * 1024 * 1024;
 const BUILTIN_THEME_VERSION: &str = "1.3.2";
 const GREENWOOD_WHISPERS: &[u8] = include_bytes!("../assets/preset-greenwood-whispers.jpg");
 const INK_SILHOUETTE: &[u8] = include_bytes!("../assets/preset-ink-silhouette.jpg");
@@ -1424,6 +1425,12 @@ pub fn load_manifest(id: &str) -> Result<(ThemeManifest, PathBuf)> {
 fn record_from(manifest: ThemeManifest, directory: &Path) -> Result<ThemeRecord> {
     let thumbnail = fs::read(directory.join(&manifest.thumbnail))?;
     let background_kind = background_kind(&manifest)?.into();
+    let background_path = (background_kind == "video").then(|| {
+        directory
+            .join(&manifest.image)
+            .to_string_lossy()
+            .into_owned()
+    });
     Ok(ThemeRecord {
         id: manifest.id,
         name: manifest.name,
@@ -1439,8 +1446,35 @@ fn record_from(manifest: ThemeManifest, directory: &Path) -> Result<ThemeRecord>
         ui: manifest.ui,
         background_kind,
         preview_data_url: format!("data:image/jpeg;base64,{}", STANDARD.encode(thumbnail)),
+        background_path,
         built_in: manifest.built_in,
     })
+}
+
+pub fn save_video_thumbnail(id: &str, thumbnail_data_url: &str) -> Result<()> {
+    let (_, encoded) = thumbnail_data_url
+        .split_once(',')
+        .filter(|(prefix, _)| *prefix == "data:image/jpeg;base64")
+        .ok_or_else(|| StudioError::from("视频预览格式无效"))?;
+    if encoded.len() > MAX_THUMBNAIL_BYTES * 2 {
+        return Err(StudioError::from("视频预览图过大"));
+    }
+    let bytes = STANDARD
+        .decode(encoded)
+        .map_err(|_| StudioError::from("视频预览图无法解码"))?;
+    if bytes.len() > MAX_THUMBNAIL_BYTES {
+        return Err(StudioError::from("视频预览图过大"));
+    }
+    image_info(&bytes)?;
+
+    let (manifest, directory) = load_manifest(id)?;
+    if background_kind(&manifest)? != "video" {
+        return Err(StudioError::from("只有视频背景可以更新预览图"));
+    }
+    atomic_write(
+        &directory.join(&manifest.thumbnail),
+        &make_thumbnail(&bytes)?,
+    )
 }
 
 pub fn list_themes() -> Result<Vec<ThemeRecord>> {

@@ -136,6 +136,7 @@ export type ThemeRecord = {
   ui: UiConfig
   backgroundKind: 'image' | 'video'
   previewDataUrl: string
+  backgroundPath?: string
   builtIn: boolean
 }
 

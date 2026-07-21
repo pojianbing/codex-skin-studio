@@ -105,11 +105,15 @@
       videoLayer.id = 'codex-skin-studio-video';
       videoLayer.src = artUrl;
       videoLayer.autoplay = true;
-      videoLayer.loop = true;
+      videoLayer.loop = false;
       videoLayer.muted = true;
       videoLayer.playsInline = true;
       videoLayer.preload = 'auto';
       videoLayer.setAttribute('aria-hidden', 'true');
+      videoLayer.addEventListener('ended', () => {
+        videoLayer.currentTime = 0;
+        void videoLayer.play().catch(() => {});
+      });
       document.body.prepend(videoLayer);
     }
     syncVideoPlayback();

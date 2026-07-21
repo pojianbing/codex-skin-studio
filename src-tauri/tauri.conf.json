@@ -39,7 +39,11 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' data: blob: https://github.com https://objects.githubusercontent.com https://release-assets.githubusercontent.com; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; img-src 'self' data: blob: https://github.com https://objects.githubusercontent.com https://release-assets.githubusercontent.com; media-src 'self' asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$LOCALDATA/codex/CodexSkinStudio/data/themes/**/*"]
+      }
     }
   },
   "bundle": {

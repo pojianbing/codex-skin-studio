@@ -1,7 +1,86 @@
 import { Check, Download, ImagePlus, Video } from 'lucide-react'
+import { convertFileSrc, invoke } from '@tauri-apps/api/core'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { type ThemeFilter, type ThemeRecord } from '@/lib/theme-types'
+
+const capturedVideoPreviews = new Map<string, string>()
+
+function VideoPreview({ theme }: { theme: ThemeRecord }) {
+  const [previewDataUrl, setPreviewDataUrl] = useState(
+    () => capturedVideoPreviews.get(theme.id) ?? theme.previewDataUrl,
+  )
+  const videoSource = useMemo(
+    () => theme.backgroundPath ? convertFileSrc(theme.backgroundPath) : undefined,
+    [theme.backgroundPath],
+  )
+
+  useEffect(() => {
+    setPreviewDataUrl(capturedVideoPreviews.get(theme.id) ?? theme.previewDataUrl)
+  }, [theme.id, theme.previewDataUrl])
+
+  const captureFirstFrame = (video: HTMLVideoElement) => {
+    if (!video.videoWidth || !video.videoHeight || capturedVideoPreviews.has(theme.id)) return
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 640
+    canvas.height = 360
+    const context = canvas.getContext('2d')
+    if (!context) return
+
+    const scale = Math.max(canvas.width / video.videoWidth, canvas.height / video.videoHeight)
+    const width = video.videoWidth * scale
+    const height = video.videoHeight * scale
+    context.drawImage(video, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height)
+
+    try {
+      const thumbnail = canvas.toDataURL('image/jpeg', 0.84)
+      capturedVideoPreviews.set(theme.id, thumbnail)
+      setPreviewDataUrl(thumbnail)
+      void invoke('save_video_thumbnail', { themeId: theme.id, thumbnailDataUrl: thumbnail })
+    } catch {
+      // Keep the existing thumbnail when the platform does not permit canvas capture.
+    }
+  }
+
+  const capturePresentedFrame = (video: HTMLVideoElement) => {
+    if (typeof video.requestVideoFrameCallback === 'function') {
+      video.requestVideoFrameCallback(() => captureFirstFrame(video))
+      return
+    }
+    window.requestAnimationFrame(() => captureFirstFrame(video))
+  }
+
+  return (
+    <span
+      className="relative z-0 block w-full aspect-video pointer-events-none bg-muted bg-center bg-cover"
+      style={{ backgroundImage: `url(${previewDataUrl})` }}
+    >
+      {videoSource && (
+        <video
+          key={`first-frame-v2-${theme.id}`}
+          aria-hidden="true"
+          className="absolute size-px opacity-0"
+          crossOrigin="anonymous"
+          muted
+          playsInline
+          preload="metadata"
+          src={videoSource}
+          onLoadedMetadata={(event) => {
+            event.currentTarget.currentTime = Math.min(0.001, event.currentTarget.duration || 0.001)
+          }}
+          onLoadedData={(event) => capturePresentedFrame(event.currentTarget)}
+          onSeeked={(event) => capturePresentedFrame(event.currentTarget)}
+        />
+      )}
+      <div className="absolute inset-0 bg-black/30" />
+      <span className="absolute bottom-2 right-2 flex size-6 items-center justify-center rounded-md border border-white/20 bg-zinc-950/70 text-white shadow-sm">
+        <Video size={13} aria-label="视频背景" />
+      </span>
+    </span>
+  )
+}
 
 type ThemeLibraryPanelProps = {
   filteredThemes: ThemeRecord[]
@@ -69,24 +148,21 @@ export function ThemeLibraryPanel({
                     onClick={() => onSelectTheme(theme.id)}
                     className="absolute inset-0 z-10 cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   />
-                  <span
-                    className="relative z-0 block w-full aspect-video pointer-events-none bg-muted bg-center bg-cover"
-                    style={{ backgroundImage: `url(${theme.previewDataUrl})` }}
-                  >
-                    <div className="absolute inset-0 bg-black/30" />
-                    {theme.backgroundKind === 'video' && (
-                      <span className="absolute bottom-2 right-2 flex size-6 items-center justify-center rounded-md border border-white/20 bg-zinc-950/70 text-white shadow-sm">
-                        <Video size={13} aria-label="视频背景" />
-                      </span>
-                    )}
-                    
-                    {/* 选中指示标记 */}
-                    {selected?.id === theme.id && (
-                      <i className="absolute left-2.5 top-2.5 flex size-6 items-center justify-center rounded-full border border-background/40 bg-primary text-primary-foreground shadow-sm">
-                        <Check size={13} strokeWidth={3.5} />
-                      </i>
-                    )}
-                  </span>
+                  {theme.backgroundKind === 'video' ? (
+                    <VideoPreview theme={theme} />
+                  ) : (
+                    <span
+                      className="relative z-0 block w-full aspect-video pointer-events-none bg-muted bg-center bg-cover"
+                      style={{ backgroundImage: `url(${theme.previewDataUrl})` }}
+                    >
+                      <div className="absolute inset-0 bg-black/30" />
+                    </span>
+                  )}
+                  {selected?.id === theme.id && (
+                    <i className="absolute left-2.5 top-2.5 z-10 flex size-6 items-center justify-center rounded-full border border-background/40 bg-primary text-primary-foreground shadow-sm pointer-events-none">
+                      <Check size={13} strokeWidth={3.5} />
+                    </i>
+                  )}
                   <button
                     type="button"
                     title={`导出主题包 ${theme.name}`}

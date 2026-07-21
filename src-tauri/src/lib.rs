@@ -286,6 +286,19 @@ async fn import_theme_bundle(path: String) -> std::result::Result<ThemeRecord, S
 }
 
 #[tauri::command]
+async fn save_video_thumbnail(
+    theme_id: String,
+    thumbnail_data_url: String,
+) -> std::result::Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        themes::save_video_thumbnail(&theme_id, &thumbnail_data_url)
+            .map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
 async fn get_store_catalog(refresh: bool) -> std::result::Result<store::StoreCatalog, String> {
     tauri::async_runtime::spawn_blocking(move || {
         store::catalog(refresh).map_err(|error| error.to_string())
@@ -584,6 +597,7 @@ pub fn run() {
             set_launch_codex_on_open,
             import_wallpaper,
             import_theme_bundle,
+            save_video_thumbnail,
             get_store_catalog,
             install_store_theme,
             export_theme,
