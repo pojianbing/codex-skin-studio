@@ -3,7 +3,11 @@ import { SkinStudioApp } from '@/components/studio/skin-studio-app'
 import { ThemeHanger } from '@/components/theme-hanger'
 
 function App() {
-  return getCurrentWebviewWindow().label === 'hanger' ? <ThemeHanger /> : <SkinStudioApp />
+  try {
+    return getCurrentWebviewWindow().label === 'hanger' ? <ThemeHanger /> : <SkinStudioApp />
+  } catch {
+    return <SkinStudioApp />
+  }
 }
 
 export default App

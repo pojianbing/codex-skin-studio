@@ -330,6 +330,20 @@ export function CodexPreview({
     ? undefined
     : `${safeAreaShade}, url(${theme.previewDataUrl})`
 
+  const previewFrameStyle: CSSProperties = light
+    ? {
+        backgroundColor: '#f4f4f5',
+        borderColor: '#d4d4d8',
+        color: '#18181b',
+        boxShadow: '0 8px 16px rgba(24,24,27,0.08)',
+      }
+    : {
+        backgroundColor: '#09090b',
+        borderColor: '#27272a',
+        color: '#f4f4f5',
+        boxShadow: '0 8px 16px rgba(0,0,0,0.32)',
+      }
+
   const targetClass = (element: PreviewElementId) => cn(
     'preview-target',
     activeElement === element && 'preview-target--active',
@@ -344,15 +358,13 @@ export function CodexPreview({
   return (
     <div
       className={cn(
-        "relative isolate w-full shrink-0 overflow-hidden rounded-xl border transition-all duration-500 ease-out",
-        light 
-          ? "border-zinc-300/80 bg-zinc-150 text-zinc-900 shadow-[0_12px_32px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.02),inset_0_1px_0_rgba(255,255,255,0.7)]" 
-          : "border-zinc-800/80 bg-zinc-950 text-zinc-100 shadow-[0_24px_50px_rgba(0,0,0,0.45),0_1px_3px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.08)]",
+        'relative isolate w-full shrink-0 overflow-hidden rounded-lg border transition-colors duration-200',
         targetClass('canvas'),
       )}
       onClick={() => onSelectElement('canvas')}
       style={{
         aspectRatio: '16 / 10',
+        ...previewFrameStyle,
         backgroundImage,
         backgroundPosition,
         backgroundSize: theme.art.taskMode === 'banner' ? '100% 47%' : 'cover',

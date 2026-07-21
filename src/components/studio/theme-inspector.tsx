@@ -135,7 +135,7 @@ export function ThemeInspector({
                         aria-label="导出当前主题包"
                         onClick={onExportTheme}
                         disabled={Boolean(working)}
-                        className="bg-gradient-to-br from-zinc-50 to-zinc-200 text-zinc-950 hover:from-white hover:to-zinc-100 font-bold shadow-[0_2px_8px_rgba(255,255,255,0.03)] cursor-pointer transition-all duration-300 active:scale-95"
+                        className="cursor-pointer"
                       >
                         {working === 'export' ? (
                           <LoaderCircle className="animate-spin" size={13} />
@@ -187,7 +187,7 @@ export function ThemeInspector({
                     {elementTab === 'shell' && (
                       <>
                         <ConfigSection title="画布与焦点" {...configSectionProps('canvas')}>
-                          <div className="grid grid-cols-2 gap-4 pb-1">
+                          <div className="grid grid-cols-1 gap-4 pb-1 md:grid-cols-2">
                             <div className="flex flex-col gap-2">
                               <label className="text-[10px] font-bold text-zinc-400 tracking-wide uppercase">
                                 内容安全区

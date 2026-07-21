@@ -1,6 +1,8 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useId, useMemo, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { type ElementTab, type PreviewElementId } from '@/lib/preview-elements'
 import { type RowStyle, type SemanticTokens, type SurfaceStyle } from '@/lib/theme-types'
@@ -14,25 +16,11 @@ export function ToggleSetting({ label, checked, onChange }: {
   checked: boolean
   onChange: (checked: boolean) => void
 }) {
+  const labelId = useId()
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-xs font-semibold text-zinc-300">{label}</span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className={cn(
-          'relative h-5 w-9 flex-none rounded-full border transition-colors cursor-pointer',
-          checked ? 'border-emerald-400/40 bg-emerald-500' : 'border-zinc-700 bg-zinc-800',
-        )}
-      >
-        <span className={cn(
-          'absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform',
-          checked ? 'translate-x-4' : 'translate-x-0',
-        )} />
-      </button>
+      <span id={labelId} className="text-xs font-medium text-foreground">{label}</span>
+      <Switch checked={checked} onCheckedChange={onChange} aria-labelledby={labelId} />
     </div>
   )
 }
@@ -46,6 +34,8 @@ export function SliderSetting({ label, value, min, max, step, unit = '', onChang
   unit?: string
   onChange: (value: number) => void
 }) {
+  const labelId = useId()
+  const inputId = useId()
   const displayValue = useMemo(() => unit === '%' ? Math.round(value * 100) : value, [value, unit])
   const [localText, setLocalText] = useState('')
   const [isFocused, setIsFocused] = useState(false)
@@ -73,10 +63,13 @@ export function SliderSetting({ label, value, min, max, step, unit = '', onChang
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-3">
-        <label className="text-xs font-semibold text-zinc-300">{label}</label>
+        <label id={labelId} htmlFor={inputId} className="text-xs font-medium text-foreground">{label}</label>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={() => onChange(normalize(value - step))} disabled={value <= min} title="减少" className="w-[18px] h-[18px] flex items-center justify-center rounded border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none select-none text-[10px] font-bold cursor-pointer transition-colors">-</button>
+          <Button type="button" variant="outline" size="icon-xs" onClick={() => onChange(normalize(value - step))} disabled={value <= min} title={`减少${label}`} aria-label={`减少${label}`}>
+            -
+          </Button>
           <input
+            id={inputId}
             type="text"
             value={localText}
             onChange={(event) => setLocalText(event.target.value)}
@@ -97,12 +90,14 @@ export function SliderSetting({ label, value, min, max, step, unit = '', onChang
               setIsFocused(true)
               setLocalText(String(displayValue))
             }}
-            className="w-11 h-[18px] text-center text-[10px] font-mono font-bold bg-zinc-950 border border-zinc-800 rounded text-zinc-300 focus:border-zinc-500 focus:outline-none transition-colors"
+            className="h-6 w-12 rounded-md border border-input bg-background text-center text-[10px] font-mono font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           />
-          <button type="button" onClick={() => onChange(normalize(value + step))} disabled={value >= max} title="增加" className="w-[18px] h-[18px] flex items-center justify-center rounded border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none select-none text-[10px] font-bold cursor-pointer transition-colors">+</button>
+          <Button type="button" variant="outline" size="icon-xs" onClick={() => onChange(normalize(value + step))} disabled={value >= max} title={`增加${label}`} aria-label={`增加${label}`}>
+            +
+          </Button>
         </div>
       </div>
-      <Slider value={[value]} min={min} max={max} step={step} onValueChange={(next) => onChange(sliderValue(next))} className="w-full cursor-pointer py-1" />
+      <Slider aria-labelledby={labelId} value={[value]} min={min} max={max} step={step} onValueChange={(next) => onChange(sliderValue(next))} className="w-full cursor-pointer py-1" />
     </div>
   )
 }
@@ -136,9 +131,9 @@ export function ColorSetting({ label, value, autoColor, allowAuto = true, onChan
 export function ShadowSetting({ value, onChange }: { value: SurfaceStyle['shadow'], onChange: (value: SurfaceStyle['shadow']) => void }) {
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-xs font-semibold text-zinc-300">阴影</label>
-      <div className="flex w-full gap-1 rounded-lg bg-zinc-950 p-1">
-        {(['none', 'soft', 'strong'] as const).map((option) => <button key={option} type="button" className={cn('flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors cursor-pointer', value === option ? 'bg-zinc-800 text-zinc-50 shadow-sm' : 'text-zinc-500 hover:text-zinc-200')} onClick={() => onChange(option)}>{option === 'none' ? '关闭' : option === 'soft' ? '柔和' : '强调'}</button>)}
+      <span className="text-xs font-medium text-foreground">阴影</span>
+      <div className="flex w-full gap-1 rounded-md bg-muted p-1" role="group" aria-label="阴影强度">
+        {(['none', 'soft', 'strong'] as const).map((option) => <button key={option} type="button" aria-pressed={value === option} className={cn('flex-1 rounded-sm py-1.5 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50', value === option ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:bg-background/60 hover:text-foreground')} onClick={() => onChange(option)}>{option === 'none' ? '关闭' : option === 'soft' ? '柔和' : '强调'}</button>)}
       </div>
     </div>
   )
@@ -169,7 +164,7 @@ export function SurfaceStyleEditor({ value, autoColor, onChange }: { value: Surf
 
 export function ElementTabSelector({ value, onChange }: { value: ElementTab, onChange: (tab: ElementTab) => void }) {
   const tabs: Array<{ value: ElementTab, label: string }> = [{ value: 'shell', label: '基础框架' }, { value: 'components', label: '视图组件' }, { value: 'styles', label: '辅助样式' }]
-  return <div className="mb-2 flex rounded-lg border border-zinc-850/50 bg-zinc-950/80 p-0.5">{tabs.map((tab) => <button key={tab.value} type="button" onClick={() => onChange(tab.value)} className={cn('flex-1 rounded py-1.5 text-center text-[11px] font-bold transition-all duration-300 cursor-pointer active:scale-98', value === tab.value ? 'bg-zinc-850 border border-zinc-700/20 text-zinc-50 shadow-md' : 'text-zinc-450 hover:text-zinc-205')}>{tab.label}</button>)}</div>
+  return <div className="mb-2 flex rounded-md bg-muted p-1" role="group" aria-label="界面元素分类">{tabs.map((tab) => <button key={tab.value} type="button" aria-pressed={value === tab.value} onClick={() => onChange(tab.value)} className={cn('flex-1 rounded-sm py-1.5 text-center text-[11px] font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50', value === tab.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:bg-background/60 hover:text-foreground')}>{tab.label}</button>)}</div>
 }
 
 export function OverlayStyleEditor({ value, autoColor, onChange }: { value: SurfaceStyle, autoColor: string, onChange: (value: SurfaceStyle) => void }) {

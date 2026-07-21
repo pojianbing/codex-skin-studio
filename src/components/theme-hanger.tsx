@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import {
   AppWindow, Check, Feather, Flame, GripVertical, Leaf, LoaderCircle,
   Moon, Mountain, Palette, RefreshCw, RotateCcw, Sparkles, Sprout,
@@ -26,7 +26,6 @@ type ApplyPlan = { action: 'hotSwitch' | 'launch' | 'restart' }
 
 const compactSize = new LogicalSize(44, 44)
 const expandedSize = new LogicalSize(360, 580)
-const hangerWindow = getCurrentWindow()
 
 function getThemeMeta(theme: ThemeRecord) {
   const name = theme.name.toLowerCase()
@@ -110,6 +109,7 @@ function getThemeMeta(theme: ThemeRecord) {
 }
 
 export function ThemeHanger() {
+  const hangerWindow = useMemo(() => getCurrentWindow(), [])
   const [dashboard, setDashboard] = useState<Dashboard>()
   const [expanded, setExpanded] = useState(false)
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
@@ -151,7 +151,7 @@ export function ThemeHanger() {
     } catch (reason) {
       setError(String(reason))
     }
-  }, [])
+  }, [hangerWindow])
 
   useEffect(() => {
     void refresh()

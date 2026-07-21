@@ -6,6 +6,7 @@ import {
   RotateCcw, ShieldCheck, Trash2, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { Toaster } from '@/components/ui/sonner'
 import { AppUpdater } from '@/components/app-updater'
 import { AppearanceToggle } from '@/components/appearance-toggle'
@@ -355,60 +356,70 @@ export function SkinStudioApp() {
   return (
     <div className="skin-studio flex w-full h-full min-h-0 overflow-hidden bg-transparent text-foreground font-sans selection:bg-primary/20">
       {/* Sidebar */}
-      <aside className="w-[218px] flex-none flex flex-col p-5 bg-zinc-900/35 backdrop-blur-xl text-zinc-200 border-r border-zinc-850/40">
+      <aside className="flex w-64 flex-none flex-col border-r border-sidebar-border bg-sidebar p-4 text-sidebar-foreground max-[800px]:w-16 max-[800px]:p-2">
         {/* Brand mark */}
         <button
           type="button"
           onClick={handleBrandMarkClick}
           aria-label="Skin Studio"
-          className="group flex w-full items-center gap-3 border-b border-zinc-850/40 px-2 pb-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+          className="flex w-full items-center gap-3 border-b border-sidebar-border px-2 pb-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50"
         >
           <img
             src="/app-icon.png"
-            className="w-9 h-9 select-none object-contain transition-all duration-300 group-hover:scale-[1.04]"
+            className="size-9 select-none object-contain"
             alt="Codex Skin Studio Logo"
           />
-          <div className="flex flex-col leading-none">
-            <span className="font-bold text-sm text-zinc-50">Skin Studio</span>
-            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold mt-1">Codex themes</span>
+          <div className="flex flex-col leading-none max-[800px]:hidden">
+            <span className="text-sm font-semibold text-sidebar-foreground">Skin Studio</span>
+            <span className="mt-1 text-[10px] font-medium text-muted-foreground">Codex themes</span>
           </div>
         </button>
 
         {/* Navigation list */}
-        <nav className="flex-1 flex flex-col gap-1 pt-3" aria-label="主导航">
+        <nav className="flex-1 pt-3" aria-label="主导航">
+          <ul className="flex flex-col gap-1">
+          <li>
           <button
             type="button"
             aria-pressed={activeView === 'library'}
+            aria-current={activeView === 'library' ? 'page' : undefined}
+            aria-label="主题库"
             onClick={() => setActiveView('library')}
             className={cn(
-              'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
+              'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 max-[800px]:justify-center max-[800px]:px-0',
               activeView === 'library' 
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                 : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
-          >
+            >
             <Library size={16} />
-            <span>主题库</span>
+            <span className="max-[800px]:sr-only">主题库</span>
           </button>
+          </li>
+          <li>
           <button
             type="button"
             aria-pressed={activeView === 'store'}
+            aria-current={activeView === 'store' ? 'page' : undefined}
+            aria-label="主题商店"
             onClick={() => setActiveView('store')}
             className={cn(
-              'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
+              'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 max-[800px]:justify-center max-[800px]:px-0',
               activeView === 'store' 
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                 : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
-          >
+            >
             <Download size={16} />
-            <span>主题商店</span>
+            <span className="max-[800px]:sr-only">主题商店</span>
           </button>
+          </li>
+          </ul>
         </nav>
 
         {/* Compact app information */}
-        <div className="mt-auto pt-3 border-t border-zinc-850/40 flex items-center justify-between gap-2 px-1 text-[10px]">
-          <span className="shrink-0 text-zinc-500">应用版本</span>
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-sidebar-border px-1 pt-3 text-[10px] max-[800px]:justify-center">
+          <span className="shrink-0 text-muted-foreground max-[800px]:hidden">应用版本</span>
           <div className="flex items-center gap-1.5">
             <AppearanceToggle />
             <AppUpdater />
@@ -423,7 +434,7 @@ export function SkinStudioApp() {
         ) : (
           <>
         {/* Topbar */}
-        <header className="h-[68px] border-b border-zinc-850/40 bg-zinc-900/35 backdrop-blur-md px-6 flex items-center justify-between flex-none">
+        <header className="flex min-h-[68px] flex-none flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-6 py-3 max-[640px]:px-3">
           <div>
             <h1 className="text-lg font-bold tracking-tight text-zinc-50">主题库</h1>
             <p className="text-xs text-zinc-400 mt-0.5">
@@ -432,53 +443,31 @@ export function SkinStudioApp() {
                 : `${filteredThemes.length} / ${dashboard.themes.length} 个本地主题`}
             </p>
           </div>
-          <div className="flex gap-2 items-center">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={dashboard.autostartEnabled}
-              title="开机启动"
-              onClick={() => void toggleAutostart()}
-              disabled={Boolean(working)}
-              className="flex h-8 items-center gap-2 px-2.5 rounded-lg border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-800/60 text-[11px] font-semibold text-zinc-350 hover:text-zinc-200 disabled:opacity-50 cursor-pointer transition-all duration-300"
-            >
-              <span className={cn(
-                "relative h-4 w-7 rounded-full transition-colors duration-300",
-                dashboard.autostartEnabled ? "bg-emerald-500" : "bg-zinc-700",
-              )}>
-                <span className={cn(
-                  "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300",
-                  dashboard.autostartEnabled ? "translate-x-3" : "translate-x-0",
-                )} />
-              </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground">
+              <Switch
+                checked={dashboard.autostartEnabled}
+                onCheckedChange={() => void toggleAutostart()}
+                disabled={Boolean(working)}
+                aria-label="开机启动"
+              />
               <span>开机启动</span>
-            </button>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={dashboard.launchCodexOnOpen}
-              title="启动 Skin Studio 时自动打开 Codex"
-              onClick={() => void toggleCodexLaunchOnOpen()}
-              disabled={Boolean(working)}
-              className="flex h-8 items-center gap-2 px-2.5 rounded-lg border border-zinc-800/60 bg-zinc-900/40 hover:bg-zinc-800/60 text-[11px] font-semibold text-zinc-350 hover:text-zinc-200 disabled:opacity-50 cursor-pointer transition-all duration-300"
-            >
-              <span className={cn(
-                "relative h-4 w-7 rounded-full transition-colors duration-300",
-                dashboard.launchCodexOnOpen ? "bg-emerald-500" : "bg-zinc-700",
-              )}>
-                <span className={cn(
-                  "absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300",
-                  dashboard.launchCodexOnOpen ? "translate-x-3" : "translate-x-0",
-                )} />
-              </span>
+            </label>
+            <label className="flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground">
+              <Switch
+                checked={dashboard.launchCodexOnOpen}
+                onCheckedChange={() => void toggleCodexLaunchOnOpen()}
+                disabled={Boolean(working)}
+                aria-label="启动 Skin Studio 时自动打开 Codex"
+              />
               <span>启动时打开 Codex</span>
-            </button>
+            </label>
             <Button
               variant="outline"
               size="sm"
               onClick={() => void importWallpaper()}
               disabled={Boolean(working)}
-              className="border-zinc-800/60 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-50 hover:border-zinc-700/60 cursor-pointer transition-all duration-300 active:scale-95"
+              className="cursor-pointer"
             >
               {working === 'import' ? (
                 <LoaderCircle className="animate-spin" size={15} />
@@ -491,7 +480,7 @@ export function SkinStudioApp() {
               onClick={() => void importThemeBundle()}
               disabled={Boolean(working)}
               size="sm"
-              className="bg-gradient-to-br from-zinc-50 to-zinc-200 text-zinc-950 hover:from-white hover:to-zinc-100 shadow-[0_2px_8px_rgba(255,255,255,0.03)] cursor-pointer transition-all duration-300 active:scale-95 font-semibold"
+              className="cursor-pointer"
             >
               {working === 'import-theme' ? (
                 <LoaderCircle className="animate-spin" size={15} />
@@ -543,8 +532,8 @@ export function SkinStudioApp() {
         </section>
 
         {/* Footer actions */}
-        <footer className="h-[76px] px-6 border-t border-zinc-800 bg-zinc-900 flex items-center justify-between flex-none">
-          <div className="flex gap-2.5 items-center text-zinc-200">
+        <footer className="flex min-h-[76px] flex-none flex-wrap items-center justify-between gap-3 border-t border-border bg-background px-6 py-3 max-[640px]:px-3">
+          <div className="flex items-center gap-2.5 text-foreground">
             <ShieldCheck size={18} strokeWidth={2.5} className="text-emerald-500" />
             <div className="flex flex-col">
               <span className="text-xs font-bold text-zinc-50">{modeLabel}</span>
@@ -580,7 +569,7 @@ export function SkinStudioApp() {
               onClick={() => void requestApply()}
               disabled={!selected || Boolean(working)}
               size="sm"
-              className="bg-zinc-50 text-zinc-950 hover:bg-zinc-200 font-semibold cursor-pointer shadow-md"
+              className="cursor-pointer"
             >
               {working === 'apply' || working === 'plan' ? (
                 <LoaderCircle className="animate-spin" size={15} />

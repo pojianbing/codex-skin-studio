@@ -25,10 +25,10 @@ export function ThemeLibraryPanel({
   onExportTheme,
 }: ThemeLibraryPanelProps) {
   return (
-          <div className="overflow-y-auto p-6 border-r border-zinc-850/40 bg-zinc-900/10">
+          <div className="overflow-y-auto border-r border-border bg-background p-6">
             <div className="mb-4 flex items-center gap-3">
-              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-zinc-500">主题类型</span>
-              <div className="flex min-w-0 flex-1 rounded-lg border border-zinc-800/70 bg-zinc-950/45 p-0.5" role="group" aria-label="主题类型筛选">
+              <span className="shrink-0 text-[10px] font-medium text-muted-foreground">主题类型</span>
+              <div className="flex min-w-0 flex-1 rounded-md bg-muted p-1" role="group" aria-label="主题类型筛选">
                 {([
                   ['all', '全部'],
                   ['builtIn', '内置'],
@@ -40,10 +40,10 @@ export function ThemeLibraryPanel({
                     aria-pressed={themeFilter === filter}
                     onClick={() => onThemeFilterChange(filter)}
                     className={cn(
-                      'h-6 min-w-0 flex-1 rounded-md px-2 text-[10px] font-semibold transition-colors cursor-pointer',
+                      'h-6 min-w-0 flex-1 rounded-sm px-2 text-[10px] font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                       themeFilter === filter
-                        ? 'bg-zinc-100 text-zinc-950 shadow-sm'
-                        : 'text-zinc-500 hover:bg-zinc-800/70 hover:text-zinc-200',
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
                     )}
                   >
                     {label}
@@ -51,80 +51,80 @@ export function ThemeLibraryPanel({
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {filteredThemes.map((theme) => (
-                <div
+                <article
                   key={theme.id}
                   className={cn(
-                    "group relative flex flex-col overflow-hidden text-left border rounded-xl bg-gradient-to-b from-zinc-900/60 to-zinc-950/80 backdrop-blur-sm transition-colors duration-150 cursor-pointer shadow-sm",
+                    'group relative flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground transition-colors',
                     selected?.id === theme.id
-                      ? "border-zinc-250 shadow-[0_0_12px_rgba(255,255,255,0.06)] ring-1 ring-zinc-200/50"
-                      : "border-zinc-800/80 hover:border-zinc-700"
+                      ? 'border-ring ring-2 ring-ring/30'
+                      : 'border-border hover:border-ring/50',
                   )}
-                  onClick={() => onSelectTheme(theme.id)}
                 >
+                  <button
+                    type="button"
+                    aria-label={`选择主题 ${theme.name}`}
+                    aria-pressed={selected?.id === theme.id}
+                    onClick={() => onSelectTheme(theme.id)}
+                    className="absolute inset-0 z-10 cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  />
                   <span
-                    className="relative block w-full aspect-video bg-zinc-950 bg-center bg-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+                    className="relative z-0 block w-full aspect-video pointer-events-none bg-muted bg-center bg-cover"
                     style={{ backgroundImage: `url(${theme.previewDataUrl})` }}
                   >
-                    {/* Shadow overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-90 transition-opacity" />
+                    <div className="absolute inset-0 bg-black/30" />
                     
                     {/* 选中指示标记 */}
                     {selected?.id === theme.id && (
-                      <i className="absolute z-10 top-2.5 left-2.5 flex items-center justify-center w-6 h-6 rounded-full bg-zinc-50 text-zinc-950 shadow-md border border-white/20">
+                      <i className="absolute left-2.5 top-2.5 flex size-6 items-center justify-center rounded-full border border-background/40 bg-primary text-primary-foreground shadow-sm">
                         <Check size={13} strokeWidth={3.5} />
                       </i>
                     )}
-
-                    {/* 快捷导出按钮 */}
-                    <button
-                      type="button"
-                      title={`导出主题包 ${theme.name}`}
-                      aria-label={`导出主题包 ${theme.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        void onExportTheme(theme)
-                      }}
-                      disabled={Boolean(working)}
-                      className="absolute z-20 top-2.5 right-2.5 flex h-6 items-center gap-1 rounded-md border border-border/80 bg-popover/90 px-2 text-[10px] font-medium text-popover-foreground backdrop-blur-md opacity-0 shadow-sm transition-all duration-200 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 cursor-pointer"
-                    >
-                      <Download size={11} />
-                      <span>导出</span>
-                    </button>
                   </span>
-                  <span className="flex flex-col p-3.5">
-                    <b className="text-sm font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">{theme.name}</b>
+                  <button
+                    type="button"
+                    title={`导出主题包 ${theme.name}`}
+                    aria-label={`导出主题包 ${theme.name}`}
+                    onClick={() => void onExportTheme(theme)}
+                    disabled={Boolean(working)}
+                    className="absolute right-2.5 top-2.5 z-20 flex h-7 items-center gap-1 rounded-md border border-border/80 bg-popover/90 px-2 text-[10px] font-medium text-popover-foreground opacity-0 shadow-sm transition-all duration-200 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Download size={11} />
+                    <span>导出</span>
+                  </button>
+                  <span className="relative z-0 flex flex-col pointer-events-none p-3.5">
+                    <b className="truncate text-sm font-medium text-card-foreground">{theme.name}</b>
                     <div className="mt-2 flex items-center gap-1.5">
                       <span className={cn(
-                        "rounded-[4px] px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase",
+                        'rounded-sm border px-1.5 py-0.5 text-[9px] font-medium',
                         theme.builtIn 
-                          ? "bg-zinc-800/80 text-zinc-400 border border-zinc-700/30"
-                          : "bg-emerald-950/40 text-emerald-400 border border-emerald-900/30"
+                          ? 'border-border bg-muted text-muted-foreground'
+                          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
                       )}>
                         {theme.builtIn ? '内置' : '自定义'}
                       </span>
-                      <span className="text-[10px] text-zinc-500 font-mono">v{theme.version}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground">v{theme.version}</span>
                     </div>
                   </span>
-                </div>
+                </article>
               ))}
               {filteredThemes.length > 0 ? (
                 <button
-                  className="flex flex-col items-center justify-center min-h-[160px] gap-2.5 border border-dashed border-zinc-800 hover:border-zinc-700/60 rounded-xl bg-zinc-900/10 hover:bg-zinc-900/30 transition-colors duration-150 cursor-pointer text-zinc-500 hover:text-zinc-200 group"
+                  className="group flex min-h-[160px] flex-col items-center justify-center gap-2.5 rounded-lg border border-dashed border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   onClick={() => void onImportWallpaper()}
                 >
-                  <ImagePlus size={20} className="transition-colors duration-150 text-zinc-500 group-hover:text-zinc-300" />
-                  <span className="text-xs font-semibold">导入背景图片</span>
+                  <ImagePlus size={20} />
+                  <span className="text-xs font-medium">导入背景图片</span>
                 </button>
               ) : (
-                <div className="col-span-2 flex min-h-[190px] flex-col items-center justify-center gap-3 border border-dashed border-zinc-800 bg-zinc-900/10 px-6 text-center">
-                  <ImagePlus size={24} strokeWidth={1.5} className="text-zinc-600" />
+                <div className="col-span-full flex min-h-[190px] flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/30 px-6 text-center">
+                  <ImagePlus size={24} strokeWidth={1.5} className="text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-zinc-300">
+                    <p className="text-xs font-medium text-foreground">
                       {themeFilter === 'custom' ? '还没有自定义主题' : '主题库暂时为空'}
                     </p>
-                    <p className="text-[10px] text-zinc-500">
+                    <p className="text-[10px] text-muted-foreground">
                       {themeFilter === 'custom' ? '导入背景图片或主题包后会显示在这里' : '正在读取本地主题'}
                     </p>
                   </div>
@@ -132,7 +132,7 @@ export function ThemeLibraryPanel({
                     variant="outline"
                     size="sm"
                     onClick={() => void onImportWallpaper()}
-                    className="border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-50 cursor-pointer"
+                    className="cursor-pointer"
                   >
                     <ImagePlus size={13} />
                     导入背景
