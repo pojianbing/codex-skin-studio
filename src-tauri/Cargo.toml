@@ -1,6 +1,6 @@
 [package]
 name = "codex-skin-studio"
-version = "0.3.3"
+version = "0.3.4"
 description = "Cross-platform Codex desktop theme manager"
 authors = ["Codex Skin Studio contributors"]
 license = "MIT"
