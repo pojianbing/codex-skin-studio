@@ -1,5 +1,5 @@
 import { type ComponentProps } from 'react'
-import { ChevronDown, Download, Library, LoaderCircle, PanelRight, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { ChevronDown, Download, Library, LoaderCircle, PanelRight, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -51,6 +51,7 @@ type ThemeInspectorProps = {
   onSelectElementTab: (tab: ElementTab) => void
   onConfigureDiff: () => void
   onExportTheme: () => void
+  onRestoreBuiltinTheme: (theme: ThemeRecord) => void
   onDeleteTheme: (theme: ThemeRecord) => void
   updateSelected: (patch: ThemeUpdate) => Promise<void>
   updateUi: <Key extends keyof UiConfig>(key: Key, value: UiConfig[Key]) => Promise<void>
@@ -71,6 +72,7 @@ export function ThemeInspector({
   onSelectElementTab,
   onConfigureDiff,
   onExportTheme,
+  onRestoreBuiltinTheme,
   onDeleteTheme,
   updateSelected,
   updateUi,
@@ -142,6 +144,20 @@ export function ThemeInspector({
                         )}
                         <span>导出主题包</span>
                       </Button>
+                      {selected.builtIn && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="恢复内置主题默认设置"
+                          aria-label={`恢复 ${selected.name} 默认设置`}
+                          onClick={() => onRestoreBuiltinTheme(selected)}
+                          disabled={Boolean(working)}
+                          className="border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-50 cursor-pointer"
+                        >
+                          <RotateCcw size={13} />
+                          <span>恢复默认</span>
+                        </Button>
+                      )}
                       {!selected.builtIn && (
                         <Button
                           variant="destructive"

@@ -352,6 +352,24 @@ async fn update_theme(
 }
 
 #[tauri::command]
+async fn restore_builtin_theme(
+    runtime: tauri::State<'_, AppRuntime>,
+    theme_id: String,
+) -> std::result::Result<(), String> {
+    let runtime = runtime.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        themes::restore_builtin_theme(&theme_id).map_err(|error| error.to_string())?;
+        let state = engine::read_state();
+        if state.mode == "active" && state.active_theme_id.as_deref() == Some(&theme_id) {
+            engine::apply(&runtime, &theme_id, false).map_err(|error| error.to_string())?;
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
 async fn delete_theme(theme_id: String) -> std::result::Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         themes::delete_theme(&theme_id).map_err(|error| error.to_string())?;
@@ -570,6 +588,7 @@ pub fn run() {
             install_store_theme,
             export_theme,
             update_theme,
+            restore_builtin_theme,
             delete_theme,
             apply_theme,
             activate_codex,

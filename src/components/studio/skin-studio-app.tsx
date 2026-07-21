@@ -44,6 +44,7 @@ export function SkinStudioApp() {
   const [working, setWorking] = useState<string>()
   const [confirmRestore, setConfirmRestore] = useState(false)
   const [confirmRestart, setConfirmRestart] = useState(false)
+  const [restoreBuiltinTarget, setRestoreBuiltinTarget] = useState<ThemeRecord | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ThemeRecord | null>(null)
   const [elementTab, setElementTab] = useState<ElementTab>('shell')
   const [openConfigSections, setOpenConfigSections] = useState<Set<PreviewElementId>>(() => new Set())
@@ -530,6 +531,7 @@ export function SkinStudioApp() {
               setSelectedElement('diff')
             }}
             onExportTheme={() => void exportTheme()}
+            onRestoreBuiltinTheme={setRestoreBuiltinTarget}
             onDeleteTheme={setDeleteTarget}
             updateSelected={updateSelected}
             updateUi={updateUi}
@@ -643,6 +645,35 @@ export function SkinStudioApp() {
             </Button>
             <Button variant="destructive" onClick={() => void deleteTheme()} className="cursor-pointer">
               删除主题
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={restoreBuiltinTarget !== null} onOpenChange={(open) => { if (!open) setRestoreBuiltinTarget(null) }}>
+        <DialogContent className="studio-dialog max-w-sm">
+          <DialogHeader>
+            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center mb-2">
+              <RotateCcw size={20} />
+            </div>
+            <DialogTitle>恢复“{restoreBuiltinTarget?.name}”默认设置？</DialogTitle>
+            <DialogDescription>
+              将还原这个内置主题的全部设置和背景图片，当前调整将无法恢复。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRestoreBuiltinTarget(null)} className="cursor-pointer">
+              取消
+            </Button>
+            <Button
+              onClick={() => {
+                const target = restoreBuiltinTarget
+                setRestoreBuiltinTarget(null)
+                if (target) void run('restore-builtin', () => invoke('restore_builtin_theme', { themeId: target.id }), '内置主题已恢复默认设置')
+              }}
+              className="cursor-pointer"
+            >
+              恢复默认
             </Button>
           </DialogFooter>
         </DialogContent>

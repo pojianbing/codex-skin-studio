@@ -1137,8 +1137,40 @@ fn should_upgrade_builtin(current: &ThemeManifest, next: &ThemeManifest) -> bool
     current.built_in && next.built_in && current.version != next.version
 }
 
+fn replace_builtin_theme(root: &Path, manifest: ThemeManifest, bytes: &[u8]) -> Result<()> {
+    validate_manifest(&manifest)?;
+    image_info(bytes)?;
+
+    let directory = root.join(&manifest.id);
+    let temporary = root.join(format!(".studio-builtin-{}", Uuid::new_v4()));
+    let backup = root.join(format!(".studio-builtin-backup-{}", Uuid::new_v4()));
+    let result = (|| {
+        fs::create_dir_all(&temporary)?;
+        fs::write(temporary.join(&manifest.image), bytes)?;
+        fs::write(temporary.join(&manifest.thumbnail), make_thumbnail(bytes)?)?;
+        write_manifest(&temporary, &manifest)?;
+        if directory.exists() {
+            fs::rename(&directory, &backup)?;
+        }
+        fs::rename(&temporary, &directory)?;
+        if backup.exists() {
+            let _ = fs::remove_dir_all(&backup);
+        }
+        Ok(())
+    })();
+
+    if result.is_err() {
+        let _ = fs::remove_dir_all(&temporary);
+        if backup.exists() && !directory.exists() {
+            let _ = fs::rename(&backup, &directory);
+        }
+    }
+    result
+}
+
 fn seed_manifest(manifest: ThemeManifest, bytes: &[u8]) -> Result<()> {
-    let directory = theme_dir(&manifest.id)?;
+    let root = themes_root()?;
+    let directory = root.join(&manifest.id);
     let manifest_path = directory.join("theme.json");
     if manifest_path.is_file() {
         let current = fs::read(&manifest_path)
@@ -1150,10 +1182,7 @@ fn seed_manifest(manifest: ThemeManifest, bytes: &[u8]) -> Result<()> {
             return Ok(());
         }
     }
-    fs::create_dir_all(&directory)?;
-    fs::write(directory.join("background.jpg"), bytes)?;
-    fs::write(directory.join("thumbnail.jpg"), make_thumbnail(bytes)?)?;
-    write_manifest(&directory, &manifest)
+    replace_builtin_theme(&root, manifest, bytes)
 }
 
 #[cfg(test)]
@@ -1241,12 +1270,37 @@ fn ink_silhouette_manifest() -> ThemeManifest {
     default_builtin_manifest("custom-11fd656b9d7f435186c707331bdde58f", "墨影霓裳")
 }
 
+fn builtin_theme(id: &str) -> Option<(ThemeManifest, &'static [u8])> {
+    match id {
+        "custom-9fc18f212a8a435289954b8792efc538" => {
+            Some((greenwood_whispers_manifest(), GREENWOOD_WHISPERS))
+        }
+        "custom-a92f80151e1a4b38bdb2c80159ed459b" => Some((starlit_dawn_manifest(), STARLIT_DAWN)),
+        "custom-3e0ddebbad5c409eb4dd872eece571ee" => {
+            Some((verdant_summit_manifest(), VERDANT_SUMMIT))
+        }
+        "custom-da9d3b18bf414ac0be12f0080b94f041" => {
+            Some((bamboo_skylight_manifest(), BAMBOO_SKYLIGHT))
+        }
+        "custom-11fd656b9d7f435186c707331bdde58f" => {
+            Some((ink_silhouette_manifest(), INK_SILHOUETTE))
+        }
+        _ => None,
+    }
+}
+
 pub fn ensure_library() -> Result<()> {
-    seed_manifest(greenwood_whispers_manifest(), GREENWOOD_WHISPERS)?;
-    seed_manifest(starlit_dawn_manifest(), STARLIT_DAWN)?;
-    seed_manifest(verdant_summit_manifest(), VERDANT_SUMMIT)?;
-    seed_manifest(bamboo_skylight_manifest(), BAMBOO_SKYLIGHT)?;
-    seed_manifest(ink_silhouette_manifest(), INK_SILHOUETTE)?;
+    for id in [
+        "custom-9fc18f212a8a435289954b8792efc538",
+        "custom-a92f80151e1a4b38bdb2c80159ed459b",
+        "custom-3e0ddebbad5c409eb4dd872eece571ee",
+        "custom-da9d3b18bf414ac0be12f0080b94f041",
+        "custom-11fd656b9d7f435186c707331bdde58f",
+    ] {
+        let (manifest, bytes) =
+            builtin_theme(id).expect("built-in theme registry must contain seeded ID");
+        seed_manifest(manifest, bytes)?;
+    }
     Ok(())
 }
 
@@ -1415,6 +1469,12 @@ pub fn update_theme(
     write_manifest(&directory, &manifest)
 }
 
+pub fn restore_builtin_theme(id: &str) -> Result<()> {
+    let (manifest, bytes) =
+        builtin_theme(id).ok_or_else(|| StudioError::from("只能恢复内置主题"))?;
+    replace_builtin_theme(&themes_root()?, manifest, bytes)
+}
+
 pub fn delete_theme(id: &str) -> Result<()> {
     let (manifest, directory) = load_manifest(id)?;
     if manifest.built_in {
@@ -1435,9 +1495,10 @@ mod tests {
     use super::{
         BAMBOO_SKYLIGHT, BUILTIN_THEME_VERSION, GREENWOOD_WHISPERS, INK_SILHOUETTE,
         MAX_IMAGE_BYTES, STARLIT_DAWN, ThemeBundle, VERDANT_SUMMIT, bamboo_skylight_manifest,
-        builtin_manifest, decode_theme_bundle, encode_theme_bundle, greenwood_whispers_manifest,
-        image_info, ink_silhouette_manifest, install_theme_bundle, should_upgrade_builtin,
-        starlit_dawn_manifest, validate_manifest, verdant_summit_manifest,
+        builtin_manifest, builtin_theme, decode_theme_bundle, encode_theme_bundle,
+        greenwood_whispers_manifest, image_info, ink_silhouette_manifest, install_theme_bundle,
+        replace_builtin_theme, should_upgrade_builtin, starlit_dawn_manifest, validate_manifest,
+        verdant_summit_manifest,
     };
     use crate::models::ThemeManifest;
 
@@ -1485,6 +1546,45 @@ mod tests {
         assert_eq!(manifest.name, "墨影霓裳");
         assert_eq!(manifest.composer.opacity, 0.2);
         assert_eq!(manifest.ui.diff.background, "#ffffff");
+    }
+
+    #[test]
+    fn restoring_builtin_theme_replaces_user_configuration_and_background() {
+        let (manifest, background) = builtin_theme("custom-9fc18f212a8a435289954b8792efc538")
+            .expect("greenwood should be registered as a built-in theme");
+        let root =
+            std::env::temp_dir().join(format!("skin-studio-builtin-test-{}", Uuid::new_v4()));
+        fs::create_dir_all(&root).expect("test theme root should be created");
+
+        replace_builtin_theme(&root, manifest.clone(), background)
+            .expect("initial built-in theme should be written");
+        let directory = root.join(&manifest.id);
+        let mut modified: ThemeManifest = serde_json::from_slice(
+            &fs::read(directory.join("theme.json")).expect("seeded manifest should exist"),
+        )
+        .expect("seeded manifest should deserialize");
+        modified.composer.opacity = 0.91;
+        fs::write(
+            directory.join("theme.json"),
+            serde_json::to_vec_pretty(&modified).expect("modified manifest should serialize"),
+        )
+        .expect("modified manifest should be written");
+        fs::write(directory.join("background.jpg"), b"changed background")
+            .expect("modified background should be written");
+
+        replace_builtin_theme(&root, manifest.clone(), background)
+            .expect("built-in theme should be restored");
+        let restored: ThemeManifest = serde_json::from_slice(
+            &fs::read(directory.join("theme.json")).expect("restored manifest should exist"),
+        )
+        .expect("restored manifest should deserialize");
+        assert_eq!(restored.composer.opacity, manifest.composer.opacity);
+        assert_eq!(
+            fs::read(directory.join("background.jpg")).expect("restored background should exist"),
+            background,
+        );
+
+        let _ = fs::remove_dir_all(root);
     }
     use std::{
         fs,
