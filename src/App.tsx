@@ -950,7 +950,7 @@ function SkinStudioApp() {
           type="button"
           onClick={handleBrandMarkClick}
           aria-label="Skin Studio"
-          className="group flex w-full items-center gap-3 border-b border-zinc-850/40 px-2 pb-6 text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+          className="group flex w-full items-center gap-3 border-b border-zinc-850/40 px-2 pb-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
         >
           <img
             src="/app-icon.png"
@@ -964,7 +964,7 @@ function SkinStudioApp() {
         </button>
 
         {/* Navigation list */}
-        <nav className="flex-1 flex flex-col gap-1" aria-label="主导航">
+        <nav className="flex-1 flex flex-col gap-1 pt-3" aria-label="主导航">
           <button
             onClick={() => setActiveView('library')}
             className={cn(
