@@ -87,7 +87,7 @@ export function ThemeLibraryPanel({
                         void onExportTheme(theme)
                       }}
                       disabled={Boolean(working)}
-                      className="absolute z-20 top-2.5 right-2.5 flex items-center gap-1 rounded-md border border-zinc-700/60 bg-zinc-950/85 px-2 py-1 text-[10px] font-semibold text-zinc-200 backdrop-blur-md opacity-0 group-hover:opacity-100 hover:bg-zinc-800 hover:text-white hover:border-zinc-500 transition-all duration-200 shadow-md cursor-pointer active:scale-95"
+                      className="absolute z-20 top-2.5 right-2.5 flex h-6 items-center gap-1 rounded-md border border-border/80 bg-popover/90 px-2 text-[10px] font-medium text-popover-foreground backdrop-blur-md opacity-0 shadow-sm transition-all duration-200 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 cursor-pointer"
                     >
                       <Download size={11} />
                       <span>导出</span>

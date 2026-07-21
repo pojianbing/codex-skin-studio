@@ -377,24 +377,28 @@ export function SkinStudioApp() {
         {/* Navigation list */}
         <nav className="flex-1 flex flex-col gap-1 pt-3" aria-label="主导航">
           <button
+            type="button"
+            aria-pressed={activeView === 'library'}
             onClick={() => setActiveView('library')}
             className={cn(
-              'flex h-10 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold transition-all duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.99]',
+              'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
               activeView === 'library' 
-                ? 'border-zinc-800/50 bg-zinc-800/60 text-zinc-50 shadow-[0_4px_12px_rgba(0,0,0,0.15)] backdrop-blur-sm' 
-                : 'border-transparent bg-transparent text-zinc-400 hover:bg-zinc-800/35 hover:text-zinc-100',
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
           >
             <Library size={16} />
             <span>主题库</span>
           </button>
           <button
+            type="button"
+            aria-pressed={activeView === 'store'}
             onClick={() => setActiveView('store')}
             className={cn(
-              'flex h-10 w-full items-center gap-3 rounded-lg border px-3 text-sm font-semibold transition-all duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.99]',
+              'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
               activeView === 'store' 
-                ? 'border-zinc-800/50 bg-zinc-800/60 text-zinc-50 shadow-[0_4px_12px_rgba(0,0,0,0.15)] backdrop-blur-sm' 
-                : 'border-transparent bg-transparent text-zinc-400 hover:bg-zinc-800/35 hover:text-zinc-100',
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
           >
             <Download size={16} />
