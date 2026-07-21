@@ -373,7 +373,7 @@ pub fn restore_official(runtime: &AppRuntime, restart_codex: bool) -> Result<()>
 
 #[cfg(test)]
 mod tests {
-    use super::payload_for;
+    use super::{CSS, payload_for};
     use crate::models::{
         ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, LevelSliderConfig,
         Palette, SemanticTokens, ThemeManifest, UiConfig,
@@ -387,7 +387,7 @@ mod tests {
         fs::create_dir_all(&directory).unwrap();
         fs::write(
             directory.join("background.jpg"),
-            include_bytes!("../assets/preset-greenwood-whispers.jpg"),
+            include_bytes!("../assets/preset-bamboo-skylight.jpg"),
         )
         .unwrap();
         let manifest = ThemeManifest {
@@ -414,5 +414,11 @@ mod tests {
         assert!(!payload.contains("__SKIN_"));
         assert_eq!(revision.len(), 64);
         let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn video_background_preserves_fixed_body_portals() {
+        assert!(CSS.contains("skin-background-video body > #root"));
+        assert!(!CSS.contains("body > :not(#codex-skin-studio-video)"));
     }
 }

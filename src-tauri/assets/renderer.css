@@ -144,7 +144,7 @@ html.codex-skin-studio #codex-skin-studio-video {
   object-position: var(--skin-art-position);
   pointer-events: none;
 }
-html.codex-skin-studio.skin-background-video body > :not(#codex-skin-studio-video) {
+html.codex-skin-studio.skin-background-video body > #root {
   position: relative;
   z-index: 1;
 }
@@ -234,6 +234,10 @@ html.codex-skin-studio .skin-environment-panel-surface {
   background: color-mix(in oklab, var(--skin-environment-color) var(--skin-environment-opacity), transparent) !important;
   box-shadow: var(--skin-environment-shadow) !important;
   backdrop-filter: blur(var(--skin-environment-blur)) saturate(1.06) !important;
+}
+/* backdrop-filter would contain Codex's fixed commit and push panel. */
+html.codex-skin-studio.skin-background-video .skin-environment-panel-surface {
+  backdrop-filter: none !important;
 }
 html.codex-skin-studio .skin-environment-panel-surface header {
   background: transparent !important;

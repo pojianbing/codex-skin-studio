@@ -6,8 +6,10 @@ use crate::{
     },
     storage::{atomic_write, themes_root},
 };
-use base64::{Engine as _, engine::general_purpose::STANDARD};
-use image::{ImageFormat, ImageReader, Rgb, RgbImage, codecs::jpeg::JpegEncoder, imageops::FilterType};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
+use image::{
+    codecs::jpeg::JpegEncoder, imageops::FilterType, ImageFormat, ImageReader, Rgb, RgbImage,
+};
 use mp4::{MediaType, Mp4Reader, TrackType};
 use std::{
     collections::HashSet,
@@ -16,7 +18,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
-use zip::{CompressionMethod, ZipArchive, ZipWriter, write::SimpleFileOptions};
+use zip::{write::SimpleFileOptions, CompressionMethod, ZipArchive, ZipWriter};
 
 const MAX_IMAGE_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_VIDEO_BYTES: u64 = 50 * 1024 * 1024;
@@ -30,12 +32,15 @@ const MAX_THEME_BUNDLE_BYTES: u64 = MAX_VIDEO_BYTES + 256 * 1024;
 const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_VIDEO_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
 const MAX_THUMBNAIL_BYTES: usize = 2 * 1024 * 1024;
-const BUILTIN_THEME_VERSION: &str = "1.3.2";
-const GREENWOOD_WHISPERS: &[u8] = include_bytes!("../assets/preset-greenwood-whispers.jpg");
-const INK_SILHOUETTE: &[u8] = include_bytes!("../assets/preset-ink-silhouette.jpg");
-const STARLIT_DAWN: &[u8] = include_bytes!("../assets/preset-starlit-dawn.jpg");
+const BUILTIN_THEME_VERSION: &str = "1.3.3";
 const BAMBOO_SKYLIGHT: &[u8] = include_bytes!("../assets/preset-bamboo-skylight.jpg");
-const VERDANT_SUMMIT: &[u8] = include_bytes!("../assets/preset-verdant-summit.jpg");
+const WILDERNESS: &[u8] = include_bytes!("../assets/preset-wilderness.mp4");
+const RETIRED_BUILTIN_THEME_IDS: &[&str] = &[
+    "custom-9fc18f212a8a435289954b8792efc538",
+    "custom-a92f80151e1a4b38bdb2c80159ed459b",
+    "custom-3e0ddebbad5c409eb4dd872eece571ee",
+    "custom-11fd656b9d7f435186c707331bdde58f",
+];
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -627,7 +632,11 @@ fn decode_theme_bundle(bytes: &[u8]) -> Result<ImportedThemeBundle> {
     let image_bytes = read_bundle_entry(
         &mut archive,
         &bundle.background,
-        if kind == "video" { MAX_VIDEO_BYTES } else { MAX_IMAGE_BYTES },
+        if kind == "video" {
+            MAX_VIDEO_BYTES
+        } else {
+            MAX_IMAGE_BYTES
+        },
     )?;
     background_info(kind, &image_bytes)?;
     let image_name = match kind {
@@ -1236,7 +1245,8 @@ fn should_upgrade_builtin(current: &ThemeManifest, next: &ThemeManifest) -> bool
 
 fn replace_builtin_theme(root: &Path, manifest: ThemeManifest, bytes: &[u8]) -> Result<()> {
     validate_manifest(&manifest)?;
-    image_info(bytes)?;
+    let kind = background_kind(&manifest)?;
+    background_info(kind, bytes)?;
 
     let directory = root.join(&manifest.id);
     let temporary = root.join(format!(".studio-builtin-{}", Uuid::new_v4()));
@@ -1244,7 +1254,10 @@ fn replace_builtin_theme(root: &Path, manifest: ThemeManifest, bytes: &[u8]) -> 
     let result = (|| {
         fs::create_dir_all(&temporary)?;
         fs::write(temporary.join(&manifest.image), bytes)?;
-        fs::write(temporary.join(&manifest.thumbnail), make_thumbnail(bytes)?)?;
+        fs::write(
+            temporary.join(&manifest.thumbnail),
+            make_background_thumbnail(kind, bytes)?,
+        )?;
         write_manifest(&temporary, &manifest)?;
         if directory.exists() {
             fs::rename(&directory, &backup)?;
@@ -1349,52 +1362,49 @@ fn default_builtin_manifest(id: &str, name: &str) -> ThemeManifest {
     }
 }
 
-fn greenwood_whispers_manifest() -> ThemeManifest {
-    default_builtin_manifest("custom-9fc18f212a8a435289954b8792efc538", "绿野树语")
-}
-
-fn starlit_dawn_manifest() -> ThemeManifest {
-    default_builtin_manifest("custom-a92f80151e1a4b38bdb2c80159ed459b", "星河初光")
-}
-
-fn verdant_summit_manifest() -> ThemeManifest {
-    default_builtin_manifest("custom-3e0ddebbad5c409eb4dd872eece571ee", "翠谷晴峰")
-}
-
 fn bamboo_skylight_manifest() -> ThemeManifest {
     default_builtin_manifest("custom-da9d3b18bf414ac0be12f0080b94f041", "竹影天光")
 }
 
-fn ink_silhouette_manifest() -> ThemeManifest {
-    default_builtin_manifest("custom-11fd656b9d7f435186c707331bdde58f", "墨影霓裳")
+fn wilderness_manifest() -> ThemeManifest {
+    let mut manifest = default_builtin_manifest("preset-wilderness", "旷野");
+    manifest.author = "哲风壁纸".into();
+    manifest.image = "background.mp4".into();
+    manifest.background_kind = "video".into();
+    manifest.art.focus_x = 0.68;
+    manifest
 }
 
 fn builtin_theme(id: &str) -> Option<(ThemeManifest, &'static [u8])> {
     match id {
-        "custom-9fc18f212a8a435289954b8792efc538" => {
-            Some((greenwood_whispers_manifest(), GREENWOOD_WHISPERS))
-        }
-        "custom-a92f80151e1a4b38bdb2c80159ed459b" => Some((starlit_dawn_manifest(), STARLIT_DAWN)),
-        "custom-3e0ddebbad5c409eb4dd872eece571ee" => {
-            Some((verdant_summit_manifest(), VERDANT_SUMMIT))
-        }
         "custom-da9d3b18bf414ac0be12f0080b94f041" => {
             Some((bamboo_skylight_manifest(), BAMBOO_SKYLIGHT))
         }
-        "custom-11fd656b9d7f435186c707331bdde58f" => {
-            Some((ink_silhouette_manifest(), INK_SILHOUETTE))
-        }
+        "preset-wilderness" => Some((wilderness_manifest(), WILDERNESS)),
         _ => None,
     }
 }
 
+fn remove_retired_builtin_themes(root: &Path) -> Result<()> {
+    for id in RETIRED_BUILTIN_THEME_IDS {
+        let directory = root.join(id);
+        let manifest_path = directory.join("theme.json");
+        let is_retired_builtin = fs::read(&manifest_path)
+            .ok()
+            .and_then(|data| serde_json::from_slice::<ThemeManifest>(&data).ok())
+            .is_some_and(|manifest| manifest.built_in);
+        if is_retired_builtin {
+            fs::remove_dir_all(directory)?;
+        }
+    }
+    Ok(())
+}
+
 pub fn ensure_library() -> Result<()> {
+    remove_retired_builtin_themes(&themes_root()?)?;
     for id in [
-        "custom-9fc18f212a8a435289954b8792efc538",
-        "custom-a92f80151e1a4b38bdb2c80159ed459b",
-        "custom-3e0ddebbad5c409eb4dd872eece571ee",
         "custom-da9d3b18bf414ac0be12f0080b94f041",
-        "custom-11fd656b9d7f435186c707331bdde58f",
+        "preset-wilderness",
     ] {
         let (manifest, bytes) =
             builtin_theme(id).expect("built-in theme registry must contain seeded ID");
@@ -1644,53 +1654,23 @@ pub fn image_bytes(manifest: &ThemeManifest, directory: &Path) -> Result<Vec<u8>
 #[cfg(test)]
 mod tests {
     use super::{
-        BAMBOO_SKYLIGHT, BUILTIN_THEME_VERSION, GREENWOOD_WHISPERS, INK_SILHOUETTE,
-        MAX_IMAGE_BYTES, STARLIT_DAWN, ThemeBundle, VERDANT_SUMMIT, bamboo_skylight_manifest,
-        background_kind,
-        builtin_manifest, builtin_theme, decode_theme_bundle, encode_theme_bundle,
-        greenwood_whispers_manifest, image_info, ink_silhouette_manifest, install_theme_bundle,
-        replace_builtin_theme, should_upgrade_builtin, starlit_dawn_manifest, validate_manifest,
-        verdant_summit_manifest,
+        background_kind, bamboo_skylight_manifest, builtin_manifest, builtin_theme,
+        decode_theme_bundle, encode_theme_bundle, image_info, install_theme_bundle,
+        replace_builtin_theme, should_upgrade_builtin, validate_manifest, video_info,
+        wilderness_manifest, ThemeBundle, BAMBOO_SKYLIGHT, BUILTIN_THEME_VERSION, MAX_IMAGE_BYTES,
+        WILDERNESS,
     };
     use crate::models::ThemeManifest;
 
     #[test]
     fn legacy_themes_default_to_image_backgrounds_and_video_themes_are_recognized() {
-        let mut manifest = greenwood_whispers_manifest();
+        let mut manifest = bamboo_skylight_manifest();
         manifest.background_kind.clear();
         assert_eq!(background_kind(&manifest).unwrap(), "image");
 
         manifest.background_kind = "video".into();
         manifest.image = "background.mp4".into();
         assert_eq!(background_kind(&manifest).unwrap(), "video");
-    }
-
-    #[test]
-    fn greenwood_whispers_is_a_protected_builtin_theme() {
-        let manifest = greenwood_whispers_manifest();
-        assert!(manifest.built_in);
-        assert_eq!(manifest.name, "绿野树语");
-        assert_eq!(manifest.composer.opacity, 0.2);
-        assert_eq!(manifest.ui.sidebar.opacity, 0.66);
-        assert_eq!(manifest.ui.diff.background, "#ffffff");
-    }
-
-    #[test]
-    fn starlit_dawn_is_a_protected_builtin_theme() {
-        let manifest = starlit_dawn_manifest();
-        assert!(manifest.built_in);
-        assert_eq!(manifest.name, "星河初光");
-        assert_eq!(manifest.composer.opacity, 0.2);
-        assert_eq!(manifest.ui.diff.background, "#ffffff");
-    }
-
-    #[test]
-    fn verdant_summit_is_a_protected_builtin_theme() {
-        let manifest = verdant_summit_manifest();
-        assert!(manifest.built_in);
-        assert_eq!(manifest.name, "翠谷晴峰");
-        assert_eq!(manifest.composer.opacity, 0.2);
-        assert_eq!(manifest.ui.diff.background, "#ffffff");
     }
 
     #[test]
@@ -1703,18 +1683,49 @@ mod tests {
     }
 
     #[test]
-    fn ink_silhouette_is_a_protected_builtin_theme() {
-        let manifest = ink_silhouette_manifest();
+    fn wilderness_is_a_protected_builtin_video_theme() {
+        let manifest = wilderness_manifest();
         assert!(manifest.built_in);
-        assert_eq!(manifest.name, "墨影霓裳");
-        assert_eq!(manifest.composer.opacity, 0.2);
-        assert_eq!(manifest.ui.diff.background, "#ffffff");
+        assert_eq!(manifest.name, "旷野");
+        assert_eq!(manifest.author, "哲风壁纸");
+        assert_eq!(manifest.background_kind, "video");
+        assert_eq!(manifest.image, "background.mp4");
+    }
+
+    #[test]
+    fn builtin_registry_contains_only_bamboo_skylight_and_wilderness() {
+        assert!(builtin_theme("custom-da9d3b18bf414ac0be12f0080b94f041").is_some());
+        assert!(builtin_theme("preset-wilderness").is_some());
+        assert!(builtin_theme("custom-9fc18f212a8a435289954b8792efc538").is_none());
+        assert!(builtin_theme("custom-a92f80151e1a4b38bdb2c80159ed459b").is_none());
+        assert!(builtin_theme("custom-3e0ddebbad5c409eb4dd872eece571ee").is_none());
+        assert!(builtin_theme("custom-11fd656b9d7f435186c707331bdde58f").is_none());
+    }
+
+    #[test]
+    fn builtin_wilderness_writes_a_video_background_and_thumbnail() {
+        let (manifest, background) =
+            builtin_theme("preset-wilderness").expect("wilderness should be registered");
+        let root =
+            std::env::temp_dir().join(format!("skin-studio-video-builtin-test-{}", Uuid::new_v4()));
+        fs::create_dir_all(&root).expect("test theme root should be created");
+
+        replace_builtin_theme(&root, manifest.clone(), background)
+            .expect("video built-in theme should be written");
+        let directory = root.join(&manifest.id);
+        assert_eq!(
+            fs::read(directory.join("background.mp4")).expect("video background should exist"),
+            background,
+        );
+        assert!(directory.join("thumbnail.jpg").is_file());
+
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]
     fn restoring_builtin_theme_replaces_user_configuration_and_background() {
-        let (manifest, background) = builtin_theme("custom-9fc18f212a8a435289954b8792efc538")
-            .expect("greenwood should be registered as a built-in theme");
+        let (manifest, background) = builtin_theme("custom-da9d3b18bf414ac0be12f0080b94f041")
+            .expect("bamboo skylight should be registered as a built-in theme");
         let root =
             std::env::temp_dir().join(format!("skin-studio-builtin-test-{}", Uuid::new_v4()));
         fs::create_dir_all(&root).expect("test theme root should be created");
@@ -1754,20 +1765,14 @@ mod tests {
         io::{Cursor, Write},
     };
     use uuid::Uuid;
-    use zip::{CompressionMethod, ZipWriter, write::SimpleFileOptions};
+    use zip::{write::SimpleFileOptions, CompressionMethod, ZipWriter};
 
     #[test]
     fn validates_bundled_image_and_rejects_invalid_payloads() {
-        for bytes in [
-            GREENWOOD_WHISPERS,
-            STARLIT_DAWN,
-            VERDANT_SUMMIT,
-            BAMBOO_SKYLIGHT,
-            INK_SILHOUETTE,
-        ] {
-            let (_, width, height) = image_info(bytes).expect("bundled image should validate");
-            assert!(width > 0 && height > 0);
-        }
+        let (_, width, height) =
+            image_info(BAMBOO_SKYLIGHT).expect("bundled image should validate");
+        assert!(width > 0 && height > 0);
+        video_info(WILDERNESS).expect("bundled video should validate");
         assert!(image_info(&[]).is_err());
         assert!(image_info(&vec![0; MAX_IMAGE_BYTES as usize + 1]).is_err());
     }
@@ -1872,8 +1877,8 @@ mod tests {
         source.ui.content.max_width = 880;
         source.ui.rich_text.image_radius = 17;
 
-        let archive = encode_theme_bundle(&source, GREENWOOD_WHISPERS)
-            .expect("theme bundle should be encoded");
+        let archive =
+            encode_theme_bundle(&source, BAMBOO_SKYLIGHT).expect("theme bundle should be encoded");
         let imported = decode_theme_bundle(&archive).expect("theme bundle should be decoded");
         let root = std::env::temp_dir().join(format!("skin-studio-theme-test-{}", Uuid::new_v4()));
         fs::create_dir_all(&root).expect("test root should be created");
@@ -1900,7 +1905,7 @@ mod tests {
         assert_eq!(stored.ui.rich_text.image_radius, 17);
         assert_eq!(
             fs::read(directory.join(&stored.image)).expect("stored background should exist"),
-            GREENWOOD_WHISPERS,
+            BAMBOO_SKYLIGHT,
         );
         assert!(directory.join(&stored.thumbnail).is_file());
 
@@ -1924,7 +1929,7 @@ mod tests {
             .start_file("../background.jpg", options)
             .expect("unsafe entry should be written for the test");
         writer
-            .write_all(GREENWOOD_WHISPERS)
+            .write_all(BAMBOO_SKYLIGHT)
             .expect("background should be written");
         let archive = writer.finish().expect("archive should finish").into_inner();
 

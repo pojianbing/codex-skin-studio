@@ -48,7 +48,7 @@ Codex Skin Studio keeps themes local to your machine. Start with a built-in them
 - **Keep changes reversible**: Pause the current skin or restore the official appearance. Skin Studio removes injected DOM, stops its watcher, and relaunches Codex in normal mode.
 - **Run it in the background**: System tray support, session recovery, and optional launch-at-login support are built in.
 
-Five themes are included: Greenwood Whispers, Starlit Dawn, Verdant Summit, Bamboo Skylight, and Ink Silhouette.
+Two themes are included: Bamboo Skylight and Wilderness.
 
 ## Quick Start
 
