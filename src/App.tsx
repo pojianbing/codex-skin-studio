@@ -1060,33 +1060,10 @@ function SkinStudioApp() {
             </button>
             <Button
               variant="outline"
-              size="icon-sm"
-              title="刷新"
-              onClick={() => void refresh()}
-              disabled={Boolean(working)}
-              className="text-zinc-400 hover:text-zinc-55 bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-700/60 cursor-pointer transition-all duration-300"
-            >
-              <RefreshCw size={15} />
-            </Button>
-            <Button
-              variant="outline"
               size="sm"
-              onClick={() => void importThemeBundle()}
-              disabled={Boolean(working)}
-              className="border-zinc-800/60 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-50 hover:border-zinc-700/60 cursor-pointer transition-all duration-300 active:scale-95"
-            >
-              {working === 'import-theme' ? (
-                <LoaderCircle className="animate-spin" size={15} />
-              ) : (
-                <Upload size={15} />
-              )}
-              导入主题包
-            </Button>
-            <Button
               onClick={() => void importWallpaper()}
               disabled={Boolean(working)}
-              size="sm"
-              className="bg-gradient-to-br from-zinc-50 to-zinc-200 text-zinc-950 hover:from-white hover:to-zinc-100 shadow-[0_2px_8px_rgba(255,255,255,0.03)] cursor-pointer transition-all duration-300 active:scale-95 font-semibold"
+              className="border-zinc-800/60 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-50 hover:border-zinc-700/60 cursor-pointer transition-all duration-300 active:scale-95"
             >
               {working === 'import' ? (
                 <LoaderCircle className="animate-spin" size={15} />
@@ -1095,6 +1072,19 @@ function SkinStudioApp() {
               )}
               导入背景
             </Button>
+            <Button
+              onClick={() => void importThemeBundle()}
+              disabled={Boolean(working)}
+              size="sm"
+              className="bg-gradient-to-br from-zinc-50 to-zinc-200 text-zinc-950 hover:from-white hover:to-zinc-100 shadow-[0_2px_8px_rgba(255,255,255,0.03)] cursor-pointer transition-all duration-300 active:scale-95 font-semibold"
+            >
+              {working === 'import-theme' ? (
+                <LoaderCircle className="animate-spin" size={15} />
+              ) : (
+                <Upload size={15} />
+              )}
+              导入主题包
+            </Button>
           </div>
         </header>
 
@@ -1102,11 +1092,7 @@ function SkinStudioApp() {
         <section className="grid min-h-0 flex-1 grid-cols-[minmax(360px,1.05fr)_minmax(320px,0.95fr)] overflow-hidden">
           {/* Left panel: Theme browser */}
           <div className="overflow-y-auto p-6 border-r border-zinc-850/40 bg-zinc-900/10">
-            <div className="flex justify-between items-center mb-4 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-              <span>已安装主题</span>
-              <span>选择主题进行编辑</span>
-            </div>
-            <div className="mb-4 flex items-center gap-3 border-y border-zinc-850/45 py-2.5">
+            <div className="mb-4 flex items-center gap-3">
               <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-zinc-500">主题类型</span>
               <div className="flex min-w-0 flex-1 rounded-lg border border-zinc-800/70 bg-zinc-950/45 p-0.5" role="group" aria-label="主题类型筛选">
                 {([
