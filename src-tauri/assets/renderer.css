@@ -151,6 +151,13 @@ html.codex-skin-studio.skin-background-video body > #root {
 html.codex-skin-studio .skin-configurable-hidden {
   display: none !important;
 }
+html.codex-skin-studio .skin-home-suggestions-hidden {
+  display: none !important;
+}
+html.codex-skin-studio .skin-home-welcome-icon-hidden,
+html.codex-skin-studio .skin-home-welcome-title-hidden {
+  display: none !important;
+}
 html.codex-skin-studio .skin-configurable-surface {
   color: var(--skin-text-primary) !important;
   border: 1px solid color-mix(in oklab, var(--skin-border) var(--skin-region-border-opacity), transparent) !important;

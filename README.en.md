@@ -50,6 +50,17 @@ Codex Skin Studio keeps themes local to your machine. Start with a built-in them
 
 Two themes are included: Bamboo Skylight and Wilderness.
 
+### Codex App Theme Results
+
+<p align="center">
+  <img src="public/screenshots/bamboo-skylight-codex-app.png" alt="Bamboo Skylight applied in Codex App" width="49%" />
+  <img src="public/screenshots/wilderness-codex-app.gif" alt="Wilderness applied in Codex App" width="49%" />
+</p>
+
+<p align="center">
+  <sub>Left: Bamboo Skylight. Right: Wilderness.</sub>
+</p>
+
 ## Quick Start
 
 ### 1. Install

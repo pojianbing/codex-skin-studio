@@ -82,6 +82,10 @@ type PreviewTheme = {
     userBubble: SurfaceStyle
     codeBlock: SurfaceStyle
     activityCard: SurfaceStyle
+    homeWelcome: {
+      iconVisible: boolean
+      titleVisible: boolean
+    }
     homeSuggestions: SurfaceStyle
     overlays: SurfaceStyle
     threadRows: RowStyle
@@ -516,41 +520,48 @@ export function CodexPreview({
       >
         {isHome ? (
           <div className="flex h-full flex-col justify-center items-center px-[10px] text-center select-none">
-            <h2 className="text-[9px] font-bold tracking-tight mb-[12px] leading-tight" style={{ color: mainText }}>
-              我们应该在 <span className="border-b border-dashed border-current/60 pb-[0.5px]">CodexSkinStudio</span> 中进行什么？
-            </h2>
-            <div
-              className={cn("grid grid-cols-4 gap-[6px] w-full", targetClass('homeSuggestions'))}
-              {...targetEvents('homeSuggestions')}
-            >
-              {[
-                { icon: <Telescope size={9} className="text-sky-400" />, text: "探索并理解代码" },
-                { icon: <Hammer size={9} className="text-violet-400" />, text: "构建新功能、应用或工具" },
-                { icon: <RefreshCw size={9} className="text-emerald-400" />, text: "审查代码并提出修改建议" },
-                { icon: <Bug size={9} className="text-rose-400" />, text: "修复问题和失败" }
-              ].map((card, idx) => {
-                const cardStyle = theme.ui.homeSuggestions
-                return (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "flex min-h-[50px] flex-col items-start justify-between gap-[4px] p-[6px] text-left border transition-all duration-200 hover:-translate-y-[1px]",
-                      !cardStyle.visible && "invisible",
-                    )}
-                    style={{
-                      ...surfaceStyle(cardStyle, light ? '#ffffff' : '#121620', borderColor),
-                    }}
-                  >
-                    <div className="flex h-[14px] w-[14px] items-center justify-center rounded-[3px] bg-black/20">
-                      {card.icon}
+            {(theme.ui.homeWelcome.iconVisible || theme.ui.homeWelcome.titleVisible) && (
+              <div
+                className={cn("mb-[12px] flex flex-col items-center gap-[7px]", targetClass('homeWelcome'))}
+                {...targetEvents('homeWelcome')}
+              >
+                {theme.ui.homeWelcome.iconVisible && <Code2 size={16} strokeWidth={1.7} style={{ color: mainText, opacity: 0.7 }} />}
+                {theme.ui.homeWelcome.titleVisible && (
+                  <h2 className="m-0 text-[9px] font-bold tracking-tight leading-tight" style={{ color: mainText }}>
+                    我们应该在 <span className="border-b border-dashed border-current/60 pb-[0.5px]">CodexSkinStudio</span> 中进行什么？
+                  </h2>
+                )}
+              </div>
+            )}
+            {theme.ui.homeSuggestions.visible && (
+              <div
+                className={cn("grid grid-cols-4 gap-[6px] w-full", targetClass('homeSuggestions'))}
+                {...targetEvents('homeSuggestions')}
+              >
+                {[
+                  { icon: <Telescope size={9} className="text-sky-400" />, text: "探索并理解代码" },
+                  { icon: <Hammer size={9} className="text-violet-400" />, text: "构建新功能、应用或工具" },
+                  { icon: <RefreshCw size={9} className="text-emerald-400" />, text: "审查代码并提出修改建议" },
+                  { icon: <Bug size={9} className="text-rose-400" />, text: "修复问题和失败" }
+                ].map((card, idx) => {
+                  const cardStyle = theme.ui.homeSuggestions
+                  return (
+                    <div
+                      key={idx}
+                      className="flex min-h-[50px] flex-col items-start justify-between gap-[4px] border p-[6px] text-left transition-all duration-200 hover:-translate-y-[1px]"
+                      style={surfaceStyle(cardStyle, light ? '#ffffff' : '#121620', borderColor)}
+                    >
+                      <div className="flex h-[14px] w-[14px] items-center justify-center rounded-[3px] bg-black/20">
+                        {card.icon}
+                      </div>
+                      <span className="text-[5.5px] font-semibold leading-normal" style={{ color: mainText }}>
+                        {card.text}
+                      </span>
                     </div>
-                    <span className="text-[5.5px] font-semibold leading-normal" style={{ color: mainText }}>
-                      {card.text}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex h-full flex-col overflow-hidden" style={{ gap: `${messageGap}px` }}>

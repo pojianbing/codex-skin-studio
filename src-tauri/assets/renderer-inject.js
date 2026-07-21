@@ -348,8 +348,13 @@
         blur: 4, radius: 12, shadow: 'none',
       });
     }
+    const homeSuggestions = document.querySelector('[class~="group/home-suggestions"]');
+    homeSuggestions?.classList.toggle('skin-home-suggestions-hidden', ui.homeSuggestions?.visible === false);
     for (const suggestion of document.querySelectorAll('[class~="group/home-suggestions"] button')) {
-      applyConfigurableSurface(suggestion, 'skin-home-suggestion-surface', ui.homeSuggestions, {
+      applyConfigurableSurface(suggestion, 'skin-home-suggestion-surface', {
+        ...ui.homeSuggestions,
+        visible: true,
+      }, {
         color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.16,
         blur: 8, radius: 4, shadow: 'none',
       });
@@ -447,6 +452,25 @@
       candidate.classList.toggle('skin-home', candidate === home);
       candidate.classList.toggle('skin-task', candidate !== home);
     }
+    const homeWelcome = ui.homeWelcome || {};
+    const homeIcons = home?.querySelectorAll('[data-testid="home-icon"]') || [];
+    for (const icon of homeIcons) {
+      icon.classList.toggle('skin-home-welcome-icon-hidden', homeWelcome.iconVisible === false);
+    }
+    const welcomeTitles = new Set(home?.querySelectorAll('h1, h2, [role="heading"]') || []);
+    const suggestionGroup = home?.querySelector('[class~="group/home-suggestions"]');
+    const addWelcomeTitle = (node) => {
+      if (!node || node === home || node === suggestionGroup || (suggestionGroup && node.contains(suggestionGroup))) return;
+      welcomeTitles.add(node);
+    };
+    for (const icon of homeIcons) {
+      addWelcomeTitle(icon.nextElementSibling);
+      addWelcomeTitle(icon.parentElement?.nextElementSibling);
+    }
+    addWelcomeTitle(suggestionGroup?.previousElementSibling);
+    for (const title of welcomeTitles) {
+      title.classList.toggle('skin-home-welcome-title-hidden', homeWelcome.titleVisible === false);
+    }
     shell.classList.toggle('skin-home-shell', Boolean(home));
     return true;
   };
@@ -494,6 +518,8 @@
     document.querySelectorAll('.skin-home').forEach((node) => node.classList.remove('skin-home'));
     document.querySelectorAll('.skin-task').forEach((node) => node.classList.remove('skin-task'));
     document.querySelectorAll('.skin-home-shell').forEach((node) => node.classList.remove('skin-home-shell'));
+    document.querySelectorAll('.skin-home-welcome-icon-hidden').forEach((node) => node.classList.remove('skin-home-welcome-icon-hidden'));
+    document.querySelectorAll('.skin-home-welcome-title-hidden').forEach((node) => node.classList.remove('skin-home-welcome-title-hidden'));
     document.querySelectorAll('.skin-composer-footer-backdrop').forEach((node) => node.classList.remove('skin-composer-footer-backdrop'));
     document.querySelectorAll('.skin-composer-file-change-backdrop').forEach((node) => node.classList.remove('skin-composer-file-change-backdrop'));
     document.querySelectorAll('.skin-environment-panel-hidden').forEach((node) => node.classList.remove('skin-environment-panel-hidden'));
@@ -501,6 +527,7 @@
     document.querySelectorAll('.skin-change-summary-hidden').forEach((node) => node.classList.remove('skin-change-summary-hidden'));
     document.querySelectorAll('.skin-change-summary-card').forEach((node) => node.classList.remove('skin-change-summary-card'));
     document.querySelectorAll('.skin-change-summary-compact').forEach((node) => node.classList.remove('skin-change-summary-compact'));
+    document.querySelectorAll('.skin-home-suggestions-hidden').forEach((node) => node.classList.remove('skin-home-suggestions-hidden'));
     document.querySelectorAll('.skin-configurable-surface').forEach((node) => {
       node.classList.remove(
         'skin-configurable-surface', 'skin-configurable-hidden', 'skin-sidebar-surface',

@@ -681,14 +681,33 @@ export function ThemeInspector({
                           />
                         </ConfigSection>
 
-                        <ConfigSection title="主页建议卡片" {...configSectionProps('homeSuggestions')}>
+                        <ConfigSection title="主页欢迎内容" {...configSectionProps('homeWelcome')}>
+                          <ToggleSetting
+                            label="Codex 图标"
+                            checked={selected.ui.homeWelcome.iconVisible}
+                            onChange={(iconVisible) => void updateUi('homeWelcome', {
+                              ...selected.ui.homeWelcome,
+                              iconVisible,
+                            })}
+                          />
+                          <ToggleSetting
+                            label="欢迎标题"
+                            checked={selected.ui.homeWelcome.titleVisible}
+                            onChange={(titleVisible) => void updateUi('homeWelcome', {
+                              ...selected.ui.homeWelcome,
+                              titleVisible,
+                            })}
+                          />
+                        </ConfigSection>
+
+                        <ConfigSection title="主页建议区域" {...configSectionProps('homeSuggestions')}>
                           <SurfaceStyleEditor
                             value={selected.ui.homeSuggestions}
                             autoColor={resolvedAppearance === 'light' ? '#ffffff' : '#121620'}
                             onChange={(value) => void updateUi('homeSuggestions', value)}
                           />
                           <p className="text-[11px] leading-relaxed text-zinc-500">
-                            卡片文字继承“主文字”语义色，图标颜色由 Codex 保持原生状态色。
+                            “显示”开关会同时隐藏或显示整组主页建议卡片；卡片文字继承“主文字”语义色，图标颜色由 Codex 保持原生状态色。
                           </p>
                         </ConfigSection>
                       </>

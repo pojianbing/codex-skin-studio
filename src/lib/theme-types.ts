@@ -90,6 +90,11 @@ export type RichTextStyle = {
   imageRadius: number
 }
 
+export type HomeWelcomeStyle = {
+  iconVisible: boolean
+  titleVisible: boolean
+}
+
 export type SemanticTokens = {
   textPrimary: string
   textSecondary: string
@@ -109,6 +114,7 @@ export type UiConfig = {
   userBubble: SurfaceStyle
   codeBlock: SurfaceStyle
   activityCard: SurfaceStyle
+  homeWelcome: HomeWelcomeStyle
   homeSuggestions: SurfaceStyle
   overlays: SurfaceStyle
   threadRows: RowStyle

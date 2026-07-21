@@ -343,6 +343,28 @@ pub struct RichTextConfig {
     pub image_radius: u32,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomeWelcomeConfig {
+    #[serde(default = "default_visible")]
+    pub icon_visible: bool,
+    #[serde(default = "default_visible")]
+    pub title_visible: bool,
+}
+
+fn default_visible() -> bool {
+    true
+}
+
+impl Default for HomeWelcomeConfig {
+    fn default() -> Self {
+        Self {
+            icon_visible: true,
+            title_visible: true,
+        }
+    }
+}
+
 impl Default for RichTextConfig {
     fn default() -> Self {
         Self {
@@ -370,6 +392,8 @@ pub struct UiConfig {
     pub user_bubble: SurfaceConfig,
     pub code_block: SurfaceConfig,
     pub activity_card: SurfaceConfig,
+    #[serde(default)]
+    pub home_welcome: HomeWelcomeConfig,
     #[serde(default = "default_home_suggestions")]
     pub home_suggestions: SurfaceConfig,
     #[serde(default)]
@@ -420,6 +444,7 @@ impl Default for UiConfig {
                 border_opacity: 0.3,
                 ..SurfaceConfig::default()
             },
+            home_welcome: HomeWelcomeConfig::default(),
             home_suggestions: default_home_suggestions(),
             overlays: SurfaceConfig {
                 opacity: 0.92,
@@ -589,6 +614,8 @@ mod tests {
         assert_eq!(ui.home_suggestions.opacity, 0.2);
         assert_eq!(ui.home_suggestions.border_opacity, 0.16);
         assert_eq!(ui.home_suggestions.radius, 4);
+        assert!(ui.home_welcome.icon_visible);
+        assert!(ui.home_welcome.title_visible);
         assert_eq!(ui.diff.background, "#ffffff");
         assert_eq!(ui.diff.opacity, 0.03);
         assert_eq!(ui.diff.hover_opacity, 0.01);
@@ -632,6 +659,8 @@ mod tests {
         assert_eq!(manifest.change_summary.radius, 12);
         assert_eq!(manifest.ui.content.max_width, 768);
         assert_eq!(manifest.ui.user_bubble.radius, 20);
+        assert!(manifest.ui.home_welcome.icon_visible);
+        assert!(manifest.ui.home_welcome.title_visible);
         assert!(manifest.ui.scrollbar.visible);
     }
 
