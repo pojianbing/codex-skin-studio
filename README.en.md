@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>Make Codex Desktop a place you can work in for the long haul.</strong><br />
-  A local theme manager for Windows and macOS: import wallpaper, tune the interface, and return to the official appearance at any time.
+  A local theme manager for Windows: import wallpaper, tune the interface, and return to the official appearance at any time.
 </p>
 
 <p align="center"><sub>This project was developed 100% with Codex.</sub></p>
@@ -24,7 +24,7 @@
 <p align="center">
   <a href="https://github.com/pojianbing/codex-skin-studio/releases"><img src="https://img.shields.io/github/v/release/pojianbing/codex-skin-studio?display_name=tag&sort=semver" alt="Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4c8bf5.svg" alt="MIT License" /></a>
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-3fb950.svg" alt="Windows and macOS" />
+  <img src="https://img.shields.io/badge/platform-Windows-3fb950.svg" alt="Windows" />
 </p>
 
 <p align="center">
@@ -70,9 +70,8 @@ Download the installer for your system from [GitHub Releases](https://github.com
 | Platform | Build architectures | Codex prerequisite |
 | --- | --- | --- |
 | Windows | x64 | The official Codex Desktop installed from Microsoft Store |
-| macOS | Apple Silicon, Intel | The official Codex / ChatGPT app in `/Applications` or `~/Applications` |
 
-Linux is not currently supported. Skin Studio verifies the Codex installation before it performs an injection; it does nothing when the installation cannot be found or verified.
+The current release supports Windows x64 only. macOS and Linux are not supported, and Codex injection on those platforms is not guaranteed. Skin Studio verifies the Windows Codex installation before it performs an injection; it does nothing when the installation cannot be found or verified.
 
 ### 2. Choose and apply a theme
 
@@ -115,7 +114,7 @@ The theme store reads its catalog from the latest stable release of [`pojianbing
 
 Skin Studio uses the Chrome DevTools Protocol (CDP), bound to `127.0.0.1`, to inject maintained CSS and a renderer payload into a running Codex instance. It does not write to the official application directory, replace resource files, or change code signing.
 
-- A themed session is only created for a verified official Codex process. Windows verifies the Microsoft Store package; macOS verifies the application identifier and the OpenAI signing team.
+- A themed session is only created for a verified official Codex process. Windows verifies the Microsoft Store package.
 - CDP listens only on the loopback interface, but local processes under the same user account may still access the debugging port. Do not run untrusted local programs while a themed session is active.
 - The current release does not modify Codex `config.toml`. Restoring the official theme leaves no persistent patch behind.
 - Closing the main window hides Skin Studio in the system tray by default; choose **Quit Background Service** to exit it. When launch at login is enabled, an active theme is restored after the next login.
@@ -126,7 +125,6 @@ Skin Studio uses the Chrome DevTools Protocol (CDP), bound to `127.0.0.1`, to in
 | Platform | Data directory |
 | --- | --- |
 | Windows | `%LOCALAPPDATA%\codex\CodexSkinStudio\data` |
-| macOS | `~/Library/Application Support/studio.codex.CodexSkinStudio` |
 
 Themes live in `themes/<theme-id>` and theme-session state is stored in `engine-state.json`. Writes use a temporary file in the same directory and a recoverable replacement strategy to avoid partial writes after an interrupted operation.
 
