@@ -28,7 +28,7 @@
 </p>
 
 <p align="center">
-  <img src="public/screenshots/theme-library.png" alt="Codex Skin Studio theme library, live preview, and theme editor" width="100%" />
+  <img src="docs/screenshots/theme-library.png" alt="Codex Skin Studio theme library, live preview, and theme editor" width="100%" />
 </p>
 
 <p align="center">
@@ -53,8 +53,8 @@ Two themes are included: Bamboo Skylight and Wilderness.
 ### Codex App Theme Results
 
 <p align="center">
-  <img src="public/screenshots/bamboo-skylight-codex-app.png" alt="Bamboo Skylight applied in Codex App" width="49%" />
-  <img src="public/screenshots/wilderness-codex-app.gif" alt="Wilderness applied in Codex App" width="49%" />
+  <img src="docs/screenshots/bamboo-skylight-codex-app.png" alt="Bamboo Skylight applied in Codex App" width="49%" />
+  <img src="docs/screenshots/wilderness-codex-app.gif" alt="Wilderness applied in Codex App" width="49%" />
 </p>
 
 <p align="center">
