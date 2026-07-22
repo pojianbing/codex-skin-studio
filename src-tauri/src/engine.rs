@@ -6,7 +6,6 @@ use crate::{
     storage::{atomic_write, state_path},
     themes,
 };
-use base64::{Engine as _, engine::general_purpose::STANDARD};
 use sha2::{Digest, Sha256};
 use std::{
     fs,
@@ -58,14 +57,20 @@ impl AppRuntime {
         }
     }
 
-    fn start_watcher(&self, port: u16, browser_id: String, payload: String, revision: String) {
-        self.stop_watcher();
+    fn start_watcher(
+        &self,
+        port: u16,
+        browser_id: String,
+        payload: String,
+        revision: String,
+        media: cdp::MediaPayload,
+    ) {
         let stop = Arc::new(AtomicBool::new(false));
         let thread_stop = stop.clone();
         let thread = thread::spawn(move || {
             let mut consecutive_failures = 0;
             while !thread_stop.load(Ordering::SeqCst) {
-                match cdp::inject(port, &browser_id, &payload, &revision) {
+                match cdp::inject(port, &browser_id, &payload, &revision, &media) {
                     Ok(_) => consecutive_failures = 0,
                     Err(error) => {
                         consecutive_failures += 1;
@@ -142,9 +147,8 @@ fn write_state(state: &EngineState) -> Result<()> {
     )
 }
 
-fn payload_for(manifest: &ThemeManifest, directory: &std::path::Path) -> Result<(String, String)> {
-    let image = themes::image_bytes(manifest, directory)?;
-    let mime = match manifest.background_kind.as_str() {
+fn media_mime(manifest: &ThemeManifest) -> &'static str {
+    match manifest.background_kind.as_str() {
         "video" => "video/mp4",
         _ => match std::path::Path::new(&manifest.image)
             .extension()
@@ -157,21 +161,38 @@ fn payload_for(manifest: &ThemeManifest, directory: &std::path::Path) -> Result<
             "webp" => "image/webp",
             _ => "image/jpeg",
         },
-    };
+    }
+}
+
+fn payload_for(manifest: &ThemeManifest, image: &[u8], asset_id: &str) -> Result<(String, String)> {
     let theme_json = serde_json::to_string(manifest)?;
     let mut hasher = Sha256::new();
     hasher.update(theme_json.as_bytes());
-    hasher.update(&image);
+    hasher.update(image);
     hasher.update(CSS.as_bytes());
     hasher.update(RENDERER.as_bytes());
     let revision = format!("{:x}", hasher.finalize());
-    let art = format!("data:{mime};base64,{}", STANDARD.encode(image));
     let payload = RENDERER
         .replace("__SKIN_CSS__", &serde_json::to_string(CSS)?)
-        .replace("__SKIN_ART__", &serde_json::to_string(&art)?)
+        .replace("__SKIN_MEDIA_ID__", &serde_json::to_string(asset_id)?)
         .replace("__SKIN_THEME__", &theme_json)
         .replace("__SKIN_REVISION__", &serde_json::to_string(&revision)?);
     Ok((payload, revision))
+}
+
+fn prepare_payload(
+    manifest: &ThemeManifest,
+    directory: &std::path::Path,
+) -> Result<(String, String, cdp::MediaPayload)> {
+    let image = themes::image_bytes(manifest, directory)?;
+    let asset_id = format!("{:x}", Sha256::digest(&image));
+    let (payload, revision) = payload_for(manifest, &image, &asset_id)?;
+    let media = cdp::MediaPayload {
+        asset_id,
+        mime: media_mime(manifest),
+        bytes: image.into(),
+    };
+    Ok((payload, revision, media))
 }
 
 fn preferred_port() -> u16 {
@@ -262,7 +283,6 @@ pub fn apply(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) -> Re
 
 fn apply_locked(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) -> Result<()> {
     let (manifest, directory) = themes::load_manifest(theme_id)?;
-    let (payload, revision) = payload_for(&manifest, &directory)?;
     let old_state = read_state();
     let install = install_from_state_or_current(&old_state)?;
 
@@ -272,40 +292,59 @@ fn apply_locked(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) ->
     } else {
         None
     };
+    let mut launch_required = false;
     if browser.is_none() {
         let running = platform::main_pids(&install)?;
-        if !running.is_empty() {
-            if !restart_existing {
-                return Err(StudioError::from(
-                    "Codex 正在普通模式运行，请确认重启后再应用主题",
-                ));
-            }
-            platform::stop_codex(&install)?;
-        } else if !platform::running_pids(&install)?.is_empty() {
-            platform::stop_codex(&install)?;
-        }
-        port = platform::select_port(preferred_port())?;
-        platform::launch_with_cdp(&install, port)?;
-        browser = Some(cdp::wait_ready(port, 130)?);
-        if !platform::verify_cdp_owner(&install, port)? {
+        if !running.is_empty() && !restart_existing {
             return Err(StudioError::from(
-                "CDP 监听进程不属于已验证的官方 Codex 可执行文件",
+                "Codex 正在普通模式运行，请确认重启后再应用主题",
             ));
         }
+        launch_required = true;
     }
-    let browser = browser.ok_or_else(|| StudioError::from("CDP Browser ID 缺失"))?;
-    cdp::wait_and_inject(port, &browser, &payload, &revision, 120)?;
-    runtime.start_watcher(port, browser.clone(), payload, revision);
-    write_state(&EngineState {
-        schema_version: 1,
-        mode: "active".into(),
-        active_theme_id: Some(theme_id.into()),
-        port: Some(port),
-        codex_executable: Some(install.executable),
-        codex_bundle: install.bundle,
-        browser_id: Some(browser),
-        message: format!("{} 正在本机端口 {} 运行", manifest.name, port),
-    })
+    let (payload, revision, media) = prepare_payload(&manifest, &directory)?;
+
+    // The previous watcher owns an old payload. It must finish before the new
+    // payload is injected, otherwise a same-browser hot switch can be reverted.
+    runtime.stop_watcher();
+    let applied = (|| {
+        if launch_required {
+            if !platform::running_pids(&install)?.is_empty() {
+                platform::stop_codex(&install)?;
+            }
+            port = platform::select_port(preferred_port())?;
+            platform::launch_with_cdp(&install, port)?;
+            browser = Some(cdp::wait_ready(port, 130)?);
+            if !platform::verify_cdp_owner(&install, port)? {
+                return Err(StudioError::from(
+                    "CDP 监听进程不属于已验证的官方 Codex 可执行文件",
+                ));
+            }
+        }
+        let browser = browser
+            .clone()
+            .ok_or_else(|| StudioError::from("CDP Browser ID 缺失"))?;
+        cdp::wait_and_inject(port, &browser, &payload, &revision, &media, 120)?;
+        write_state(&EngineState {
+            schema_version: 1,
+            mode: "active".into(),
+            active_theme_id: Some(theme_id.into()),
+            port: Some(port),
+            codex_executable: Some(install.executable.clone()),
+            codex_bundle: install.bundle.clone(),
+            browser_id: Some(browser.clone()),
+            message: format!("{} 正在本机端口 {} 运行", manifest.name, port),
+        })?;
+        Ok(browser)
+    })();
+
+    match applied {
+        Ok(browser) => {
+            runtime.start_watcher(port, browser, payload, revision, media);
+            Ok(())
+        }
+        Err(error) => Err(error),
+    }
 }
 
 pub fn launch_codex_on_open(runtime: &AppRuntime) -> Result<()> {
@@ -410,8 +449,18 @@ mod tests {
             ui: UiConfig::default(),
             built_in: false,
         };
-        let (payload, revision) = payload_for(&manifest, &directory).unwrap();
+        let image = fs::read(directory.join("background.jpg")).unwrap();
+        let (payload, revision) = payload_for(
+            &manifest,
+            &image,
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )
+        .unwrap();
         assert!(!payload.contains("__SKIN_"));
+        assert!(
+            payload.contains("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        );
+        assert!(!payload.contains("base64,"));
         assert_eq!(revision.len(), 64);
         let _ = fs::remove_dir_all(directory);
     }

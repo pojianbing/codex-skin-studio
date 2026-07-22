@@ -1,10 +1,21 @@
 use crate::error::{Result, StudioError};
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 use reqwest::redirect::Policy;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{collections::HashSet, thread, time::Duration};
-use tungstenite::{Message, connect};
+use std::{collections::HashSet, net::TcpStream, sync::Arc, thread, time::Duration};
+use tungstenite::{Message, WebSocket, connect, stream::MaybeTlsStream};
 use url::Url;
+
+const MEDIA_STATE: &str = "__CODEX_SKIN_STUDIO_MEDIA__";
+const MEDIA_CHUNK_BYTES: usize = 1024 * 1024;
+
+#[derive(Clone)]
+pub struct MediaPayload {
+    pub asset_id: String,
+    pub mime: &'static str,
+    pub bytes: Arc<[u8]>,
+}
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -108,48 +119,103 @@ pub fn wait_ready(port: u16, attempts: usize) -> Result<String> {
     )))
 }
 
-fn command(target: &Target, method: &str, params: Value) -> Result<Value> {
-    let (mut socket, _) = connect(target.web_socket_debugger_url.as_str())?;
-    socket.send(Message::Text(
-        json!({ "id": 1, "method": method, "params": params })
-            .to_string()
-            .into(),
+struct TargetSession {
+    socket: WebSocket<MaybeTlsStream<TcpStream>>,
+    next_id: u64,
+}
+
+impl TargetSession {
+    fn connect(target: &Target) -> Result<Self> {
+        let (socket, _) = connect(target.web_socket_debugger_url.as_str())?;
+        Ok(Self { socket, next_id: 1 })
+    }
+
+    fn command(&mut self, method: &str, params: Value) -> Result<Value> {
+        let id = self.next_id;
+        self.next_id += 1;
+        self.socket.send(Message::Text(
+            json!({ "id": id, "method": method, "params": params })
+                .to_string()
+                .into(),
+        ))?;
+        loop {
+            let message = self.socket.read()?;
+            let Message::Text(text) = message else {
+                continue;
+            };
+            let value: Value = serde_json::from_str(text.as_str())?;
+            if value.get("id").and_then(Value::as_u64) != Some(id) {
+                continue;
+            }
+            if let Some(error) = value.get("error") {
+                return Err(StudioError::from(format!("CDP 命令失败：{error}")));
+            }
+            return Ok(value.get("result").cloned().unwrap_or(Value::Null));
+        }
+    }
+
+    fn evaluate(&mut self, expression: &str) -> Result<Value> {
+        let result = self.command(
+            "Runtime.evaluate",
+            json!({
+              "expression": expression, "awaitPromise": true, "returnByValue": true, "userGesture": false
+            }),
+        )?;
+        if let Some(details) = result.get("exceptionDetails") {
+            return Err(StudioError::from(format!("Renderer 执行失败：{details}")));
+        }
+        Ok(result
+            .pointer("/result/value")
+            .cloned()
+            .unwrap_or(Value::Null))
+    }
+}
+
+fn verified_codex_target(session: &mut TargetSession) -> bool {
+    session.evaluate("Boolean(document.querySelector('main.main-surface') && document.querySelector('aside.app-shell-left-panel'))").ok().and_then(|value| value.as_bool()).unwrap_or(false)
+}
+
+fn media_ready(session: &mut TargetSession, asset_id: &str) -> bool {
+    let asset_id = serde_json::to_string(asset_id).unwrap_or_else(|_| "null".into());
+    session
+        .evaluate(&format!(
+            "Boolean(window[{state}]?.assets?.[{asset_id}]?.url)",
+            state = serde_json::to_string(MEDIA_STATE).expect("media state name must serialize"),
+        ))
+        .ok()
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+}
+
+fn upload_media(session: &mut TargetSession, media: &MediaPayload) -> Result<()> {
+    if media_ready(session, &media.asset_id) {
+        return Ok(());
+    }
+    let state = serde_json::to_string(MEDIA_STATE)?;
+    let asset_id = serde_json::to_string(&media.asset_id)?;
+    let mime = serde_json::to_string(media.mime)?;
+    let size = media.bytes.len();
+    session.evaluate(&format!(
+        "(() => {{ const store = window[{state}] ||= {{ assets: Object.create(null), uploads: Object.create(null) }}; if (store.assets[{asset_id}]?.url) return true; store.uploads[{asset_id}] = {{ mime: {mime}, size: {size}, received: 0, parts: [] }}; return false; }})()"
     ))?;
-    loop {
-        let message = socket.read()?;
-        let Message::Text(text) = message else {
-            continue;
-        };
-        let value: Value = serde_json::from_str(text.as_str())?;
-        if value.get("id").and_then(Value::as_u64) != Some(1) {
-            continue;
-        }
-        if let Some(error) = value.get("error") {
-            return Err(StudioError::from(format!("CDP 命令失败：{error}")));
-        }
-        return Ok(value.get("result").cloned().unwrap_or(Value::Null));
-    }
-}
 
-fn evaluate(target: &Target, expression: &str) -> Result<Value> {
-    let result = command(
-        target,
-        "Runtime.evaluate",
-        json!({
-          "expression": expression, "awaitPromise": true, "returnByValue": true, "userGesture": false
-        }),
-    )?;
-    if let Some(details) = result.get("exceptionDetails") {
-        return Err(StudioError::from(format!("Renderer 执行失败：{details}")));
+    for chunk in media.bytes.chunks(MEDIA_CHUNK_BYTES) {
+        let encoded = serde_json::to_string(&STANDARD.encode(chunk))?;
+        let received = session.evaluate(&format!(
+            "(() => {{ const upload = window[{state}]?.uploads?.[{asset_id}]; if (!upload) throw new Error('skin media upload missing'); const binary = atob({encoded}); const bytes = new Uint8Array(binary.length); for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index); upload.parts.push(bytes); upload.received += bytes.length; return upload.received; }})()"
+        ))?;
+        if received.as_u64().is_none_or(|value| value > size as u64) {
+            return Err(StudioError::from("Renderer 主题媒体分块状态无效"));
+        }
     }
-    Ok(result
-        .pointer("/result/value")
-        .cloned()
-        .unwrap_or(Value::Null))
-}
 
-fn verified_codex_target(target: &Target) -> bool {
-    evaluate(target, "Boolean(document.querySelector('main.main-surface') && document.querySelector('aside.app-shell-left-panel'))").ok().and_then(|value| value.as_bool()).unwrap_or(false)
+    let finalized = session.evaluate(&format!(
+        "(() => {{ const store = window[{state}]; const upload = store?.uploads?.[{asset_id}]; if (!upload || upload.received !== upload.size) return false; const previous = store.assets[{asset_id}]; if (previous?.url) URL.revokeObjectURL(previous.url); store.assets[{asset_id}] = {{ url: URL.createObjectURL(new Blob(upload.parts, {{ type: upload.mime }})), mime: upload.mime, size: upload.size, refs: 0 }}; delete store.uploads[{asset_id}]; for (const [key, asset] of Object.entries(store.assets)) {{ if (key !== {asset_id} && !asset.refs) {{ URL.revokeObjectURL(asset.url); delete store.assets[key]; }} }} return true; }})()"
+    ))?;
+    if finalized.as_bool() != Some(true) {
+        return Err(StudioError::from("Renderer 主题媒体分块不完整"));
+    }
+    Ok(())
 }
 
 pub fn inject(
@@ -157,23 +223,25 @@ pub fn inject(
     expected_browser_id: &str,
     payload: &str,
     revision: &str,
+    media: &MediaPayload,
 ) -> Result<usize> {
     if browser_id(port)? != expected_browser_id {
         return Err(StudioError::from("CDP Browser ID 已变化，注入已停止"));
     }
     let mut count = 0;
     for target in list_targets(port)? {
-        if !verified_codex_target(&target) {
+        let mut session = TargetSession::connect(&target)?;
+        if !verified_codex_target(&mut session) {
             continue;
         }
-        let installed = evaluate(
-            &target,
-            "window.__CODEX_SKIN_STUDIO_STATE__?.revision || null",
-        )
-        .ok()
-        .and_then(|value| value.as_str().map(str::to_owned));
-        if installed.as_deref() != Some(revision) {
-            evaluate(&target, payload)?;
+        let installed = session
+            .evaluate("window.__CODEX_SKIN_STUDIO_STATE__?.revision || null")
+            .ok()
+            .and_then(|value| value.as_str().map(str::to_owned));
+        let ready = media_ready(&mut session, &media.asset_id);
+        if installed.as_deref() != Some(revision) || !ready {
+            upload_media(&mut session, media)?;
+            session.evaluate(payload)?;
         }
         count += 1;
     }
@@ -188,11 +256,12 @@ pub fn wait_and_inject(
     expected_browser_id: &str,
     payload: &str,
     revision: &str,
+    media: &MediaPayload,
     attempts: usize,
 ) -> Result<usize> {
     let mut last_error = StudioError::from("Codex renderer 尚未就绪");
     for _ in 0..attempts {
-        match inject(port, expected_browser_id, payload, revision) {
+        match inject(port, expected_browser_id, payload, revision, media) {
             Ok(count) => return Ok(count),
             Err(error) => {
                 if error.to_string().contains("Browser ID 已变化") {
@@ -216,13 +285,11 @@ pub fn cleanup(port: u16, expected_browser_id: Option<&str>) -> Result<usize> {
     }
     let mut cleaned = HashSet::new();
     for target in list_targets(port)? {
-        if !verified_codex_target(&target) {
+        let mut session = TargetSession::connect(&target)?;
+        if !verified_codex_target(&mut session) {
             continue;
         }
-        evaluate(
-            &target,
-            "window.__CODEX_SKIN_STUDIO_STATE__?.cleanup?.() ?? true",
-        )?;
+        session.evaluate("window.__CODEX_SKIN_STUDIO_STATE__?.cleanup?.() ?? true")?;
         cleaned.insert(target.id);
     }
     Ok(cleaned.len())

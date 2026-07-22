@@ -1,20 +1,21 @@
-((cssText, artDataUrl, theme, revision) => {
+((cssText, assetId, theme, revision) => {
   const STATE = '__CODEX_SKIN_STUDIO_STATE__';
+  const MEDIA_STATE = '__CODEX_SKIN_STUDIO_MEDIA__';
   const current = window[STATE];
-  if (current?.revision === revision) {
+  const mediaStore = window[MEDIA_STATE];
+  const mediaAsset = mediaStore?.assets?.[assetId];
+  if (current?.revision === revision && mediaAsset?.url === current.artUrl) {
     current.ensure?.();
     return { installed: true, revision, reused: true };
   }
-  current?.cleanup?.();
 
   const root = document.documentElement;
   if (!root || !document.body) return { installed: false, reason: 'document-not-ready' };
-  const binary = atob(artDataUrl.slice(artDataUrl.indexOf(',') + 1));
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  const mime = /^data:([^;,]+)/.exec(artDataUrl)?.[1] || 'image/jpeg';
-  const artUrl = URL.createObjectURL(new Blob([bytes], { type: mime }));
-  const isVideo = mime === 'video/mp4';
+  if (!mediaAsset?.url) return { installed: false, reason: 'media-not-ready' };
+  mediaAsset.refs = (mediaAsset.refs || 0) + 1;
+  const artUrl = mediaAsset.url;
+  current?.cleanup?.();
+  const isVideo = theme.backgroundKind === 'video';
   const classes = [
     'codex-skin-studio', 'skin-theme-light', 'skin-theme-dark', 'skin-safe-left',
     'skin-safe-right', 'skin-safe-center', 'skin-safe-none', 'skin-task-ambient',
@@ -22,10 +23,14 @@
     'skin-background-video',
   ];
   let observer;
-  let timer;
+  let appearanceObserver;
+  let sliderObserver;
+  let healthTimer;
   let scheduled;
   let videoLayer;
+  const pendingNodes = new Set();
   const levelSliderBindings = new Map();
+  const processedNodes = new WeakMap();
 
   const clamp = (value, minimum, maximum, fallback) => {
     const number = Number(value);
@@ -41,23 +46,36 @@
     soft: '0 10px 28px color-mix(in oklab, #101411 20%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 38%, transparent)',
     strong: '0 18px 48px color-mix(in oklab, #080b0a 36%, transparent), 0 3px 10px color-mix(in oklab, #080b0a 18%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 58%, transparent)',
   };
+  const runOnce = (node, key, action) => {
+    if (!node) return;
+    let keys = processedNodes.get(node);
+    if (!keys) {
+      keys = new Set();
+      processedNodes.set(node, keys);
+    }
+    if (keys.has(key)) return;
+    keys.add(key);
+    action(node);
+  };
   const applyConfigurableSurface = (node, className, config, defaults) => {
     if (!node) return;
-    const value = config || {};
-    const color = /^#[0-9a-f]{6}$/i.test(value.background || '')
-      ? value.background
-      : defaults.color;
-    node.classList.add('skin-configurable-surface', className);
-    node.classList.toggle('skin-configurable-hidden', value.visible === false);
-    node.style.setProperty('--skin-region-color', color);
-    node.style.setProperty('--skin-region-opacity', `${Math.round(clamp(value.opacity, 0, 1, defaults.opacity) * 100)}%`);
-    node.style.setProperty('--skin-region-border-opacity', `${Math.round(clamp(value.borderOpacity, 0, 1, defaults.borderOpacity) * 100)}%`);
-    node.style.setProperty('--skin-region-blur', `${Math.round(clamp(value.blur, 0, 32, defaults.blur))}px`);
-    node.style.setProperty('--skin-region-radius', `${Math.round(clamp(value.radius, 0, 32, defaults.radius))}px`);
-    node.style.setProperty(
-      '--skin-region-shadow',
-      configurableSurfaceShadows[value.shadow] || configurableSurfaceShadows[defaults.shadow],
-    );
+    runOnce(node, className, () => {
+      const value = config || {};
+      const color = /^#[0-9a-f]{6}$/i.test(value.background || '')
+        ? value.background
+        : defaults.color;
+      node.classList.add('skin-configurable-surface', className);
+      node.classList.toggle('skin-configurable-hidden', value.visible === false);
+      node.style.setProperty('--skin-region-color', color);
+      node.style.setProperty('--skin-region-opacity', `${Math.round(clamp(value.opacity, 0, 1, defaults.opacity) * 100)}%`);
+      node.style.setProperty('--skin-region-border-opacity', `${Math.round(clamp(value.borderOpacity, 0, 1, defaults.borderOpacity) * 100)}%`);
+      node.style.setProperty('--skin-region-blur', `${Math.round(clamp(value.blur, 0, 32, defaults.blur))}px`);
+      node.style.setProperty('--skin-region-radius', `${Math.round(clamp(value.radius, 0, 32, defaults.radius))}px`);
+      node.style.setProperty(
+        '--skin-region-shadow',
+        configurableSurfaceShadows[value.shadow] || configurableSurfaceShadows[defaults.shadow],
+      );
+    });
   };
 
   const updateLevelSlider = (slider) => {
@@ -82,6 +100,11 @@
         slider.addEventListener(event, refresh, { passive: true });
       }
       levelSliderBindings.set(slider, refresh);
+      sliderObserver?.observe(slider, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['data-selected', 'data-max', 'data-pointer-down'],
+      });
     }
   };
 
@@ -90,6 +113,12 @@
     if (/\b(dark|electron-dark|theme-dark)\b/.test(classNames)) return 'dark';
     if (/\b(light|electron-light|theme-light)\b/.test(classNames)) return 'light';
     try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch { return 'light'; }
+  };
+
+  const applyAppearance = () => {
+    const appearance = theme.appearance === 'auto' ? nativeAppearance() : theme.appearance;
+    root.classList.toggle('skin-theme-light', appearance === 'light');
+    root.classList.toggle('skin-theme-dark', appearance === 'dark');
   };
 
   const syncVideoPlayback = () => {
@@ -119,6 +148,199 @@
     syncVideoPlayback();
   };
 
+  const relatedMatches = (scope, selector) => {
+    const matches = new Set();
+    if (scope instanceof Element) {
+      if (scope.matches(selector)) matches.add(scope);
+      const closest = scope.closest(selector);
+      if (closest) matches.add(closest);
+    }
+    scope.querySelectorAll?.(selector).forEach((node) => matches.add(node));
+    return matches;
+  };
+
+  const refreshHome = () => {
+    const home = document.querySelector('[role="main"]:has([data-testid="home-icon"])');
+    for (const candidate of document.querySelectorAll('[role="main"]')) {
+      candidate.classList.toggle('skin-home', candidate === home);
+      candidate.classList.toggle('skin-task', candidate !== home);
+    }
+    const homeWelcome = theme.ui?.homeWelcome || {};
+    const homeIcons = home?.querySelectorAll('[data-testid="home-icon"]') || [];
+    for (const icon of homeIcons) {
+      icon.classList.toggle('skin-home-welcome-icon-hidden', homeWelcome.iconVisible === false);
+    }
+    const welcomeTitles = new Set(home?.querySelectorAll('h1, h2, [role="heading"]') || []);
+    const suggestionGroup = home?.querySelector('[class~="group/home-suggestions"]');
+    const addWelcomeTitle = (node) => {
+      if (!node || node === home || node === suggestionGroup || (suggestionGroup && node.contains(suggestionGroup))) return;
+      welcomeTitles.add(node);
+    };
+    for (const icon of homeIcons) {
+      addWelcomeTitle(icon.nextElementSibling);
+      addWelcomeTitle(icon.parentElement?.nextElementSibling);
+    }
+    addWelcomeTitle(suggestionGroup?.previousElementSibling);
+    for (const title of welcomeTitles) {
+      title.classList.toggle('skin-home-welcome-title-hidden', homeWelcome.titleVisible === false);
+    }
+    document.querySelector('main.main-surface')?.classList.toggle('skin-home-shell', Boolean(home));
+  };
+
+  const fileChangeFadeSelector = 'div[class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="-bottom-1"][class~="h-7"][class~="bg-gradient-to-t"][class~="from-token-main-surface-primary"][class~="to-transparent"]';
+
+  const processIncrementalScope = (scope) => {
+    if (!scope?.querySelectorAll && !(scope instanceof Element)) return;
+    const composer = theme.composer || {};
+    const environment = theme.environment || {};
+    const changeSummary = theme.changeSummary || {};
+    const ui = theme.ui || {};
+
+    for (const composerSurface of relatedMatches(scope, '.composer-surface-chrome')) {
+      const controls = composerSurface.querySelectorAll('button, [role="button"]');
+      controls.forEach((control) => control.classList.add('skin-composer-control'));
+      const primaryAction = [...controls].find((control) => {
+        const label = `${control.getAttribute('aria-label') || ''} ${control.textContent || ''}`;
+        return control.getAttribute('type') === 'submit' || /send|发送|stop|停止/i.test(label);
+      });
+      primaryAction?.classList.add('skin-composer-primary-action');
+    }
+    for (const footer of relatedMatches(scope, '[data-thread-scroll-footer="true"]')) {
+      const hasComposer = Boolean(footer.querySelector('.composer-surface-chrome'));
+      for (const layer of footer.children) {
+        if (layer.querySelector('.composer-surface-chrome')) continue;
+        layer.classList.toggle(
+          'skin-composer-footer-backdrop',
+          hasComposer && composer.showFooterBackdrop !== true,
+        );
+      }
+    }
+    for (const layer of relatedMatches(scope, fileChangeFadeSelector)) {
+      layer.classList.toggle('skin-composer-file-change-backdrop', composer.showFooterBackdrop !== true);
+    }
+
+    for (const panel of relatedMatches(scope, '[data-pip-obstacle="thread-summary-panel"]')) {
+      panel.classList.toggle('skin-environment-panel-hidden', environment.visible === false);
+      panel.firstElementChild?.firstElementChild?.classList.add('skin-environment-panel-surface');
+    }
+    for (const header of relatedMatches(scope, '[class~="group/turn-diff-header"]')) {
+      const card = header.parentElement;
+      card?.classList.add('skin-change-summary-card');
+      card?.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
+    }
+    for (const summary of relatedMatches(scope, 'div.rounded-3xl.border[class~="bg-token-input-background/70"]')) {
+      const compact = summary.classList.contains('flex')
+        && summary.classList.contains('w-max')
+        && summary.classList.contains('max-w-full')
+        && summary.classList.contains('min-w-0')
+        && summary.classList.contains('items-center')
+        && summary.classList.contains('gap-2')
+        && summary.classList.contains('px-3')
+        && summary.classList.contains('py-1.5')
+        && summary.classList.contains('text-token-foreground')
+        && summary.classList.contains('backdrop-blur-sm');
+      if (compact) {
+        summary.classList.add('skin-change-summary-compact');
+        summary.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
+      }
+    }
+
+    const headerDefaults = {
+      color: 'var(--skin-surface)', opacity: 0.42, borderOpacity: 0.25,
+      blur: 8, radius: 0, shadow: 'none',
+    };
+    for (const sidebar of relatedMatches(scope, 'aside.app-shell-left-panel')) {
+      applyConfigurableSurface(sidebar, 'skin-sidebar-surface', ui.sidebar, {
+        color: 'var(--skin-sidebar)', opacity: 0.66, borderOpacity: 0.25,
+        blur: 8, radius: 0, shadow: 'none',
+      });
+    }
+    for (const header of relatedMatches(scope, 'main.main-surface > header.app-header-tint')) {
+      applyConfigurableSurface(header, 'skin-header-surface', ui.header, headerDefaults);
+    }
+    for (const menu of relatedMatches(scope, '[class~="group/application-menu-top-bar"]')) {
+      applyConfigurableSurface(menu, 'skin-application-menu-surface', {
+        ...ui.header,
+        visible: true,
+        opacity: Math.max(0.72, clamp(ui.header?.opacity, 0, 1, headerDefaults.opacity)),
+        radius: 0,
+        shadow: 'none',
+      }, headerDefaults);
+    }
+    for (const bubble of relatedMatches(scope, '[data-user-message-bubble="true"]')) {
+      applyConfigurableSurface(bubble, 'skin-user-bubble-surface', ui.userBubble, {
+        color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.25,
+        blur: 4, radius: 20, shadow: 'none',
+      });
+    }
+    const codeBlocks = new Set(relatedMatches(scope, '[class*="_codeBlock_"]'));
+    for (const pre of relatedMatches(scope, 'pre')) {
+      codeBlocks.add(pre.closest('[class*="bg-token-text-code-block-background"]') || pre);
+    }
+    for (const codeBlock of codeBlocks) {
+      applyConfigurableSurface(codeBlock, 'skin-code-block-surface', ui.codeBlock, {
+        color: 'var(--skin-surface)', opacity: 0.17, borderOpacity: 0,
+        blur: 6, radius: 12, shadow: 'none',
+      });
+    }
+    for (const activityHeader of relatedMatches(scope, '[class~="group/activity-header"]')) {
+      applyConfigurableSurface(activityHeader.parentElement, 'skin-activity-card-surface', ui.activityCard, {
+        color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.3,
+        blur: 4, radius: 12, shadow: 'none',
+      });
+    }
+    for (const suggestions of relatedMatches(scope, '[class~="group/home-suggestions"]')) {
+      suggestions.classList.toggle('skin-home-suggestions-hidden', ui.homeSuggestions?.visible === false);
+    }
+    for (const suggestion of relatedMatches(scope, '[class~="group/home-suggestions"] button')) {
+      applyConfigurableSurface(suggestion, 'skin-home-suggestion-surface', {
+        ...ui.homeSuggestions,
+        visible: true,
+      }, {
+        color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.16,
+        blur: 8, radius: 4, shadow: 'none',
+      });
+    }
+    const overlayConfig = { ...(ui.overlays || {}), visible: true };
+    const overlayDefaults = {
+      color: 'var(--skin-surface)', opacity: 0.92, borderOpacity: 0.5,
+      blur: 14, radius: 12, shadow: 'strong',
+    };
+    for (const selector of ['[role="dialog"]', '[role="menu"]', '[role="listbox"]', '[data-slot="popover-content"]']) {
+      for (const overlay of relatedMatches(scope, selector)) {
+        applyConfigurableSurface(overlay, 'skin-overlay-surface', overlayConfig, overlayDefaults);
+      }
+    }
+
+    const threadRows = ui.threadRows || {};
+    for (const row of relatedMatches(scope, '[data-app-action-sidebar-thread-row]')) {
+      row.classList.add('skin-thread-row');
+      row.classList.toggle('skin-thread-row-hidden', threadRows.visible === false);
+    }
+    const summaryRows = ui.summaryRows || {};
+    for (const row of relatedMatches(scope, '[data-slot="thread-summary-panel-item-button"]')) {
+      row.classList.add('skin-summary-row');
+      row.classList.toggle('skin-summary-row-hidden', summaryRows.visible === false);
+    }
+    for (const rail of relatedMatches(scope, '[data-thread-user-message-navigation-rail-list="true"]')) {
+      rail.classList.toggle('skin-navigation-rail-hidden', ui.navigationRailVisible === false);
+      rail.classList.add('skin-navigation-rail');
+    }
+    const diff = ui.diff || {};
+    for (const row of relatedMatches(scope, '.thread-diff-virtualized')) {
+      row.classList.add('skin-diff-row');
+      row.classList.toggle('skin-diff-row-hidden', diff.visible === false);
+    }
+    if (theme.levelSlider?.enabled !== false) {
+      for (const slider of relatedMatches(scope, '[data-model-picker-power-slider]')) {
+        updateLevelSlider(slider);
+      }
+    }
+    for (const conversation of relatedMatches(scope, '[data-thread-find-target="conversation"]')) {
+      conversation.firstElementChild?.firstElementChild?.classList.add('skin-message-stack');
+    }
+  };
+
   const ensure = () => {
     const shell = document.querySelector('main.main-surface');
     const sidebar = document.querySelector('aside.app-shell-left-panel');
@@ -132,9 +354,7 @@
     if (style.textContent !== cssText) style.textContent = cssText;
     root.classList.add('codex-skin-studio');
     root.classList.toggle('skin-background-video', isVideo);
-    const appearance = theme.appearance === 'auto' ? nativeAppearance() : theme.appearance;
-    root.classList.toggle('skin-theme-light', appearance === 'light');
-    root.classList.toggle('skin-theme-dark', appearance === 'dark');
+    applyAppearance();
 
     let safeArea = theme.art.safeArea;
     if (safeArea === 'auto') {
@@ -226,18 +446,8 @@
         );
       }
     }
-    for (const layer of document.querySelectorAll('div')) {
-      const isFileChangeFooterFade = layer.classList.contains('pointer-events-none')
-        && layer.classList.contains('absolute')
-        && layer.classList.contains('inset-x-0')
-        && layer.classList.contains('-bottom-1')
-        && layer.classList.contains('h-7')
-        && layer.classList.contains('bg-gradient-to-t')
-        && layer.classList.contains('from-token-main-surface-primary')
-        && layer.classList.contains('to-transparent');
-      if (isFileChangeFooterFade) {
-        layer.classList.toggle('skin-composer-file-change-backdrop', composer.showFooterBackdrop !== true);
-      }
+    for (const layer of document.querySelectorAll(fileChangeFadeSelector)) {
+      layer.classList.toggle('skin-composer-file-change-backdrop', composer.showFooterBackdrop !== true);
     }
     const environment = theme.environment || {};
     const environmentColor = /^#[0-9a-f]{6}$/i.test(environment.background || '')
@@ -330,9 +540,7 @@
       });
     }
     const codeBlocks = new Set();
-    for (const node of document.querySelectorAll('[class]')) {
-      if ([...node.classList].some((token) => token.startsWith('_codeBlock_'))) codeBlocks.add(node);
-    }
+    document.querySelectorAll('[class*="_codeBlock_"]').forEach((node) => codeBlocks.add(node));
     for (const pre of document.querySelectorAll('pre')) {
       codeBlocks.add(pre.closest('[class*="bg-token-text-code-block-background"]') || pre);
     }
@@ -475,14 +683,37 @@
     return true;
   };
 
-  const schedule = () => {
-    clearTimeout(scheduled);
-    scheduled = setTimeout(ensure, 120);
+  const healthCheck = () => {
+    if (!document.getElementById('codex-skin-studio-style')
+      || !root.classList.contains('codex-skin-studio')) {
+      ensure();
+      return;
+    }
+    if (isVideo && !document.getElementById('codex-skin-studio-video')) {
+      ensureVideoLayer();
+    }
+  };
+  const flushPendingNodes = () => {
+    scheduled = undefined;
+    const nodes = [...pendingNodes].filter((node) => node.isConnected);
+    pendingNodes.clear();
+    const scopes = nodes.filter((node) => !nodes.some(
+      (candidate) => candidate !== node && candidate.contains(node),
+    ));
+    for (const scope of scopes) processIncrementalScope(scope);
+    if (scopes.length > 0) refreshHome();
+  };
+  const scheduleNode = (node) => {
+    if (!(node instanceof Element)) return;
+    pendingNodes.add(node);
+    if (scheduled === undefined) scheduled = requestAnimationFrame(flushPendingNodes);
   };
   const cleanup = () => {
-    clearTimeout(scheduled);
-    clearInterval(timer);
+    if (scheduled !== undefined) cancelAnimationFrame(scheduled);
+    clearInterval(healthTimer);
     observer?.disconnect();
+    appearanceObserver?.disconnect();
+    sliderObserver?.disconnect();
     document.getElementById('codex-skin-studio-style')?.remove();
     root.classList.remove(...classes);
     for (const property of [
@@ -558,20 +789,56 @@
     levelSliderBindings.clear();
     videoLayer?.pause();
     videoLayer?.remove();
-    URL.revokeObjectURL(artUrl);
+    const asset = window[MEDIA_STATE]?.assets?.[assetId];
+    if (asset?.url === artUrl) {
+      asset.refs = Math.max(0, (asset.refs || 1) - 1);
+      if (asset.refs === 0) {
+        URL.revokeObjectURL(asset.url);
+        delete window[MEDIA_STATE].assets[assetId];
+      }
+    }
     if (window[STATE]?.revision === revision) delete window[STATE];
     return true;
   };
 
-  observer = new MutationObserver(schedule);
+  observer = new MutationObserver((records) => {
+    let healthRequired = false;
+    for (const record of records) {
+      record.addedNodes.forEach(scheduleNode);
+      for (const node of record.removedNodes) {
+        if (node instanceof Element
+          && (node.id === 'codex-skin-studio-style'
+            || node.id === 'codex-skin-studio-video'
+            || node.querySelector?.('#codex-skin-studio-style, #codex-skin-studio-video'))) {
+          healthRequired = true;
+        }
+      }
+    }
+    if (healthRequired) queueMicrotask(healthCheck);
+  });
   observer.observe(root, {
     childList: true,
     subtree: true,
-    attributes: true,
-    attributeFilter: ['class', 'data-theme', 'data-appearance', 'data-selected', 'data-max', 'data-pointer-down'],
   });
-  timer = setInterval(ensure, 4000);
-  window[STATE] = { revision, ensure, cleanup, observer, timer, artUrl };
+  appearanceObserver = new MutationObserver(applyAppearance);
+  for (const node of [root, document.body]) {
+    appearanceObserver.observe(node, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme', 'data-appearance'],
+    });
+  }
+  sliderObserver = new MutationObserver((records) => {
+    const sliders = new Set();
+    for (const record of records) {
+      const slider = record.target instanceof Element
+        ? record.target.closest('[data-model-picker-power-slider]')
+        : null;
+      if (slider) sliders.add(slider);
+    }
+    sliders.forEach(updateLevelSlider);
+  });
+  healthTimer = setInterval(healthCheck, 30000);
+  window[STATE] = { revision, assetId, ensure: healthCheck, cleanup, observer, healthTimer, artUrl };
   ensure();
   return { installed: true, revision };
-})(__SKIN_CSS__, __SKIN_ART__, __SKIN_THEME__, __SKIN_REVISION__)
+})(__SKIN_CSS__, __SKIN_MEDIA_ID__, __SKIN_THEME__, __SKIN_REVISION__)
