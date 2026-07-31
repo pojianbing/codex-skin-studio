@@ -578,6 +578,7 @@ pub struct Dashboard {
     pub message: String,
     pub autostart_enabled: bool,
     pub launch_codex_on_open: bool,
+    pub model_picker_layout: String,
     pub themes: Vec<ThemeRecord>,
 }
 

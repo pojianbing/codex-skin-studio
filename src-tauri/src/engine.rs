@@ -3,7 +3,7 @@ use crate::{
     error::{Result, StudioError},
     models::{ApplyPlan, CodexInstall, EngineState, ThemeManifest},
     platform,
-    storage::{atomic_write, state_path},
+    storage::{atomic_write, read_settings, state_path},
     themes,
 };
 use sha2::{Digest, Sha256};
@@ -164,10 +164,21 @@ fn media_mime(manifest: &ThemeManifest) -> &'static str {
     }
 }
 
-fn payload_for(manifest: &ThemeManifest, image: &[u8], asset_id: &str) -> Result<(String, String)> {
+fn payload_for(
+    manifest: &ThemeManifest,
+    image: &[u8],
+    asset_id: &str,
+    model_picker_layout: &str,
+) -> Result<(String, String)> {
     let theme_json = serde_json::to_string(manifest)?;
+    let model_picker_layout = if model_picker_layout == "flat" {
+        "flat"
+    } else {
+        "native"
+    };
     let mut hasher = Sha256::new();
     hasher.update(theme_json.as_bytes());
+    hasher.update(model_picker_layout.as_bytes());
     hasher.update(image);
     hasher.update(CSS.as_bytes());
     hasher.update(RENDERER.as_bytes());
@@ -176,6 +187,10 @@ fn payload_for(manifest: &ThemeManifest, image: &[u8], asset_id: &str) -> Result
         .replace("__SKIN_CSS__", &serde_json::to_string(CSS)?)
         .replace("__SKIN_MEDIA_ID__", &serde_json::to_string(asset_id)?)
         .replace("__SKIN_THEME__", &theme_json)
+        .replace(
+            "__SKIN_MODEL_PICKER_LAYOUT__",
+            &serde_json::to_string(model_picker_layout)?,
+        )
         .replace("__SKIN_REVISION__", &serde_json::to_string(&revision)?);
     Ok((payload, revision))
 }
@@ -186,7 +201,8 @@ fn prepare_payload(
 ) -> Result<(String, String, cdp::MediaPayload)> {
     let image = themes::image_bytes(manifest, directory)?;
     let asset_id = format!("{:x}", Sha256::digest(&image));
-    let (payload, revision) = payload_for(manifest, &image, &asset_id)?;
+    let model_picker_layout = read_settings().model_picker_layout;
+    let (payload, revision) = payload_for(manifest, &image, &asset_id, &model_picker_layout)?;
     let media = cdp::MediaPayload {
         asset_id,
         mime: media_mime(manifest),
@@ -454,6 +470,7 @@ mod tests {
             &manifest,
             &image,
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "native",
         )
         .unwrap();
         assert!(!payload.contains("__SKIN_"));

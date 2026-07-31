@@ -197,6 +197,7 @@ fn autostart_enabled(app: &tauri::AppHandle) -> std::result::Result<bool, String
 async fn get_dashboard(app: tauri::AppHandle) -> std::result::Result<Dashboard, String> {
     let autostart_enabled = autostart_enabled(&app)?;
     let launch_codex_on_open = storage::read_settings().launch_codex_on_open;
+    let model_picker_layout = storage::read_settings().model_picker_layout;
     tauri::async_runtime::spawn_blocking(move || {
         themes::ensure_library().map_err(|error| error.to_string())?;
         let themes = themes::list_themes().map_err(|error| error.to_string())?;
@@ -224,6 +225,7 @@ async fn get_dashboard(app: tauri::AppHandle) -> std::result::Result<Dashboard, 
             message,
             autostart_enabled,
             launch_codex_on_open,
+            model_picker_layout,
             themes,
         })
     })
@@ -265,6 +267,32 @@ fn set_launch_codex_on_open(enabled: bool) -> std::result::Result<bool, String> 
     settings.launch_codex_on_open = enabled;
     storage::write_settings(&settings).map_err(|error| error.to_string())?;
     Ok(settings.launch_codex_on_open)
+}
+
+#[tauri::command]
+async fn set_model_picker_layout(
+    runtime: tauri::State<'_, AppRuntime>,
+    layout: String,
+) -> std::result::Result<String, String> {
+    if !matches!(layout.as_str(), "native" | "flat") {
+        return Err("模型菜单布局无效".into());
+    }
+    let runtime = runtime.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut settings = storage::read_settings();
+        settings.model_picker_layout = layout.clone();
+        storage::write_settings(&settings).map_err(|error| error.to_string())?;
+
+        let state = engine::read_state();
+        if state.mode == "active" {
+            if let Some(theme_id) = state.active_theme_id {
+                engine::apply(&runtime, &theme_id, false).map_err(|error| error.to_string())?;
+            }
+        }
+        Ok(layout)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -595,6 +623,7 @@ pub fn run() {
             get_apply_plan,
             set_autostart,
             set_launch_codex_on_open,
+            set_model_picker_layout,
             import_wallpaper,
             import_theme_bundle,
             save_video_thumbnail,

@@ -7,14 +7,31 @@ use std::{
 };
 use uuid::Uuid;
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub launch_codex_on_open: bool,
+    #[serde(default = "default_model_picker_layout")]
+    pub model_picker_layout: String,
     #[serde(default)]
     pub show_theme_hanger: bool,
     #[serde(default)]
     pub theme_hanger_position: Option<WindowPosition>,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            launch_codex_on_open: false,
+            model_picker_layout: default_model_picker_layout(),
+            show_theme_hanger: false,
+            theme_hanger_position: None,
+        }
+    }
+}
+
+fn default_model_picker_layout() -> String {
+    "native".into()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -98,6 +115,11 @@ mod tests {
     #[test]
     fn codex_launch_on_open_is_disabled_by_default() {
         assert!(!AppSettings::default().launch_codex_on_open);
+    }
+
+    #[test]
+    fn model_picker_layout_defaults_to_native() {
+        assert_eq!(AppSettings::default().model_picker_layout, "native");
     }
 
     #[test]

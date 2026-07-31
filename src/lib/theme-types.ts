@@ -1,4 +1,5 @@
 export type EngineMode = 'official' | 'active' | 'paused' | 'error'
+export type ModelPickerLayout = 'native' | 'flat'
 
 export type ArtConfig = {
   focusX: number
@@ -156,6 +157,7 @@ export type Dashboard = {
   message: string
   autostartEnabled: boolean
   launchCodexOnOpen: boolean
+  modelPickerLayout: ModelPickerLayout
   themes: ThemeRecord[]
 }
 
@@ -172,6 +174,7 @@ export const fallbackDashboard: Dashboard = {
   message: '正在连接本地引擎',
   autostartEnabled: false,
   launchCodexOnOpen: false,
+  modelPickerLayout: 'native',
   themes: [],
 }
 

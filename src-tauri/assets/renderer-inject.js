@@ -1,9 +1,10 @@
-((cssText, assetId, theme, revision) => {
+((cssText, assetId, theme, preferences, revision) => {
   const STATE = '__CODEX_SKIN_STUDIO_STATE__';
   const MEDIA_STATE = '__CODEX_SKIN_STUDIO_MEDIA__';
   const current = window[STATE];
   const mediaStore = window[MEDIA_STATE];
   const mediaAsset = mediaStore?.assets?.[assetId];
+  const modelPickerLayout = preferences?.modelPickerLayout === 'flat' ? 'flat' : 'native';
   if (current?.revision === revision && mediaAsset?.url === current.artUrl) {
     current.ensure?.();
     return { installed: true, revision, reused: true };
@@ -20,16 +21,18 @@
     'codex-skin-studio', 'skin-theme-light', 'skin-theme-dark', 'skin-safe-left',
     'skin-safe-right', 'skin-safe-center', 'skin-safe-none', 'skin-task-ambient',
     'skin-task-banner', 'skin-task-off', 'skin-scrollbars-hidden', 'skin-level-slider-custom',
-    'skin-background-video',
+    'skin-background-video', 'skin-model-picker-flat',
   ];
   let observer;
   let appearanceObserver;
   let sliderObserver;
   let healthTimer;
   let scheduled;
+  let flatMenuResizeHandler;
   let videoLayer;
   const pendingNodes = new Set();
   const levelSliderBindings = new Map();
+  const flatMenuStates = new Map();
   const processedNodes = new WeakMap();
 
   const clamp = (value, minimum, maximum, fallback) => {
@@ -106,6 +109,212 @@
         attributeFilter: ['data-selected', 'data-max', 'data-pointer-down'],
       });
     }
+  };
+
+  const isVisible = (node) => {
+    if (!node?.isConnected) return false;
+    const rect = node.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  };
+
+  const isIntelligenceMenu = (node) => node instanceof Element
+    && node.matches('[role="menu"]')
+    && Boolean(node.querySelector('[data-model-picker-view-toggle]'))
+    && Boolean(node.querySelector('[data-model-picker-power-slider]'));
+
+  const flatMenuLabel = (panel) => {
+    if (!panel || panel.querySelector('.skin-intelligence-flat-label')) return;
+    const label = document.createElement('div');
+    label.className = 'skin-intelligence-flat-label';
+    label.setAttribute('aria-hidden', 'true');
+    label.textContent = '推理强度';
+    panel.prepend(label);
+  };
+
+  const openFlatModelSubmenu = (state) => {
+    if (flatMenuStates.get(state.menu) !== state || !state.modelItem?.isConnected) return;
+    if (state.modelItem.getAttribute('aria-expanded') === 'true') {
+      state.modelOpened = true;
+      applyFlatMenuState(state);
+      return;
+    }
+    if (state.openAttempts >= 4) return;
+    state.openAttempts += 1;
+    requestAnimationFrame(() => {
+      if (flatMenuStates.get(state.menu) !== state || !state.modelItem?.isConnected) return;
+      state.modelItem.focus({ preventScroll: true });
+      state.modelItem.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'ArrowRight', code: 'ArrowRight', keyCode: 39, which: 39,
+        bubbles: true, cancelable: true,
+      }));
+      requestAnimationFrame(() => {
+        if (flatMenuStates.get(state.menu) !== state) return;
+        if (state.modelItem.getAttribute('aria-expanded') === 'true') {
+          state.modelOpened = true;
+          applyFlatMenuState(state);
+          refreshFlatSubmenus();
+        } else {
+          openFlatModelSubmenu(state);
+        }
+      });
+    });
+  };
+
+  const applyFlatMenuState = (state) => {
+    const {
+      menu, simplePanel, viewToggle, viewControls, modelItem, effortItem,
+    } = state;
+    if (!menu?.isConnected) return;
+    menu.classList.add('skin-intelligence-flat-menu');
+    simplePanel?.classList.add('skin-intelligence-flat-simple-panel');
+    viewToggle?.classList.add('skin-intelligence-flat-view-toggle');
+    viewControls?.classList.add('skin-intelligence-flat-view-controls');
+    effortItem?.classList.add('skin-intelligence-flat-effort-trigger');
+    modelItem?.classList.add('skin-intelligence-flat-model-trigger');
+    modelItem?.classList.toggle('skin-intelligence-flat-model-hidden', state.modelOpened);
+    state.advancedPanel?.classList.add('skin-intelligence-flat-advanced-panel');
+    if (simplePanel) {
+      simplePanel.removeAttribute('inert');
+      simplePanel.setAttribute('aria-hidden', 'false');
+      flatMenuLabel(simplePanel);
+    }
+  };
+
+  const refreshFlatSubmenus = () => {
+    for (const state of flatMenuStates.values()) {
+      if (!state.menu.isConnected) continue;
+      const previous = state.submenu;
+      if (previous && !previous.isConnected) state.submenu = null;
+      const submenu = state.modelItem?.id
+        ? [...document.querySelectorAll('[role="menu"]')].find((candidate) => (
+          candidate !== state.menu
+          && candidate.getAttribute('aria-labelledby') === state.modelItem.id
+          && isVisible(candidate)
+        ))
+        : null;
+      if (previous && previous !== submenu) {
+        previous.classList.remove('skin-intelligence-flat-model-menu');
+        previous.querySelector('.skin-intelligence-flat-model-label')?.remove();
+        if (state.submenuWrapper?.isConnected) state.submenuWrapper.style.cssText = state.originalSubmenuWrapperStyle || '';
+        state.submenuWrapper = null;
+        state.originalSubmenuWrapperStyle = null;
+        state.modelOpened = false;
+        state.modelItem?.classList.remove('skin-intelligence-flat-model-hidden');
+      }
+      if (!submenu) continue;
+      state.submenu = submenu;
+      const wrapper = submenu.parentElement;
+      if (state.submenuWrapper !== wrapper) {
+        state.submenuWrapper = wrapper;
+        state.originalSubmenuWrapperStyle = wrapper?.getAttribute('style') || '';
+      }
+      submenu.classList.add('skin-intelligence-flat-model-menu');
+      if (!submenu.querySelector('.skin-intelligence-flat-model-label')) {
+        const label = document.createElement('div');
+        label.className = 'skin-intelligence-flat-model-label';
+        label.setAttribute('role', 'presentation');
+        label.textContent = '模型';
+        submenu.prepend(label);
+      }
+      if (wrapper) {
+        const menuRect = state.menu.getBoundingClientRect();
+        const submenuRect = submenu.getBoundingClientRect();
+        const gap = 6;
+        const canPlaceLeft = menuRect.left - submenuRect.width - gap >= 8;
+        const left = canPlaceLeft
+          ? menuRect.left - submenuRect.width - gap
+          : Math.min(Math.max(8, menuRect.right + gap), window.innerWidth - submenuRect.width - 8);
+        const top = canPlaceLeft
+          ? Math.min(Math.max(8, menuRect.top), window.innerHeight - submenuRect.height - 8)
+          : Math.min(Math.max(8, menuRect.bottom + gap), window.innerHeight - submenuRect.height - 8);
+        wrapper.style.position = 'fixed';
+        wrapper.style.transform = 'none';
+        wrapper.style.left = `${Math.round(left)}px`;
+        wrapper.style.top = `${Math.round(top)}px`;
+        wrapper.style.margin = '0';
+        wrapper.style.zIndex = '51';
+      }
+      if (document.activeElement === state.modelItem) {
+        submenu.querySelector('[role="menuitem"]')?.focus({ preventScroll: true });
+      }
+    }
+  };
+
+  const ensureFlatMenu = (menu) => {
+    if (!isIntelligenceMenu(menu)) return;
+    let state = flatMenuStates.get(menu);
+    if (!state) {
+      const slider = menu.querySelector('[data-model-picker-power-slider]');
+      const simplePanel = slider?.closest('[data-active]');
+      const advancedPanel = menu.querySelector('[data-active="true"]');
+      const viewToggle = menu.querySelector('[data-model-picker-view-toggle]');
+      const viewControls = viewToggle?.parentElement;
+      const menuItems = [...menu.querySelectorAll('[role="menuitem"][aria-haspopup="menu"]')];
+      const modelItem = menuItems[0];
+      const effortItem = menuItems[1];
+      if (!slider || !simplePanel || !modelItem) return;
+      state = {
+        menu,
+        slider,
+        simplePanel,
+        advancedPanel,
+        viewToggle,
+        viewControls,
+        modelItem,
+        effortItem,
+        originalAriaHidden: simplePanel.getAttribute('aria-hidden'),
+        originalInert: simplePanel.hasAttribute('inert'),
+        modelOpened: false,
+        openAttempts: 0,
+        submenu: null,
+        submenuWrapper: null,
+        originalSubmenuWrapperStyle: null,
+      };
+      flatMenuStates.set(menu, state);
+      requestAnimationFrame(() => openFlatModelSubmenu(state));
+    }
+    applyFlatMenuState(state);
+  };
+
+  const cleanupFlatMenu = (state) => {
+    const {
+      menu, simplePanel, viewToggle, viewControls, modelItem, effortItem, submenu,
+    } = state;
+    submenu?.classList.remove('skin-intelligence-flat-model-menu');
+    submenu?.querySelector('.skin-intelligence-flat-model-label')?.remove();
+    if (state.submenuWrapper?.isConnected) {
+      state.submenuWrapper.style.cssText = state.originalSubmenuWrapperStyle || '';
+    }
+    menu?.classList.remove('skin-intelligence-flat-menu');
+    simplePanel?.classList.remove('skin-intelligence-flat-simple-panel');
+    state.advancedPanel?.classList.remove('skin-intelligence-flat-advanced-panel');
+    simplePanel?.querySelector('.skin-intelligence-flat-label')?.remove();
+    if (simplePanel?.isConnected) {
+      if (state.originalInert) simplePanel.setAttribute('inert', '');
+      else simplePanel.removeAttribute('inert');
+      if (state.originalAriaHidden == null) simplePanel.removeAttribute('aria-hidden');
+      else simplePanel.setAttribute('aria-hidden', state.originalAriaHidden);
+    }
+    viewToggle?.classList.remove('skin-intelligence-flat-view-toggle');
+    viewControls?.classList.remove('skin-intelligence-flat-view-controls');
+    modelItem?.classList.remove('skin-intelligence-flat-model-trigger');
+    modelItem?.classList.remove('skin-intelligence-flat-model-hidden');
+    effortItem?.classList.remove('skin-intelligence-flat-effort-trigger');
+    flatMenuStates.delete(menu);
+  };
+
+  const syncFlatMenus = () => {
+    if (modelPickerLayout === 'flat') {
+      document.querySelectorAll('[role="menu"]').forEach((menu) => {
+        if (isIntelligenceMenu(menu)) ensureFlatMenu(menu);
+      });
+      refreshFlatSubmenus();
+    } else {
+      [...flatMenuStates.values()].forEach(cleanupFlatMenu);
+    }
+    [...flatMenuStates.values()]
+      .filter((state) => !state.menu.isConnected)
+      .forEach(cleanupFlatMenu);
   };
 
   const nativeAppearance = () => {
@@ -336,6 +545,7 @@
         updateLevelSlider(slider);
       }
     }
+    syncFlatMenus();
     for (const conversation of relatedMatches(scope, '[data-thread-find-target="conversation"]')) {
       conversation.firstElementChild?.firstElementChild?.classList.add('skin-message-stack');
     }
@@ -354,6 +564,7 @@
     if (style.textContent !== cssText) style.textContent = cssText;
     root.classList.add('codex-skin-studio');
     root.classList.toggle('skin-background-video', isVideo);
+    root.classList.toggle('skin-model-picker-flat', modelPickerLayout === 'flat');
     applyAppearance();
 
     let safeArea = theme.art.safeArea;
@@ -633,6 +844,7 @@
         updateLevelSlider(slider);
       }
     }
+    syncFlatMenus();
 
     const content = ui.content || {};
     root.style.setProperty('--thread-content-max-width', `${Math.round(clamp(content.maxWidth, 560, 1200, 768))}px`);
@@ -714,6 +926,8 @@
     observer?.disconnect();
     appearanceObserver?.disconnect();
     sliderObserver?.disconnect();
+    [...flatMenuStates.values()].forEach(cleanupFlatMenu);
+    if (flatMenuResizeHandler) window.removeEventListener('resize', flatMenuResizeHandler);
     document.getElementById('codex-skin-studio-style')?.remove();
     root.classList.remove(...classes);
     for (const property of [
@@ -814,6 +1028,7 @@
         }
       }
     }
+    if (records.length > 0) queueMicrotask(syncFlatMenus);
     if (healthRequired) queueMicrotask(healthCheck);
   });
   observer.observe(root, {
@@ -837,8 +1052,10 @@
     }
     sliders.forEach(updateLevelSlider);
   });
+  flatMenuResizeHandler = () => requestAnimationFrame(refreshFlatSubmenus);
+  window.addEventListener('resize', flatMenuResizeHandler, { passive: true });
   healthTimer = setInterval(healthCheck, 30000);
   window[STATE] = { revision, assetId, ensure: healthCheck, cleanup, observer, healthTimer, artUrl };
   ensure();
   return { installed: true, revision };
-})(__SKIN_CSS__, __SKIN_MEDIA_ID__, __SKIN_THEME__, __SKIN_REVISION__)
+})(__SKIN_CSS__, __SKIN_MEDIA_ID__, __SKIN_THEME__, { modelPickerLayout: __SKIN_MODEL_PICKER_LAYOUT__ }, __SKIN_REVISION__)

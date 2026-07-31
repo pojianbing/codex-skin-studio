@@ -6,6 +6,7 @@ import {
   RotateCcw, ShieldCheck, Trash2, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Toaster } from '@/components/ui/sonner'
 import { AppUpdater } from '@/components/app-updater'
@@ -28,6 +29,7 @@ import { type ElementTab, type PreviewElementId, previewElementMeta } from '@/li
 import {
   type ApplyPlan,
   type Dashboard,
+  type ModelPickerLayout,
   type ThemeFilter,
   type ThemeRecord,
   type ThemeUpdate,
@@ -339,6 +341,14 @@ export function SkinStudioApp() {
     )
   }
 
+  const setModelPickerLayout = async (layout: ModelPickerLayout) => {
+    await run(
+      'model-picker-layout',
+      () => invoke('set_model_picker_layout', { layout }),
+      layout === 'flat' ? '已启用平铺模型菜单' : '已恢复原生模型菜单',
+    )
+  }
+
   const handleStoreInstalled = async (themeId: string) => {
     setSelectedId(themeId)
     await refresh()
@@ -462,6 +472,24 @@ export function SkinStudioApp() {
               />
               <span>启动时打开 Codex</span>
             </label>
+            <div className="flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground">
+              <span className="text-zinc-400">模型菜单</span>
+              <Select
+                value={dashboard.modelPickerLayout}
+                onValueChange={(value) => {
+                  if (value === 'native' || value === 'flat') void setModelPickerLayout(value)
+                }}
+                disabled={Boolean(working)}
+              >
+                <SelectTrigger size="sm" className="h-6 min-w-[92px] border-0 bg-transparent px-1.5 text-[11px] shadow-none focus-visible:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="native">原生菜单</SelectItem>
+                  <SelectItem value="flat">平铺选择</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               variant="outline"
               size="sm"

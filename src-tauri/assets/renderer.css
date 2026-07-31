@@ -391,6 +391,61 @@ html.codex-skin-studio.skin-background-video.skin-task-banner .skin-task::before
 html.codex-skin-studio.skin-task-off .skin-task::before { background: var(--skin-surface); }
 html.codex-skin-studio [data-message-author-role], html.codex-skin-studio article { color: var(--skin-text); }
 
+/* Keep Codex's native model options and reasoning slider usable in one view. */
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-menu {
+  min-width: 224px !important;
+  min-height: 58px !important;
+  overflow: visible !important;
+}
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-menu [class*="_ViewTrack_"] {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+}
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-simple-panel {
+  display: block !important;
+  height: auto !important;
+  min-height: 48px !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
+  position: static !important;
+  transform: none !important;
+  visibility: visible !important;
+}
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-simple-panel > [data-reasoning-slider="true"],
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-view-toggle,
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-view-controls,
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-model-hidden,
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-effort-trigger {
+  display: none !important;
+}
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-label {
+  padding: 1px 7px 3px;
+  color: var(--skin-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-simple-panel [data-model-picker-power-slider] {
+  margin: 0 6px 3px;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-model-menu {
+  min-width: 224px !important;
+  overflow: visible !important;
+}
+html.codex-skin-studio.skin-model-picker-flat .skin-intelligence-flat-model-label {
+  padding: 2px 7px 4px;
+  color: var(--skin-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  pointer-events: none;
+}
+
 /* Keep the native reasoning control semantics, but give each discrete level its own color. */
 html.codex-skin-studio.skin-level-slider-custom [data-model-picker-power-slider] {
   --skin-level-active-color: var(--skin-level-color-0);
