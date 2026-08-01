@@ -246,7 +246,8 @@ export function ThemeHanger() {
   }
 
   const requestApply = async (theme: ThemeRecord) => {
-    if (workingThemeId || theme.id === dashboard?.activeThemeId) return
+    if (workingThemeId
+      || (dashboard?.mode === 'active' && theme.id === dashboard.activeThemeId)) return
     setWorkingThemeId(theme.id)
     setError(undefined)
     try {
@@ -419,7 +420,7 @@ export function ThemeHanger() {
 
           <section className="flex-1 overflow-y-auto p-2 space-y-1.5">
           {dashboard?.themes.map((theme) => {
-            const active = theme.id === dashboard.activeThemeId
+            const active = dashboard.mode === 'active' && theme.id === dashboard.activeThemeId
             const working = theme.id === workingThemeId
             const meta = getThemeMeta(theme)
             const ThemeIcon = meta.Icon

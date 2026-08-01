@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>把 Codex Desktop 调整成适合长期工作的界面。</strong><br />
-  一个运行于 Windows 的本地主题管理器：导入壁纸、精细调整界面，并随时恢复官方外观。
+  一个运行于 Windows 和 macOS 的本地主题管理器：导入壁纸、精细调整界面，并随时恢复官方外观。
 </p>
 
 <p align="center"><sub>本项目 100% 使用 Codex 开发。</sub></p>
@@ -24,7 +24,7 @@
 <p align="center">
   <a href="https://github.com/pojianbing/codex-skin-studio/releases"><img src="https://img.shields.io/github/v/release/pojianbing/codex-skin-studio?display_name=tag&sort=semver" alt="Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4c8bf5.svg" alt="MIT License" /></a>
-  <img src="https://img.shields.io/badge/platform-Windows-3fb950.svg" alt="Windows" />
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-3fb950.svg" alt="Windows and macOS" />
 </p>
 
 <p align="center">
@@ -70,8 +70,9 @@ Codex Skin Studio 将主题保留在本机。选择内置主题、导入一张�
 | 平台 | 已构建架构 | Codex 前置条件 |
 | --- | --- | --- |
 | Windows | x64 | 通过 Microsoft Store 安装的官方 Codex Desktop |
+| macOS | Apple Silicon、Intel | 已安装并通过签名校验的官方 Codex Desktop |
 
-当前版本仅支持 Windows x64。macOS 和 Linux 当前不受支持，也不会对这些平台上的 Codex 注入行为提供保证。应用会在操作前验证检测到的 Windows Codex 安装；找不到或无法验证时不会进行注入。
+当前版本支持 Windows x64 和 macOS（Apple Silicon、Intel）；Linux 当前不受支持。应用会在操作前验证官方 Codex 安装：Windows 校验 Microsoft Store 包，macOS 校验官方应用签名与 OpenAI 团队标识；找不到或无法验证时不会进行注入。
 
 ### 2. 选择主题并应用
 

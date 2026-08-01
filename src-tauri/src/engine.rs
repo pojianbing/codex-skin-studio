@@ -222,20 +222,67 @@ fn preferred_port() -> u16 {
     }
 }
 
+#[cfg(target_os = "windows")]
+fn windows_package_family_from_executable(executable: &str) -> Option<String> {
+    let normalized = executable.replace('/', "\\");
+    if !normalized
+        .to_ascii_lowercase()
+        .ends_with("\\app\\chatgpt.exe")
+    {
+        return None;
+    }
+    let package_full_name = normalized.split('\\').rev().nth(2)?;
+    if !package_full_name
+        .to_ascii_lowercase()
+        .starts_with("openai.codex_")
+    {
+        return None;
+    }
+    let publisher_id = package_full_name.rsplit('_').next()?;
+    (!publisher_id.is_empty()).then(|| format!("OpenAI.Codex_{publisher_id}"))
+}
+
+fn install_matches_state(state: &EngineState, current: &CodexInstall) -> bool {
+    let Some(saved_executable) = state.codex_executable.as_deref() else {
+        return true;
+    };
+    let same_path = if cfg!(target_os = "windows") {
+        saved_executable.eq_ignore_ascii_case(&current.executable)
+    } else {
+        saved_executable == current.executable
+    };
+    if same_path {
+        return true;
+    }
+    if let Some(saved_id) = state.codex_app_user_model_id.as_deref() {
+        return current
+            .app_user_model_id
+            .as_deref()
+            .is_some_and(|current_id| saved_id.eq_ignore_ascii_case(current_id));
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let saved_family = windows_package_family_from_executable(saved_executable);
+        let current_family = current
+            .app_user_model_id
+            .as_deref()
+            .and_then(|value| value.split_once('!').map(|(family, _)| family));
+        saved_family
+            .as_deref()
+            .zip(current_family)
+            .is_some_and(|(saved, current)| saved.eq_ignore_ascii_case(current))
+    }
+    #[cfg(not(target_os = "windows"))]
+    false
+}
+
 fn install_from_state_or_current(state: &EngineState) -> Result<CodexInstall> {
     let current =
         platform::find_codex()?.ok_or_else(|| StudioError::from("未找到官方 Codex Desktop"))?;
-    if let Some(saved) = &state.codex_executable {
-        let same = if cfg!(target_os = "windows") {
-            saved.eq_ignore_ascii_case(&current.executable)
-        } else {
-            saved == &current.executable
-        };
-        if !same && !platform::main_pids(&current)?.is_empty() {
-            return Err(StudioError::from(
-                "检测到与保存状态不同的 Codex 版本，请先关闭 Codex",
-            ));
-        }
+    if !install_matches_state(state, &current) && !platform::main_pids(&current)?.is_empty() {
+        return Err(StudioError::from(
+            "检测到与保存状态不同的 Codex 安装，请先关闭 Codex",
+        ));
     }
     Ok(current)
 }
@@ -342,11 +389,12 @@ fn apply_locked(runtime: &AppRuntime, theme_id: &str, restart_existing: bool) ->
             .ok_or_else(|| StudioError::from("CDP Browser ID 缺失"))?;
         cdp::wait_and_inject(port, &browser, &payload, &revision, &media, 120)?;
         write_state(&EngineState {
-            schema_version: 1,
+            schema_version: 2,
             mode: "active".into(),
             active_theme_id: Some(theme_id.into()),
             port: Some(port),
             codex_executable: Some(install.executable.clone()),
+            codex_app_user_model_id: install.app_user_model_id.clone(),
             codex_bundle: install.bundle.clone(),
             browser_id: Some(browser.clone()),
             message: format!("{} 正在本机端口 {} 运行", manifest.name, port),
@@ -428,10 +476,10 @@ pub fn restore_official(runtime: &AppRuntime, restart_codex: bool) -> Result<()>
 
 #[cfg(test)]
 mod tests {
-    use super::{CSS, payload_for};
+    use super::{CSS, RENDERER, install_matches_state, payload_for};
     use crate::models::{
-        ArtConfig, ChangeSummaryConfig, ComposerConfig, EnvironmentConfig, LevelSliderConfig,
-        Palette, SemanticTokens, ThemeManifest, UiConfig,
+        ArtConfig, ChangeSummaryConfig, CodexInstall, ComposerConfig, EngineState,
+        EnvironmentConfig, LevelSliderConfig, Palette, SemanticTokens, ThemeManifest, UiConfig,
     };
     use std::fs;
     use uuid::Uuid;
@@ -486,5 +534,54 @@ mod tests {
     fn video_background_preserves_fixed_body_portals() {
         assert!(CSS.contains("skin-background-video body > #root"));
         assert!(!CSS.contains("body > :not(#codex-skin-studio-video)"));
+    }
+
+    #[test]
+    fn renderer_uses_semantic_shell_markers_and_owned_css_classes() {
+        assert!(RENDERER.contains("data-app-shell-main-surface"));
+        assert!(RENDERER.contains("data-app-shell-application-menu-bar"));
+        assert!(RENDERER.contains("data-codex-window-chrome"));
+        assert!(RENDERER.contains("[role=\"menubar\"]"));
+        assert!(RENDERER.contains("application-menu-trigger-"));
+        assert!(RENDERER.contains("group/application-menu-top-bar"));
+        assert!(RENDERER.contains("skin-main-surface"));
+        assert!(RENDERER.contains("skin-application-menu-surface"));
+        assert!(CSS.contains(".skin-main-surface"));
+        assert!(!CSS.contains("main.main-surface"));
+    }
+
+    #[test]
+    fn stable_app_identity_allows_a_versioned_path_change() {
+        let state = EngineState {
+            codex_executable: Some("C:\\old\\ChatGPT.exe".into()),
+            codex_app_user_model_id: Some("OpenAI.Codex_2p2nqsd0c76g0!App".into()),
+            ..EngineState::default()
+        };
+        let current = CodexInstall {
+            executable: "C:\\new\\ChatGPT.exe".into(),
+            bundle: None,
+            version: Some("26.727.6591.0".into()),
+            app_user_model_id: Some("OpenAI.Codex_2p2nqsd0c76g0!App".into()),
+        };
+        assert!(install_matches_state(&state, &current));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn legacy_state_recovers_store_package_identity_from_the_old_path() {
+        let state = EngineState {
+            codex_executable: Some(
+                "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.721.11231.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe"
+                    .into(),
+            ),
+            ..EngineState::default()
+        };
+        let current = CodexInstall {
+            executable: "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.727.6591.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe".into(),
+            bundle: None,
+            version: Some("26.727.6591.0".into()),
+            app_user_model_id: Some("OpenAI.Codex_2p2nqsd0c76g0!App".into()),
+        };
+        assert!(install_matches_state(&state, &current));
     }
 }

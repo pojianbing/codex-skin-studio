@@ -176,28 +176,28 @@ html.codex-skin-studio .skin-application-menu-surface {
 html.codex-skin-studio aside.app-shell-left-panel {
   color: var(--skin-text) !important;
 }
-html.codex-skin-studio main.main-surface {
+html.codex-skin-studio .skin-main-surface {
   color: var(--skin-text) !important;
   background: linear-gradient(90deg, color-mix(in oklab, var(--skin-surface) 64%, transparent), color-mix(in oklab, var(--skin-surface) 30%, transparent)) !important;
   border: 0 !important;
   box-shadow: none !important;
 }
-html.codex-skin-studio.skin-safe-left main.main-surface {
+html.codex-skin-studio.skin-safe-left .skin-main-surface {
   background: linear-gradient(90deg, color-mix(in oklab, var(--skin-surface) 64%, transparent), color-mix(in oklab, var(--skin-surface) 30%, transparent)) !important;
 }
-html.codex-skin-studio.skin-safe-right main.main-surface {
+html.codex-skin-studio.skin-safe-right .skin-main-surface {
   background: linear-gradient(270deg, color-mix(in oklab, var(--skin-surface) 72%, transparent), color-mix(in oklab, var(--skin-surface) 26%, transparent)) !important;
 }
-html.codex-skin-studio.skin-safe-center main.main-surface {
+html.codex-skin-studio.skin-safe-center .skin-main-surface {
   background: color-mix(in oklab, var(--skin-surface) 48%, transparent) !important;
 }
-html.codex-skin-studio.skin-safe-none main.main-surface {
+html.codex-skin-studio.skin-safe-none .skin-main-surface {
   background: transparent !important;
 }
-html.codex-skin-studio main.main-surface > header.app-header-tint {
+html.codex-skin-studio .skin-main-surface > .skin-header-surface {
   color: var(--skin-text) !important;
 }
-html.codex-skin-studio main.main-surface [role="main"] {
+html.codex-skin-studio .skin-main-surface [role="main"] {
   color: var(--skin-text) !important;
   background: transparent !important;
 }
@@ -487,7 +487,7 @@ html.codex-skin-studio.skin-level-slider-custom [data-model-picker-power-slider]
   box-shadow: 0 0 2px color-mix(in srgb, #000 12%, transparent) !important;
 }
 @media (max-width: 760px) {
-  html.codex-skin-studio main.main-surface { background: color-mix(in oklab, var(--skin-surface) 78%, transparent) !important; }
+  html.codex-skin-studio .skin-main-surface { background: color-mix(in oklab, var(--skin-surface) 78%, transparent) !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   html.codex-skin-studio *, html.codex-skin-studio *::before, html.codex-skin-studio *::after { transition: none !important; animation: none !important; }

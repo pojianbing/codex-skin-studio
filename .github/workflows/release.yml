@@ -64,7 +64,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: Codex Skin Studio v__VERSION__
-          releaseBody: See the assets below to download and install this version.
+          releaseBody: "Supports Windows x64 and macOS (Apple Silicon and Intel). See the assets below to download and install this version."
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true

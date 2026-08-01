@@ -203,23 +203,30 @@ async fn get_dashboard(app: tauri::AppHandle) -> std::result::Result<Dashboard, 
         let themes = themes::list_themes().map_err(|error| error.to_string())?;
         let state = engine::read_state();
         let install = platform::find_codex().map_err(|error| error.to_string())?;
-        let message = if state.mode == "active"
-            && install
-                .as_ref()
-                .map(|install| platform::main_pids(install).map(|pids| pids.is_empty()))
-                .transpose()
-                .map_err(|error| error.to_string())?
-                .unwrap_or(true)
-        {
-            "后台守护已就绪，等待 Codex 启动".into()
+        let codex_running = install
+            .as_ref()
+            .map(|install| platform::main_pids(install).map(|pids| !pids.is_empty()))
+            .transpose()
+            .map_err(|error| error.to_string())?
+            .unwrap_or(false);
+        let session_healthy = state.mode == "active"
+            && codex_running
+            && state
+                .port
+                .zip(state.browser_id.as_deref())
+                .is_some_and(|(port, browser_id)| cdp::session_is_healthy(port, browser_id));
+        let (mode, message) = if state.mode == "active" && !codex_running {
+            (state.mode.clone(), "后台守护已就绪，等待 Codex 启动".into())
+        } else if state.mode == "active" && !session_healthy {
+            ("error".into(), "主题会话未连接，后台正在尝试恢复".into())
         } else {
-            state.message
+            (state.mode.clone(), state.message.clone())
         };
         Ok(Dashboard {
             platform: platform::platform_label(),
             codex_found: install.is_some(),
             codex_version: install.and_then(|value| value.version),
-            mode: state.mode,
+            mode,
             active_theme_id: state.active_theme_id,
             port: state.port,
             message,

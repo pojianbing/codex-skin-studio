@@ -9,6 +9,8 @@ use url::Url;
 
 const MEDIA_STATE: &str = "__CODEX_SKIN_STUDIO_MEDIA__";
 const MEDIA_CHUNK_BYTES: usize = 1024 * 1024;
+const CODEX_RENDERER_PROBE: &str = "Boolean(document.querySelector('main[data-app-shell-main-surface], main.main-surface') && document.querySelector('aside.app-shell-left-panel'))";
+const RENDERER_HEALTH_CHECK: &str = "Boolean(window.__CODEX_SKIN_STUDIO_STATE__?.revision && window.__CODEX_SKIN_STUDIO_STATE__?.ensure?.() === true && document.getElementById('codex-skin-studio-style') && document.documentElement.classList.contains('codex-skin-studio'))";
 
 #[derive(Clone)]
 pub struct MediaPayload {
@@ -172,7 +174,24 @@ impl TargetSession {
 }
 
 fn verified_codex_target(session: &mut TargetSession) -> bool {
-    session.evaluate("Boolean(document.querySelector('main.main-surface') && document.querySelector('aside.app-shell-left-panel'))").ok().and_then(|value| value.as_bool()).unwrap_or(false)
+    session
+        .evaluate(CODEX_RENDERER_PROBE)
+        .ok()
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+}
+
+fn verify_renderer_result(result: &Value) -> Result<()> {
+    if result.get("installed").and_then(Value::as_bool) == Some(true) {
+        return Ok(());
+    }
+    let reason = result
+        .get("reason")
+        .and_then(Value::as_str)
+        .unwrap_or("unknown");
+    Err(StudioError::from(format!(
+        "Renderer 未能安装主题：{reason}"
+    )))
 }
 
 fn media_ready(session: &mut TargetSession, asset_id: &str) -> bool {
@@ -239,16 +258,53 @@ pub fn inject(
             .ok()
             .and_then(|value| value.as_str().map(str::to_owned));
         let ready = media_ready(&mut session, &media.asset_id);
-        if installed.as_deref() != Some(revision) || !ready {
-            upload_media(&mut session, media)?;
-            session.evaluate(payload)?;
+        if installed.as_deref() == Some(revision) && ready {
+            let healthy = session
+                .evaluate(RENDERER_HEALTH_CHECK)
+                .ok()
+                .and_then(|value| value.as_bool())
+                .unwrap_or(false);
+            if healthy {
+                count += 1;
+                continue;
+            }
         }
+        if !ready {
+            upload_media(&mut session, media)?;
+        }
+        verify_renderer_result(&session.evaluate(payload)?)?;
         count += 1;
     }
     if count == 0 {
         return Err(StudioError::from("没有找到经过验证的 Codex renderer"));
     }
     Ok(count)
+}
+
+pub fn session_is_healthy(port: u16, expected_browser_id: &str) -> bool {
+    if browser_id(port).ok().as_deref() != Some(expected_browser_id) {
+        return false;
+    }
+    let Ok(targets) = list_targets(port) else {
+        return false;
+    };
+    for target in targets {
+        let Ok(mut session) = TargetSession::connect(&target) else {
+            continue;
+        };
+        if !verified_codex_target(&mut session) {
+            continue;
+        }
+        if session
+            .evaluate(RENDERER_HEALTH_CHECK)
+            .ok()
+            .and_then(|value| value.as_bool())
+            .unwrap_or(false)
+        {
+            return true;
+        }
+    }
+    false
 }
 
 pub fn wait_and_inject(
@@ -297,7 +353,8 @@ pub fn cleanup(port: u16, expected_browser_id: Option<&str>) -> Result<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::validate_ws;
+    use super::{CODEX_RENDERER_PROBE, validate_ws, verify_renderer_result};
+    use serde_json::json;
 
     #[test]
     fn accepts_only_same_port_loopback_page_urls() {
@@ -314,5 +371,23 @@ mod tests {
                 "accepted {value}"
             );
         }
+    }
+
+    #[test]
+    fn renderer_probe_supports_current_and_legacy_shell_markers() {
+        assert!(CODEX_RENDERER_PROBE.contains("data-app-shell-main-surface"));
+        assert!(CODEX_RENDERER_PROBE.contains("main.main-surface"));
+        assert!(CODEX_RENDERER_PROBE.contains("aside.app-shell-left-panel"));
+    }
+
+    #[test]
+    fn renderer_result_must_report_a_real_install() {
+        assert!(verify_renderer_result(&json!({ "installed": true })).is_ok());
+        let error = verify_renderer_result(&json!({
+            "installed": false,
+            "reason": "shell-not-ready"
+        }))
+        .unwrap_err();
+        assert!(error.to_string().contains("shell-not-ready"));
     }
 }

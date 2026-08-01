@@ -546,6 +546,8 @@ pub struct EngineState {
     pub active_theme_id: Option<String>,
     pub port: Option<u16>,
     pub codex_executable: Option<String>,
+    #[serde(default)]
+    pub codex_app_user_model_id: Option<String>,
     pub codex_bundle: Option<String>,
     pub browser_id: Option<String>,
     pub message: String,
@@ -554,11 +556,12 @@ pub struct EngineState {
 impl Default for EngineState {
     fn default() -> Self {
         Self {
-            schema_version: 1,
+            schema_version: 2,
             mode: "official".into(),
             active_theme_id: None,
             port: None,
             codex_executable: None,
+            codex_app_user_model_id: None,
             codex_bundle: None,
             browser_id: None,
             message: "Codex 正在使用官方主题".into(),
@@ -598,7 +601,7 @@ pub struct CodexInstall {
 
 #[cfg(test)]
 mod tests {
-    use super::{ComposerConfig, ThemeManifest, UiConfig};
+    use super::{ComposerConfig, EngineState, ThemeManifest, UiConfig};
 
     #[test]
     fn default_configuration_matches_greenwood_theme() {
@@ -679,5 +682,24 @@ mod tests {
         .expect("previous composer settings should deserialize");
 
         assert!(!composer.show_footer_backdrop);
+    }
+
+    #[test]
+    fn legacy_engine_state_defaults_the_stable_app_identity() {
+        let state: EngineState = serde_json::from_str(
+            r#"{
+                "schemaVersion": 1,
+                "mode": "active",
+                "activeThemeId": "test-theme",
+                "port": 9335,
+                "codexExecutable": "C:\\old\\ChatGPT.exe",
+                "codexBundle": null,
+                "browserId": "old-browser",
+                "message": "active"
+            }"#,
+        )
+        .expect("legacy engine state should deserialize");
+
+        assert!(state.codex_app_user_model_id.is_none());
     }
 }

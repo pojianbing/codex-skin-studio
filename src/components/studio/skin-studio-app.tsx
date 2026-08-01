@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import {
   Download, ImagePlus, Library, LoaderCircle, Pause, Play,
-  RotateCcw, ShieldCheck, Trash2, Upload,
+  RotateCcw, ShieldAlert, ShieldCheck, Trash2, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -362,6 +362,7 @@ export function SkinStudioApp() {
   const modeLabel = dashboard.mode === 'active' ? '主题运行中'
     : dashboard.mode === 'paused' ? '主题已暂停'
       : dashboard.mode === 'error' ? '需要处理' : '官方主题'
+  const StatusIcon = dashboard.mode === 'error' ? ShieldAlert : ShieldCheck
 
   return (
     <div className="skin-studio flex w-full h-full min-h-0 overflow-hidden bg-transparent text-foreground font-sans selection:bg-primary/20">
@@ -562,7 +563,11 @@ export function SkinStudioApp() {
         {/* Footer actions */}
         <footer className="flex min-h-[76px] flex-none flex-wrap items-center justify-between gap-3 border-t border-border bg-background px-6 py-3 max-[640px]:px-3">
           <div className="flex items-center gap-2.5 text-foreground">
-            <ShieldCheck size={18} strokeWidth={2.5} className="text-emerald-500" />
+            <StatusIcon
+              size={18}
+              strokeWidth={2.5}
+              className={dashboard.mode === 'error' ? 'text-amber-400' : 'text-emerald-500'}
+            />
             <div className="flex flex-col">
               <span className="text-xs font-bold text-zinc-50">{modeLabel}</span>
               <small className="text-[10px] text-zinc-400 mt-0.5 max-w-[360px] truncate">
@@ -571,7 +576,7 @@ export function SkinStudioApp() {
             </div>
           </div>
           <div className="flex gap-2 items-center">
-            {dashboard.mode === 'active' && (
+            {(dashboard.mode === 'active' || dashboard.mode === 'error') && (
               <Button
                 variant="outline"
                 size="sm"

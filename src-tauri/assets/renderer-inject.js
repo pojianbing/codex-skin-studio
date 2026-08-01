@@ -5,8 +5,33 @@
   const mediaStore = window[MEDIA_STATE];
   const mediaAsset = mediaStore?.assets?.[assetId];
   const modelPickerLayout = preferences?.modelPickerLayout === 'flat' ? 'flat' : 'native';
+  const mainSurfaceSelector = 'main[data-app-shell-main-surface], main.main-surface';
+  const appHeaderSelector = [
+    'main[data-app-shell-main-surface] > header[data-app-shell-application-menu-bar]',
+    'main.main-surface > header.app-header-tint',
+  ].join(', ');
+  const legacyApplicationMenuSelector = '[class~="group/application-menu-top-bar"]';
+  const findMainSurface = () => document.querySelector(mainSurfaceSelector);
+  const findAppHeader = (surface = findMainSurface()) => surface?.querySelector(
+    ':scope > header[data-app-shell-application-menu-bar], :scope > header.app-header-tint',
+  );
+  const applicationMenuIsRequired = () => (
+    document.documentElement?.getAttribute('data-codex-window-chrome') === 'application-menu'
+  );
+  const findApplicationMenuSurface = () => {
+    if (applicationMenuIsRequired()) {
+      for (const menubar of document.querySelectorAll('#root [role="menubar"]')) {
+        if (menubar.querySelector('[id^="application-menu-trigger-"]')) {
+          return menubar.parentElement;
+        }
+      }
+    }
+    return document.querySelector(legacyApplicationMenuSelector);
+  };
   if (current?.revision === revision && mediaAsset?.url === current.artUrl) {
-    current.ensure?.();
+    if (current.ensure?.() !== true) {
+      return { installed: false, reason: 'shell-not-ready' };
+    }
     return { installed: true, revision, reused: true };
   }
 
@@ -79,6 +104,29 @@
         configurableSurfaceShadows[value.shadow] || configurableSurfaceShadows[defaults.shadow],
       );
     });
+  };
+  const headerSurfaceDefaults = {
+    color: 'var(--skin-surface)', opacity: 0.42, borderOpacity: 0.25,
+    blur: 8, radius: 0, shadow: 'none',
+  };
+  const applyApplicationMenuSurface = () => {
+    const applicationMenu = findApplicationMenuSurface();
+    applyConfigurableSurface(
+      applicationMenu,
+      'skin-application-menu-surface',
+      {
+        ...theme.ui?.header,
+        visible: true,
+        opacity: Math.max(
+          0.72,
+          clamp(theme.ui?.header?.opacity, 0, 1, headerSurfaceDefaults.opacity),
+        ),
+        radius: 0,
+        shadow: 'none',
+      },
+      headerSurfaceDefaults,
+    );
+    return applicationMenu;
   };
 
   const updateLevelSlider = (slider) => {
@@ -393,7 +441,7 @@
     for (const title of welcomeTitles) {
       title.classList.toggle('skin-home-welcome-title-hidden', homeWelcome.titleVisible === false);
     }
-    document.querySelector('main.main-surface')?.classList.toggle('skin-home-shell', Boolean(home));
+    findMainSurface()?.classList.toggle('skin-home-shell', Boolean(home));
   };
 
   const fileChangeFadeSelector = 'div[class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="-bottom-1"][class~="h-7"][class~="bg-gradient-to-t"][class~="from-token-main-surface-primary"][class~="to-transparent"]';
@@ -454,28 +502,16 @@
       }
     }
 
-    const headerDefaults = {
-      color: 'var(--skin-surface)', opacity: 0.42, borderOpacity: 0.25,
-      blur: 8, radius: 0, shadow: 'none',
-    };
     for (const sidebar of relatedMatches(scope, 'aside.app-shell-left-panel')) {
       applyConfigurableSurface(sidebar, 'skin-sidebar-surface', ui.sidebar, {
         color: 'var(--skin-sidebar)', opacity: 0.66, borderOpacity: 0.25,
         blur: 8, radius: 0, shadow: 'none',
       });
     }
-    for (const header of relatedMatches(scope, 'main.main-surface > header.app-header-tint')) {
-      applyConfigurableSurface(header, 'skin-header-surface', ui.header, headerDefaults);
+    for (const header of relatedMatches(scope, appHeaderSelector)) {
+      applyConfigurableSurface(header, 'skin-header-surface', ui.header, headerSurfaceDefaults);
     }
-    for (const menu of relatedMatches(scope, '[class~="group/application-menu-top-bar"]')) {
-      applyConfigurableSurface(menu, 'skin-application-menu-surface', {
-        ...ui.header,
-        visible: true,
-        opacity: Math.max(0.72, clamp(ui.header?.opacity, 0, 1, headerDefaults.opacity)),
-        radius: 0,
-        shadow: 'none',
-      }, headerDefaults);
-    }
+    applyApplicationMenuSurface();
     for (const bubble of relatedMatches(scope, '[data-user-message-bubble="true"]')) {
       applyConfigurableSurface(bubble, 'skin-user-bubble-surface', ui.userBubble, {
         color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.25,
@@ -552,9 +588,10 @@
   };
 
   const ensure = () => {
-    const shell = document.querySelector('main.main-surface');
+    const shell = findMainSurface();
     const sidebar = document.querySelector('aside.app-shell-left-panel');
     if (!shell || !sidebar) return false;
+    shell.classList.add('skin-main-surface');
     let style = document.getElementById('codex-skin-studio-style');
     if (!style) {
       style = document.createElement('style');
@@ -720,30 +757,14 @@
       color: 'var(--skin-sidebar)', opacity: 0.66, borderOpacity: 0.25,
       blur: 8, radius: 0, shadow: 'none',
     });
-    const headerDefaults = {
-      color: 'var(--skin-surface)', opacity: 0.42, borderOpacity: 0.25,
-      blur: 8, radius: 0, shadow: 'none',
-    };
-    const taskHeader = document.querySelector('main.main-surface > header.app-header-tint');
-    const applicationMenu = document.querySelector('[class~="group/application-menu-top-bar"]');
+    const taskHeader = findAppHeader(shell);
     applyConfigurableSurface(
       taskHeader,
       'skin-header-surface',
       ui.header,
-      headerDefaults,
+      headerSurfaceDefaults,
     );
-    applyConfigurableSurface(
-      applicationMenu,
-      'skin-application-menu-surface',
-      {
-        ...ui.header,
-        visible: true,
-        opacity: Math.max(0.72, clamp(ui.header?.opacity, 0, 1, headerDefaults.opacity)),
-        radius: 0,
-        shadow: 'none',
-      },
-      headerDefaults,
-    );
+    const applicationMenu = applyApplicationMenuSurface();
     for (const bubble of document.querySelectorAll('[data-user-message-bubble="true"]')) {
       applyConfigurableSurface(bubble, 'skin-user-bubble-surface', ui.userBubble, {
         color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.25,
@@ -892,18 +913,27 @@
       title.classList.toggle('skin-home-welcome-title-hidden', homeWelcome.titleVisible === false);
     }
     shell.classList.toggle('skin-home-shell', Boolean(home));
-    return true;
+    return !applicationMenuIsRequired()
+      || Boolean(applicationMenu?.classList.contains('skin-application-menu-surface'));
   };
 
   const healthCheck = () => {
-    if (!document.getElementById('codex-skin-studio-style')
-      || !root.classList.contains('codex-skin-studio')) {
-      ensure();
-      return;
+    const shell = findMainSurface();
+    const style = document.getElementById('codex-skin-studio-style');
+    const applicationMenu = findApplicationMenuSurface();
+    const applicationMenuIsHealthy = !applicationMenuIsRequired()
+      || applicationMenu?.classList.contains('skin-application-menu-surface');
+    if (!shell?.classList.contains('skin-main-surface')
+      || !style
+      || style.textContent !== cssText
+      || !root.classList.contains('codex-skin-studio')
+      || !applicationMenuIsHealthy) {
+      return ensure();
     }
     if (isVideo && !document.getElementById('codex-skin-studio-video')) {
       ensureVideoLayer();
     }
+    return true;
   };
   const flushPendingNodes = () => {
     scheduled = undefined;
@@ -962,6 +992,7 @@
     ]) root.style.removeProperty(property);
     document.querySelectorAll('.skin-home').forEach((node) => node.classList.remove('skin-home'));
     document.querySelectorAll('.skin-task').forEach((node) => node.classList.remove('skin-task'));
+    document.querySelectorAll('.skin-main-surface').forEach((node) => node.classList.remove('skin-main-surface'));
     document.querySelectorAll('.skin-home-shell').forEach((node) => node.classList.remove('skin-home-shell'));
     document.querySelectorAll('.skin-home-welcome-icon-hidden').forEach((node) => node.classList.remove('skin-home-welcome-icon-hidden'));
     document.querySelectorAll('.skin-home-welcome-title-hidden').forEach((node) => node.classList.remove('skin-home-welcome-title-hidden'));
@@ -1018,7 +1049,13 @@
   observer = new MutationObserver((records) => {
     let healthRequired = false;
     for (const record of records) {
-      record.addedNodes.forEach(scheduleNode);
+      record.addedNodes.forEach((node) => {
+        scheduleNode(node);
+        if (node instanceof Element
+          && (node.matches(mainSurfaceSelector) || node.querySelector?.(mainSurfaceSelector))) {
+          healthRequired = true;
+        }
+      });
       for (const node of record.removedNodes) {
         if (node instanceof Element
           && (node.id === 'codex-skin-studio-style'
@@ -1055,7 +1092,10 @@
   flatMenuResizeHandler = () => requestAnimationFrame(refreshFlatSubmenus);
   window.addEventListener('resize', flatMenuResizeHandler, { passive: true });
   healthTimer = setInterval(healthCheck, 30000);
+  if (!ensure()) {
+    cleanup();
+    return { installed: false, reason: 'shell-not-ready' };
+  }
   window[STATE] = { revision, assetId, ensure: healthCheck, cleanup, observer, healthTimer, artUrl };
-  ensure();
   return { installed: true, revision };
 })(__SKIN_CSS__, __SKIN_MEDIA_ID__, __SKIN_THEME__, { modelPickerLayout: __SKIN_MODEL_PICKER_LAYOUT__ }, __SKIN_REVISION__)
