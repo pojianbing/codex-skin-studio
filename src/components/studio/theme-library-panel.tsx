@@ -54,7 +54,7 @@ function VideoPreview({ theme }: { theme: ThemeRecord }) {
 
   return (
     <span
-      className="relative z-0 block w-full aspect-video pointer-events-none bg-muted bg-center bg-cover"
+      className="theme-card-media relative z-0 block w-full aspect-video pointer-events-none bg-muted bg-center bg-cover"
       style={{ backgroundImage: `url(${previewDataUrl})` }}
     >
       {videoSource && (
@@ -104,8 +104,8 @@ export function ThemeLibraryPanel({
   onExportTheme,
 }: ThemeLibraryPanelProps) {
   return (
-          <div className="overflow-y-auto border-r border-border bg-background p-6">
-            <div className="mb-4 flex items-center gap-3">
+          <div className="theme-library-panel overflow-y-auto border-r border-border bg-background p-6">
+            <div className="library-filter-bar mb-4 flex items-center gap-3">
               <span className="shrink-0 text-[10px] font-medium text-muted-foreground">主题类型</span>
               <div className="flex min-w-0 flex-1 rounded-md bg-muted p-1" role="group" aria-label="主题类型筛选">
                 {([
@@ -130,12 +130,12 @@ export function ThemeLibraryPanel({
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="theme-grid grid grid-cols-1 gap-4 sm:grid-cols-2">
               {filteredThemes.map((theme) => (
                 <article
                   key={theme.id}
                   className={cn(
-                    'group relative flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground transition-colors',
+                    'theme-card group relative flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground transition-colors',
                     selected?.id === theme.id
                       ? 'border-ring ring-2 ring-ring/30'
                       : 'border-border hover:border-ring/50',
@@ -152,7 +152,7 @@ export function ThemeLibraryPanel({
                     <VideoPreview theme={theme} />
                   ) : (
                     <span
-                      className="relative z-0 block w-full aspect-video pointer-events-none bg-muted bg-center bg-cover"
+                      className="theme-card-media relative z-0 block w-full aspect-video pointer-events-none bg-muted bg-center bg-cover"
                       style={{ backgroundImage: `url(${theme.previewDataUrl})` }}
                     >
                       <div className="absolute inset-0 bg-black/30" />
@@ -174,7 +174,7 @@ export function ThemeLibraryPanel({
                     <Download size={11} />
                     <span>导出</span>
                   </button>
-                  <span className="relative z-0 flex flex-col pointer-events-none p-3.5">
+                  <span className="theme-card-body relative z-0 flex flex-col pointer-events-none p-3.5">
                     <b className="truncate text-sm font-medium text-card-foreground">{theme.name}</b>
                     <div className="mt-2 flex items-center gap-1.5">
                       <span className={cn(
@@ -195,14 +195,21 @@ export function ThemeLibraryPanel({
               ))}
               {filteredThemes.length > 0 ? (
                 <button
-                  className="group flex min-h-[160px] flex-col items-center justify-center gap-2.5 rounded-lg border border-dashed border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="theme-card-import group flex flex-col rounded-lg border border-dashed border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  type="button"
+                  aria-label="导入图片或视频背景"
                   onClick={() => void onImportWallpaper()}
                 >
-                  <ImagePlus size={20} />
-                  <span className="text-xs font-medium">导入图片或视频背景</span>
+                  <span className="theme-card-import-media">
+                    <ImagePlus size={21} />
+                  </span>
+                  <span className="theme-card-import-body">
+                    <strong>导入图片或视频背景</strong>
+                    <small>支持图片与 MP4 视频</small>
+                  </span>
                 </button>
               ) : (
-                <div className="col-span-full flex min-h-[190px] flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/30 px-6 text-center">
+                <div className="theme-library-empty col-span-full flex min-h-[190px] flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/30 px-6 text-center">
                   <ImagePlus size={24} strokeWidth={1.5} className="text-muted-foreground" />
                   <div className="space-y-1">
                     <p className="text-xs font-medium text-foreground">

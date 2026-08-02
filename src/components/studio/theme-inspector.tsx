@@ -78,14 +78,14 @@ export function ThemeInspector({
   updateUi,
 }: ThemeInspectorProps) {
   return (
-          <aside className="flex min-h-0 flex-col overflow-hidden bg-zinc-900/20 backdrop-blur-xl border-l border-zinc-800/40">
+          <aside className="theme-inspector flex min-h-0 flex-col overflow-hidden bg-zinc-900/20 backdrop-blur-xl border-l border-zinc-800/40">
             {selected ? (
               <>
-                <div className="shrink-0 border-b border-zinc-850/40 bg-zinc-900/15 px-5 pt-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all duration-300">
+                <div className="inspector-preview-header shrink-0 border-b border-zinc-850/40 bg-zinc-900/15 px-5 pt-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all duration-300">
                   <div className="mb-2.5 flex items-center justify-between gap-3">
                     <button
                       onClick={onTogglePreview}
-                      className="flex min-w-0 items-center gap-2 hover:text-zinc-50 transition-colors cursor-pointer group"
+                      className="preview-toggle flex min-w-0 items-center gap-2 hover:text-zinc-50 transition-colors cursor-pointer group"
                     >
                       <span className="flex h-5 w-5 items-center justify-center rounded bg-zinc-800/80 text-zinc-300 group-hover:bg-zinc-700 transition-colors">
                         <PanelRight size={11} />
@@ -121,14 +121,14 @@ export function ThemeInspector({
                   </div>
                 </div>
 
-                <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5">
+                <div className="inspector-body flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5">
                   {/* Theme Title Header */}
-                  <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+                  <div className="inspector-title-row flex items-center justify-between pb-4 border-b border-zinc-800">
                     <div>
                       <h2 className="text-base font-bold text-zinc-50">{selected.name}</h2>
 
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="inspector-actions flex items-center gap-1.5">
                       <Button
                         size="sm"
                         title="导出当前主题包"
@@ -176,7 +176,7 @@ export function ThemeInspector({
 
 
                   {/* Advanced UI Settings */}
-                  <div className="flex flex-col gap-2 pb-5 border-b border-zinc-800/40">
+                  <div className="inspector-settings flex flex-col gap-2 pb-5 border-b border-zinc-800/40">
                     <label className="mb-1 flex items-center gap-2 text-xs font-bold text-zinc-450 tracking-wide uppercase">
                       <SlidersHorizontal size={13} className="text-zinc-550" />
                       <span>界面元素</span>

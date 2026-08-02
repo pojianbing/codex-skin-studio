@@ -107,7 +107,7 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
 
   return (
     <>
-      <header className="flex h-[68px] shrink-0 items-center justify-between border-b border-zinc-850/40 bg-zinc-900/35 backdrop-blur-md px-6">
+      <header className="store-topbar flex h-[68px] shrink-0 items-center justify-between border-b border-zinc-850/40 bg-zinc-900/35 backdrop-blur-md px-6">
         <div className="min-w-0">
           <h1 className="text-lg font-bold tracking-tight text-zinc-50">主题商店</h1>
           <p className="mt-0.5 text-xs text-zinc-400">
@@ -140,8 +140,8 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
         </div>
       </header>
 
-      <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
-        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-850/40 bg-zinc-900/20 backdrop-blur-sm px-6 py-3">
+      <section className="theme-store flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
+        <div className="store-toolbar flex flex-wrap items-center gap-2 border-b border-zinc-850/40 bg-zinc-900/20 backdrop-blur-sm px-6 py-3">
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -178,7 +178,7 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
           ))}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="store-grid-wrap min-h-0 flex-1 overflow-y-auto p-6">
           {loading && !catalog ? (
             <div className="flex h-full min-h-[280px] items-center justify-center gap-2 text-xs font-semibold text-zinc-500 animate-pulse">
               <LoaderCircle size={18} className="animate-spin" />
@@ -186,9 +186,9 @@ export function ThemeStore({ onInstalled }: ThemeStoreProps) {
             </div>
           ) : catalog ? (
             visibleThemes.length > 0 ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+              <div className="store-grid grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                 {visibleThemes.map((theme) => (
-                  <article key={theme.id} className="group overflow-hidden rounded-xl border border-zinc-850/60 bg-gradient-to-b from-zinc-900/55 to-zinc-950/80 backdrop-blur-sm shadow-sm hover:border-zinc-700 transition-colors duration-150">
+                  <article key={theme.id} className="store-card group overflow-hidden rounded-xl border border-zinc-850/60 bg-gradient-to-b from-zinc-900/55 to-zinc-950/80 backdrop-blur-sm shadow-sm hover:border-zinc-700 transition-colors duration-150">
                     <div className="relative aspect-video overflow-hidden bg-zinc-950">
                       <img
                         src={theme.previewUrl}

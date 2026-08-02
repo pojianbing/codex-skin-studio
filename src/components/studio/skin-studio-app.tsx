@@ -6,7 +6,6 @@ import {
   RotateCcw, ShieldAlert, ShieldCheck, Trash2, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Toaster } from '@/components/ui/sonner'
 import { AppUpdater } from '@/components/app-updater'
@@ -29,7 +28,6 @@ import { type ElementTab, type PreviewElementId, previewElementMeta } from '@/li
 import {
   type ApplyPlan,
   type Dashboard,
-  type ModelPickerLayout,
   type ThemeFilter,
   type ThemeRecord,
   type ThemeUpdate,
@@ -341,14 +339,6 @@ export function SkinStudioApp() {
     )
   }
 
-  const setModelPickerLayout = async (layout: ModelPickerLayout) => {
-    await run(
-      'model-picker-layout',
-      () => invoke('set_model_picker_layout', { layout }),
-      layout === 'flat' ? '已启用平铺模型菜单' : '已恢复原生模型菜单',
-    )
-  }
-
   const handleStoreInstalled = async (themeId: string) => {
     setSelectedId(themeId)
     await refresh()
@@ -365,15 +355,15 @@ export function SkinStudioApp() {
   const StatusIcon = dashboard.mode === 'error' ? ShieldAlert : ShieldCheck
 
   return (
-    <div className="skin-studio flex w-full h-full min-h-0 overflow-hidden bg-transparent text-foreground font-sans selection:bg-primary/20">
+    <div className="skin-studio app-shell flex w-full h-full min-h-0 overflow-hidden bg-transparent text-foreground font-sans selection:bg-primary/20">
       {/* Sidebar */}
-      <aside className="flex w-64 flex-none flex-col border-r border-sidebar-border bg-sidebar p-4 text-sidebar-foreground max-[800px]:w-16 max-[800px]:p-2">
+      <aside className="studio-sidebar flex w-64 flex-none flex-col border-r border-sidebar-border bg-sidebar p-4 text-sidebar-foreground max-[800px]:w-16 max-[800px]:p-2">
         {/* Brand mark */}
         <button
           type="button"
           onClick={handleBrandMarkClick}
           aria-label="Skin Studio"
-          className="flex w-full items-center gap-3 border-b border-sidebar-border px-2 pb-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50"
+          className="studio-brand flex w-full items-center gap-3 border-b border-sidebar-border px-2 pb-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50"
         >
           <img
             src="/app-icon.png"
@@ -387,7 +377,7 @@ export function SkinStudioApp() {
         </button>
 
         {/* Navigation list */}
-        <nav className="flex-1 pt-3" aria-label="主导航">
+        <nav className="studio-nav flex-1 pt-3" aria-label="主导航">
           <ul className="flex flex-col gap-1">
           <li>
           <button
@@ -397,7 +387,7 @@ export function SkinStudioApp() {
             aria-label="主题库"
             onClick={() => setActiveView('library')}
             className={cn(
-              'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 max-[800px]:justify-center max-[800px]:px-0',
+              'studio-nav-button flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 max-[800px]:justify-center max-[800px]:px-0',
               activeView === 'library' 
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                 : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -415,7 +405,7 @@ export function SkinStudioApp() {
             aria-label="主题商店"
             onClick={() => setActiveView('store')}
             className={cn(
-              'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 max-[800px]:justify-center max-[800px]:px-0',
+              'studio-nav-button flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 max-[800px]:justify-center max-[800px]:px-0',
               activeView === 'store' 
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                 : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -429,7 +419,7 @@ export function SkinStudioApp() {
         </nav>
 
         {/* Compact app information */}
-        <div className="mt-auto flex items-center justify-between gap-2 border-t border-sidebar-border px-1 pt-3 text-[10px] max-[800px]:justify-center">
+        <div className="studio-sidebar-footer mt-auto flex items-center justify-between gap-2 border-t border-sidebar-border px-1 pt-3 text-[10px] max-[800px]:justify-center">
           <span className="shrink-0 text-muted-foreground max-[800px]:hidden">应用版本</span>
           <div className="flex items-center gap-1.5">
             <AppearanceToggle />
@@ -439,14 +429,15 @@ export function SkinStudioApp() {
       </aside>
 
       {/* Main Workspace */}
-      <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-transparent">
+      <main className="studio-main flex-1 flex flex-col min-w-0 min-h-0 bg-transparent">
         {activeView === 'store' ? (
           <ThemeStore onInstalled={handleStoreInstalled} />
         ) : (
           <>
         {/* Topbar */}
-        <header className="flex min-h-[68px] flex-none flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-6 py-3 max-[640px]:px-3">
-          <div>
+        <header className="studio-topbar flex min-h-[68px] flex-none flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-6 py-3 max-[640px]:px-3">
+          <div className="studio-page-heading">
+            <div className="studio-eyebrow"><span className="studio-live-dot" />LOCAL WORKSPACE</div>
             <h1 className="text-lg font-bold tracking-tight text-zinc-50">主题库</h1>
             <p className="text-xs text-zinc-400 mt-0.5">
               {themeFilter === 'all'
@@ -454,7 +445,7 @@ export function SkinStudioApp() {
                 : `${filteredThemes.length} / ${dashboard.themes.length} 个本地主题`}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="studio-toolbar flex flex-wrap items-center gap-2">
             <label className="flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground">
               <Switch
                 checked={dashboard.autostartEnabled}
@@ -462,7 +453,7 @@ export function SkinStudioApp() {
                 disabled={Boolean(working)}
                 aria-label="开机启动"
               />
-              <span>开机启动</span>
+              <span className="studio-toolbar-copy">开机启动</span>
             </label>
             <label className="flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground">
               <Switch
@@ -471,29 +462,12 @@ export function SkinStudioApp() {
                 disabled={Boolean(working)}
                 aria-label="启动 Skin Studio 时自动打开 Codex"
               />
-              <span>启动时打开 Codex</span>
+              <span className="studio-toolbar-copy">启动时打开 Codex</span>
             </label>
-            <div className="flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-foreground">
-              <span className="text-zinc-400">模型菜单</span>
-              <Select
-                value={dashboard.modelPickerLayout}
-                onValueChange={(value) => {
-                  if (value === 'native' || value === 'flat') void setModelPickerLayout(value)
-                }}
-                disabled={Boolean(working)}
-              >
-                <SelectTrigger size="sm" className="h-6 min-w-[92px] border-0 bg-transparent px-1.5 text-[11px] shadow-none focus-visible:ring-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="native">原生菜单</SelectItem>
-                  <SelectItem value="flat">平铺选择</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <Button
               variant="outline"
               size="sm"
+              title="导入背景"
               onClick={() => void importWallpaper()}
               disabled={Boolean(working)}
               className="cursor-pointer"
@@ -503,12 +477,13 @@ export function SkinStudioApp() {
               ) : (
                 <ImagePlus size={15} />
               )}
-              导入背景
+              <span className="studio-toolbar-copy">导入背景</span>
             </Button>
             <Button
               onClick={() => void importThemeBundle()}
               disabled={Boolean(working)}
               size="sm"
+              title="导入主题包"
               className="cursor-pointer"
             >
               {working === 'import-theme' ? (
@@ -516,13 +491,13 @@ export function SkinStudioApp() {
               ) : (
                 <Upload size={15} />
               )}
-              导入主题包
+              <span className="studio-toolbar-copy">导入主题包</span>
             </Button>
           </div>
         </header>
 
         {/* Content grid */}
-        <section className="grid min-h-0 flex-1 grid-cols-[minmax(360px,1.05fr)_minmax(320px,0.95fr)] overflow-hidden">
+        <section className="studio-content-grid grid min-h-0 flex-1 grid-cols-[minmax(360px,1.05fr)_minmax(320px,0.95fr)] overflow-hidden">
           <ThemeLibraryPanel
             filteredThemes={filteredThemes}
             selected={selected}
@@ -561,8 +536,8 @@ export function SkinStudioApp() {
         </section>
 
         {/* Footer actions */}
-        <footer className="flex min-h-[76px] flex-none flex-wrap items-center justify-between gap-3 border-t border-border bg-background px-6 py-3 max-[640px]:px-3">
-          <div className="flex items-center gap-2.5 text-foreground">
+        <footer className="studio-footer flex min-h-[76px] flex-none flex-wrap items-center justify-between gap-3 border-t border-border bg-background px-6 py-3 max-[640px]:px-3">
+          <div className="studio-status flex items-center gap-2.5 text-foreground">
             <StatusIcon
               size={18}
               strokeWidth={2.5}

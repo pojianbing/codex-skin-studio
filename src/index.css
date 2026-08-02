@@ -11,58 +11,58 @@
   text-rendering: optimizeLegibility;
   letter-spacing: 0;
 
-  color: oklch(0.22 0.012 255);
-  background: oklch(0.985 0.004 255);
+  color: oklch(0.22 0.018 255);
+  background: oklch(0.965 0.012 92);
 
-  --background: oklch(0.985 0.004 255);
-  --foreground: oklch(0.22 0.012 255);
-  --card: oklch(0.995 0.002 255);
-  --card-foreground: oklch(0.22 0.012 255);
-  --popover: oklch(0.995 0.002 255);
-  --popover-foreground: oklch(0.22 0.012 255);
+  --background: oklch(0.965 0.012 92);
+  --foreground: oklch(0.22 0.018 255);
+  --card: oklch(0.985 0.009 92);
+  --card-foreground: oklch(0.22 0.018 255);
+  --popover: oklch(0.985 0.009 92);
+  --popover-foreground: oklch(0.22 0.018 255);
 
-  --primary: oklch(0.28 0.017 255);
-  --primary-foreground: oklch(0.99 0.002 255);
+  --primary: oklch(0.46 0.13 150);
+  --primary-foreground: oklch(0.99 0.008 92);
 
-  --secondary: oklch(0.94 0.008 255);
-  --secondary-foreground: oklch(0.28 0.017 255);
+  --secondary: oklch(0.92 0.014 92);
+  --secondary-foreground: oklch(0.28 0.02 255);
 
-  --muted: oklch(0.94 0.008 255);
-  --muted-foreground: oklch(0.47 0.017 255);
+  --muted: oklch(0.92 0.012 92);
+  --muted-foreground: oklch(0.47 0.02 255);
 
-  --accent: oklch(0.93 0.012 255);
-  --accent-foreground: oklch(0.23 0.014 255);
+  --accent: oklch(0.9 0.035 148);
+  --accent-foreground: oklch(0.22 0.04 150);
 
   --destructive: oklch(0.56 0.21 25);
-  --border: oklch(0.88 0.01 255);
-  --input: oklch(0.88 0.01 255);
-  --ring: oklch(0.53 0.12 250);
+  --border: oklch(0.86 0.018 92);
+  --input: oklch(0.86 0.018 92);
+  --ring: oklch(0.56 0.14 150);
 
   --radius: 0.75rem;
 
-  --sidebar: oklch(0.97 0.006 255);
-  --sidebar-foreground: oklch(0.22 0.012 255);
-  --sidebar-primary: oklch(0.28 0.017 255);
-  --sidebar-primary-foreground: oklch(0.99 0.002 255);
-  --sidebar-accent: oklch(0.93 0.012 255);
-  --sidebar-accent-foreground: oklch(0.23 0.014 255);
-  --sidebar-border: oklch(0.88 0.01 255);
-  --sidebar-ring: oklch(0.53 0.12 250);
+  --sidebar: oklch(0.2 0.035 255);
+  --sidebar-foreground: oklch(0.95 0.012 92);
+  --sidebar-primary: oklch(0.78 0.15 150);
+  --sidebar-primary-foreground: oklch(0.15 0.025 255);
+  --sidebar-accent: oklch(0.28 0.045 255);
+  --sidebar-accent-foreground: oklch(0.98 0.008 92);
+  --sidebar-border: oklch(0.34 0.04 255);
+  --sidebar-ring: oklch(0.76 0.15 150);
 
-  --app-surface: oklch(0.975 0.005 255);
-  --app-surface-raised: oklch(0.995 0.002 255);
-  --app-surface-muted: oklch(0.955 0.007 255);
-  --app-control: oklch(0.92 0.01 255);
-  --app-hover: oklch(0.9 0.012 255);
-  --app-selected: oklch(0.27 0.018 255);
-  --app-line: oklch(0.87 0.011 255);
-  --app-line-strong: oklch(0.79 0.014 255);
-  --app-text: oklch(0.22 0.012 255);
-  --app-text-soft: oklch(0.34 0.015 255);
-  --app-text-muted: oklch(0.47 0.017 255);
-  --app-text-faint: oklch(0.59 0.014 255);
-  --app-scrollbar: oklch(0.61 0.014 255 / 0.7);
-  --app-scrollbar-hover: oklch(0.48 0.016 255);
+  --app-surface: oklch(0.95 0.014 92);
+  --app-surface-raised: oklch(0.985 0.009 92);
+  --app-surface-muted: oklch(0.925 0.018 92);
+  --app-control: oklch(0.9 0.02 92);
+  --app-hover: oklch(0.875 0.035 148);
+  --app-selected: oklch(0.27 0.035 255);
+  --app-line: oklch(0.85 0.02 92);
+  --app-line-strong: oklch(0.76 0.025 92);
+  --app-text: oklch(0.22 0.018 255);
+  --app-text-soft: oklch(0.34 0.02 255);
+  --app-text-muted: oklch(0.47 0.02 255);
+  --app-text-faint: oklch(0.59 0.018 255);
+  --app-scrollbar: oklch(0.54 0.03 255 / 0.55);
+  --app-scrollbar-hover: oklch(0.42 0.04 255);
   --app-success: oklch(0.52 0.15 150);
   --app-success-soft: oklch(0.94 0.04 150);
   --app-warning: oklch(0.6 0.14 75);
@@ -133,53 +133,53 @@ html.theme-hanger-window #root {
 }
 
 .dark {
-  --background: oklch(0.08 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.12 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.98 0 0);
+  --background: oklch(0.12 0.018 255);
+  --foreground: oklch(0.95 0.012 92);
+  --card: oklch(0.16 0.022 255);
+  --card-foreground: oklch(0.95 0.012 92);
+  --popover: oklch(0.17 0.024 255);
+  --popover-foreground: oklch(0.95 0.012 92);
 
-  --primary: oklch(0.98 0 0);
-  --primary-foreground: oklch(0.09 0 0);
+  --primary: oklch(0.78 0.15 150);
+  --primary-foreground: oklch(0.15 0.025 255);
 
-  --secondary: oklch(0.2 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.22 0.025 255);
+  --secondary-foreground: oklch(0.95 0.012 92);
 
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.65 0 0);
+  --muted: oklch(0.205 0.022 255);
+  --muted-foreground: oklch(0.68 0.018 255);
 
-  --accent: oklch(0.2 0 0);
-  --accent-foreground: oklch(0.98 0 0);
+  --accent: oklch(0.25 0.05 148);
+  --accent-foreground: oklch(0.93 0.08 148);
 
   --destructive: oklch(0.4 0.18 20);
-  --border: oklch(0.18 0 0 / 0.7);
-  --input: oklch(0.18 0 0 / 0.7);
-  --ring: oklch(0.98 0 0);
+  --border: oklch(0.29 0.028 255 / 0.9);
+  --input: oklch(0.25 0.025 255 / 0.9);
+  --ring: oklch(0.76 0.15 150);
 
-  --sidebar: oklch(0.09 0.003 255);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.98 0 0);
-  --sidebar-primary-foreground: oklch(0.09 0 0);
-  --sidebar-accent: oklch(0.2 0.005 255);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.18 0.004 255 / 0.7);
-  --sidebar-ring: oklch(0.98 0 0);
+  --sidebar: oklch(0.095 0.022 255);
+  --sidebar-foreground: oklch(0.95 0.012 92);
+  --sidebar-primary: oklch(0.78 0.15 150);
+  --sidebar-primary-foreground: oklch(0.15 0.025 255);
+  --sidebar-accent: oklch(0.19 0.035 255);
+  --sidebar-accent-foreground: oklch(0.98 0.008 92);
+  --sidebar-border: oklch(0.22 0.03 255 / 0.95);
+  --sidebar-ring: oklch(0.76 0.15 150);
 
-  --app-surface: oklch(0.12 0.005 255);
-  --app-surface-raised: oklch(0.1 0.004 255);
-  --app-surface-muted: oklch(0.145 0.006 255);
-  --app-control: oklch(0.19 0.006 255);
-  --app-hover: oklch(0.24 0.007 255);
-  --app-selected: oklch(0.98 0 0);
-  --app-line: oklch(0.22 0.006 255 / 0.75);
-  --app-line-strong: oklch(0.34 0.008 255);
-  --app-text: oklch(0.98 0 0);
-  --app-text-soft: oklch(0.86 0.006 255);
-  --app-text-muted: oklch(0.66 0.008 255);
-  --app-text-faint: oklch(0.49 0.009 255);
-  --app-scrollbar: oklch(0.3 0.006 255 / 0.85);
-  --app-scrollbar-hover: oklch(0.42 0.008 255);
+  --app-surface: oklch(0.15 0.022 255);
+  --app-surface-raised: oklch(0.175 0.026 255);
+  --app-surface-muted: oklch(0.2 0.026 255);
+  --app-control: oklch(0.235 0.03 255);
+  --app-hover: oklch(0.27 0.05 148);
+  --app-selected: oklch(0.78 0.15 150);
+  --app-line: oklch(0.27 0.03 255 / 0.86);
+  --app-line-strong: oklch(0.38 0.035 255);
+  --app-text: oklch(0.95 0.012 92);
+  --app-text-soft: oklch(0.86 0.018 92);
+  --app-text-muted: oklch(0.68 0.018 255);
+  --app-text-faint: oklch(0.5 0.022 255);
+  --app-scrollbar: oklch(0.43 0.03 255 / 0.75);
+  --app-scrollbar-hover: oklch(0.58 0.04 255);
   --app-success: oklch(0.78 0.15 150);
   --app-success-soft: oklch(0.24 0.05 150);
   --app-warning: oklch(0.82 0.14 75);
@@ -550,4 +550,479 @@ html.theme-hanger-window #root {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--app-scrollbar) transparent;
+}
+
+/* Studio visual system */
+.app-shell {
+  position: relative;
+  isolation: isolate;
+  background: var(--background);
+}
+
+.app-shell::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+  opacity: 0.22;
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--app-line) 38%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--app-line) 38%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(135deg, black, transparent 68%);
+}
+
+.studio-sidebar {
+  position: relative;
+  z-index: 2;
+  gap: 0.15rem;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--sidebar) 96%, white 4%), var(--sidebar));
+  box-shadow: 10px 0 32px color-mix(in oklab, var(--sidebar) 35%, transparent);
+}
+
+.studio-sidebar::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  content: '';
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--sidebar-ring) 48%, transparent) 35%, transparent 78%);
+  opacity: 0.8;
+}
+
+.studio-brand {
+  min-height: 54px;
+  border-bottom-color: color-mix(in oklab, var(--sidebar-border) 75%, transparent);
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.studio-brand:hover {
+  border-bottom-color: color-mix(in oklab, var(--sidebar-ring) 42%, var(--sidebar-border));
+  transform: translateX(1px);
+}
+
+.studio-brand img {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  filter: drop-shadow(0 6px 12px color-mix(in oklab, var(--sidebar-ring) 20%, transparent));
+}
+
+.studio-brand span:first-child {
+  letter-spacing: -0.02em;
+}
+
+.studio-brand span:last-child {
+  color: color-mix(in oklab, var(--sidebar-foreground) 55%, transparent);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.studio-nav {
+  padding-top: 1.25rem;
+}
+
+.studio-nav li + li {
+  margin-top: 0.35rem;
+}
+
+.studio-nav-button {
+  position: relative;
+  height: 42px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: color-mix(in oklab, var(--sidebar-foreground) 58%, transparent);
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.studio-nav-button:hover {
+  border-color: color-mix(in oklab, var(--sidebar-border) 70%, transparent);
+  background: color-mix(in oklab, var(--sidebar-accent) 65%, transparent);
+  color: var(--sidebar-foreground);
+  transform: translateX(2px);
+}
+
+.studio-nav-button[aria-pressed='true'] {
+  border-color: color-mix(in oklab, var(--sidebar-ring) 23%, var(--sidebar-border));
+  background: linear-gradient(100deg, color-mix(in oklab, var(--sidebar-ring) 16%, var(--sidebar-accent)), var(--sidebar-accent));
+  color: var(--sidebar-accent-foreground);
+  box-shadow: inset 3px 0 0 var(--sidebar-ring), 0 8px 18px color-mix(in oklab, var(--sidebar) 28%, transparent);
+}
+
+.studio-nav-button[aria-pressed='true'] svg {
+  color: var(--sidebar-ring);
+}
+
+.studio-sidebar-footer {
+  border-top-color: color-mix(in oklab, var(--sidebar-border) 70%, transparent);
+}
+
+.studio-main {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 16% 0%, color-mix(in oklab, var(--element-link) 8%, transparent), transparent 32%),
+    linear-gradient(135deg, color-mix(in oklab, var(--background) 94%, white 6%), var(--background));
+}
+
+.studio-topbar,
+.store-topbar {
+  position: relative;
+  min-height: 82px;
+  padding-inline: 28px;
+  border-bottom-color: color-mix(in oklab, var(--app-line) 82%, transparent);
+  background: color-mix(in oklab, var(--background) 90%, var(--app-surface-raised));
+  box-shadow: 0 12px 26px color-mix(in oklab, var(--background) 35%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.studio-topbar::after,
+.store-topbar::after {
+  position: absolute;
+  right: 28px;
+  bottom: -1px;
+  left: 28px;
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, var(--element-link), transparent 32%);
+  opacity: 0.7;
+}
+
+.studio-page-heading h1,
+.store-topbar h1 {
+  margin-top: 0.12rem;
+  color: var(--app-text);
+  letter-spacing: -0.025em;
+}
+
+.studio-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  color: var(--element-link);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.studio-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--element-link);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--element-link) 16%, transparent), 0 0 12px color-mix(in oklab, var(--element-link) 65%, transparent);
+}
+
+.studio-toolbar {
+  justify-content: flex-end;
+}
+
+.studio-toolbar > label,
+.studio-toolbar > div {
+  min-height: 36px;
+  border-color: color-mix(in oklab, var(--app-line) 88%, transparent);
+  background: color-mix(in oklab, var(--app-surface-raised) 80%, transparent);
+  border-radius: 10px;
+}
+
+.studio-toolbar > label {
+  padding-inline: 0.65rem;
+}
+
+.studio-toolbar > div {
+  padding-inline: 0.7rem;
+}
+
+.studio-toolbar > button {
+  min-height: 36px;
+  border-radius: 10px;
+}
+
+.studio-content-grid {
+  position: relative;
+  min-height: 0;
+}
+
+.theme-library-panel {
+  border-right-color: color-mix(in oklab, var(--app-line) 82%, transparent);
+  background: color-mix(in oklab, var(--background) 92%, var(--app-surface-raised));
+}
+
+.library-filter-bar {
+  min-height: 42px;
+  padding: 0.42rem 0.55rem 0.42rem 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--app-line) 85%, transparent);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--app-surface-raised) 78%, transparent);
+  box-shadow: 0 8px 20px color-mix(in oklab, var(--background) 22%, transparent);
+}
+
+.library-filter-bar > div {
+  border: 1px solid color-mix(in oklab, var(--app-line) 55%, transparent);
+  background: color-mix(in oklab, var(--app-surface-muted) 72%, transparent);
+  border-radius: 8px;
+}
+
+.library-filter-bar button {
+  min-height: 26px;
+  border-radius: 6px;
+}
+
+.library-filter-bar button[aria-pressed='true'] {
+  background: var(--app-selected);
+  color: var(--primary-foreground);
+  box-shadow: 0 3px 10px color-mix(in oklab, var(--app-selected) 22%, transparent);
+}
+
+.theme-grid,
+.store-grid {
+  align-content: start;
+  gap: 1rem;
+}
+
+.theme-card,
+.store-card {
+  border-color: color-mix(in oklab, var(--app-line) 90%, transparent);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--app-surface-raised) 92%, transparent);
+  box-shadow: 0 10px 24px color-mix(in oklab, var(--background) 22%, transparent), inset 0 1px 0 color-mix(in oklab, white 8%, transparent);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.theme-card:hover,
+.store-card:hover {
+  border-color: color-mix(in oklab, var(--element-link) 52%, var(--app-line));
+  box-shadow: 0 16px 30px color-mix(in oklab, var(--background) 34%, transparent), 0 0 0 1px color-mix(in oklab, var(--element-link) 10%, transparent);
+  transform: translateY(-2px);
+}
+
+.theme-card-media,
+.store-card > div:first-child {
+  border-bottom: 1px solid color-mix(in oklab, var(--app-line) 70%, transparent);
+}
+
+.theme-card-body {
+  min-height: 74px;
+  padding: 0.85rem 0.95rem;
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--app-surface-muted) 26%, transparent));
+}
+
+.theme-card-body b {
+  letter-spacing: -0.01em;
+}
+
+.theme-card-import,
+.theme-library-empty {
+  border-color: color-mix(in oklab, var(--element-link) 30%, var(--app-line));
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--element-link) 4%, var(--app-surface-raised));
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.theme-card-import {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.theme-card-import-media {
+  display: flex;
+  flex: none;
+  aspect-ratio: 16 / 9;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid color-mix(in oklab, var(--element-link) 20%, var(--app-line));
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--element-link) 8%, transparent), transparent 58%),
+    color-mix(in oklab, var(--app-surface-muted) 58%, transparent);
+  color: color-mix(in oklab, var(--element-link) 70%, var(--app-text-muted));
+}
+
+.theme-card-import-body {
+  display: flex;
+  min-height: 74px;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  padding: 0.85rem;
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--app-surface-muted) 26%, transparent));
+}
+
+.theme-card-import-body strong {
+  color: var(--app-text-soft);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.theme-card-import-body small {
+  color: var(--app-text-faint);
+  font-size: 0.625rem;
+}
+
+.theme-card-import:hover {
+  border-color: color-mix(in oklab, var(--element-link) 70%, var(--app-line));
+  background: color-mix(in oklab, var(--element-link) 9%, var(--app-surface-raised));
+  transform: translateY(-2px);
+}
+
+.theme-library-empty {
+  min-height: 208px;
+}
+
+.theme-inspector {
+  border-left-color: color-mix(in oklab, var(--app-line) 86%, transparent);
+  background: color-mix(in oklab, var(--app-surface) 94%, transparent);
+  box-shadow: inset 12px 0 30px color-mix(in oklab, var(--background) 22%, transparent);
+}
+
+.inspector-preview-header {
+  padding: 1rem 1.2rem 1.05rem;
+  border-bottom-color: color-mix(in oklab, var(--app-line) 78%, transparent);
+  background: color-mix(in oklab, var(--app-surface-raised) 72%, transparent);
+}
+
+.preview-toggle {
+  min-height: 26px;
+  border-radius: 8px;
+}
+
+.preview-toggle > span:first-child {
+  width: 26px;
+  height: 26px;
+  border: 1px solid color-mix(in oklab, var(--element-link) 24%, var(--app-line));
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--element-link) 9%, var(--app-control));
+}
+
+.inspector-body {
+  padding: 1.2rem 1.25rem 1.5rem;
+}
+
+.inspector-title-row {
+  min-height: 42px;
+  border-bottom-color: color-mix(in oklab, var(--app-line) 76%, transparent);
+}
+
+.inspector-title-row h2 {
+  color: var(--app-text);
+  letter-spacing: -0.02em;
+}
+
+.inspector-actions button {
+  border-radius: 9px;
+}
+
+.inspector-settings {
+  padding: 0.8rem 0.95rem 1rem;
+  border: 1px solid color-mix(in oklab, var(--app-line) 78%, transparent);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--app-surface-raised) 62%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, white 6%, transparent);
+}
+
+.inspector-settings > label {
+  min-height: 28px;
+  color: var(--element-link);
+}
+
+.inspector-settings .config-section-link {
+  margin-inline: -0.2rem;
+  padding-inline: 0.55rem;
+  border-top-color: color-mix(in oklab, var(--app-line) 75%, transparent);
+}
+
+.inspector-settings .config-section-link--active {
+  border-radius: 8px;
+}
+
+.studio-footer {
+  min-height: 78px;
+  border-top-color: color-mix(in oklab, var(--app-line) 82%, transparent);
+  background: color-mix(in oklab, var(--background) 90%, var(--app-surface-raised));
+  box-shadow: 0 -10px 24px color-mix(in oklab, var(--background) 20%, transparent);
+}
+
+.studio-status {
+  min-width: 0;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--app-line) 72%, transparent);
+  border-radius: 11px;
+  background: color-mix(in oklab, var(--app-surface-raised) 68%, transparent);
+}
+
+.studio-status small {
+  color: var(--app-text-muted);
+}
+
+.store-toolbar {
+  min-height: 60px;
+  background: color-mix(in oklab, var(--app-surface) 72%, transparent);
+}
+
+.store-toolbar input {
+  border-color: color-mix(in oklab, var(--app-line) 86%, transparent);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--app-surface-raised) 82%, transparent);
+}
+
+.store-toolbar button {
+  border-radius: 9px;
+}
+
+.store-grid-wrap {
+  background: color-mix(in oklab, var(--background) 82%, transparent);
+}
+
+.store-card {
+  background: color-mix(in oklab, var(--app-surface-raised) 92%, transparent);
+}
+
+@media (max-width: 800px) {
+  .studio-topbar,
+  .store-topbar {
+    padding-inline: 18px;
+  }
+
+  .studio-eyebrow {
+    display: none;
+  }
+
+  .theme-library-panel,
+  .inspector-body {
+    padding-inline: 18px;
+  }
+}
+
+@media (max-width: 1120px) {
+  .studio-topbar {
+    gap: 0.75rem;
+    padding-inline: 18px;
+  }
+
+  .studio-toolbar {
+    min-width: 0;
+    gap: 0.4rem;
+  }
+
+  .studio-toolbar-copy {
+    display: none;
+  }
+
+  .studio-toolbar > label,
+  .studio-toolbar > div,
+  .studio-toolbar > button {
+    padding-inline: 0.55rem;
+  }
+
+  .studio-topbar::after,
+  .store-topbar::after {
+    right: 18px;
+    left: 18px;
+  }
 }
