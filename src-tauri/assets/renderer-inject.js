@@ -445,6 +445,7 @@
   };
 
   const fileChangeFadeSelector = 'div[class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="-bottom-1"][class~="h-7"][class~="bg-gradient-to-t"][class~="from-token-main-surface-primary"][class~="to-transparent"]';
+  const homeUtilityBarSelector = '[class*="_homeUtilityBar_"]';
 
   const processIncrementalScope = (scope) => {
     if (!scope?.querySelectorAll && !(scope instanceof Element)) return;
@@ -461,6 +462,9 @@
         return control.getAttribute('type') === 'submit' || /send|发送|stop|停止/i.test(label);
       });
       primaryAction?.classList.add('skin-composer-primary-action');
+    }
+    for (const utilityBar of relatedMatches(scope, homeUtilityBarSelector)) {
+      utilityBar.classList.add('skin-home-utility-bar');
     }
     for (const footer of relatedMatches(scope, '[data-thread-scroll-footer="true"]')) {
       const hasComposer = Boolean(footer.querySelector('.composer-surface-chrome'));
@@ -683,6 +687,9 @@
         return control.getAttribute('type') === 'submit' || /send|发送|stop|停止/i.test(label);
       });
       primaryAction?.classList.add('skin-composer-primary-action');
+    }
+    for (const utilityBar of document.querySelectorAll(homeUtilityBarSelector)) {
+      utilityBar.classList.add('skin-home-utility-bar');
     }
     for (const footer of document.querySelectorAll('[data-thread-scroll-footer="true"]')) {
       const hasComposer = Boolean(footer.querySelector('.composer-surface-chrome'));
@@ -998,6 +1005,7 @@
     document.querySelectorAll('.skin-home-welcome-title-hidden').forEach((node) => node.classList.remove('skin-home-welcome-title-hidden'));
     document.querySelectorAll('.skin-composer-footer-backdrop').forEach((node) => node.classList.remove('skin-composer-footer-backdrop'));
     document.querySelectorAll('.skin-composer-file-change-backdrop').forEach((node) => node.classList.remove('skin-composer-file-change-backdrop'));
+    document.querySelectorAll('.skin-home-utility-bar').forEach((node) => node.classList.remove('skin-home-utility-bar'));
     document.querySelectorAll('.skin-environment-panel-hidden').forEach((node) => node.classList.remove('skin-environment-panel-hidden'));
     document.querySelectorAll('.skin-environment-panel-surface').forEach((node) => node.classList.remove('skin-environment-panel-surface'));
     document.querySelectorAll('.skin-change-summary-hidden').forEach((node) => node.classList.remove('skin-change-summary-hidden'));
@@ -1049,6 +1057,10 @@
   observer = new MutationObserver((records) => {
     let healthRequired = false;
     for (const record of records) {
+      if (record.type === 'attributes') {
+        scheduleNode(record.target);
+        continue;
+      }
       record.addedNodes.forEach((node) => {
         scheduleNode(node);
         if (node instanceof Element
@@ -1071,6 +1083,8 @@
   observer.observe(root, {
     childList: true,
     subtree: true,
+    attributes: true,
+    attributeFilter: ['class'],
   });
   appearanceObserver = new MutationObserver(applyAppearance);
   for (const node of [root, document.body]) {

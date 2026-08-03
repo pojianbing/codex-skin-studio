@@ -274,9 +274,13 @@ export function CodexPreview({
   const [scene, setScene] = useState<'task' | 'home'>('task')
   const isHome = scene === 'home'
   const light = appearance === 'light'
-  const fallbackSurface = light ? '#f8fafc' : '#18181b'
-  const fallbackSidebar = light ? '#f1f5f9' : '#0e121c'
-  const fallbackHeader = light ? '#f8fafc' : '#121620'
+  const fallbackSurface = light
+    ? `color-mix(in oklab, #fff 92%, ${theme.accent})`
+    : `color-mix(in oklab, #121620 91%, ${theme.accent})`
+  const fallbackSidebar = light
+    ? `color-mix(in oklab, #f1f5f9 90%, ${theme.accent})`
+    : `color-mix(in oklab, #0e121c 90%, ${theme.accent})`
+  const fallbackHeader = fallbackSurface
   const defaultBorder = light ? '#94a3b8' : '#64748b'
   const defaultMuted = light ? '#475569' : '#a1a1aa'
   const defaultText = light ? '#18181b' : '#f4f4f5'
@@ -324,14 +328,22 @@ export function CodexPreview({
   })
   const backgroundPosition = `${percent(theme.art.focusX)}% ${percent(theme.art.focusY)}%`
   const safeAreaShade = safeArea === 'right'
-    ? 'linear-gradient(to left, rgba(0,0,0,.5), transparent 58%)'
+    ? `linear-gradient(270deg, ${mix(fallbackSurface, 0.72)}, ${mix(fallbackSurface, 0.26)})`
     : safeArea === 'center'
-      ? 'linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.28))'
+      ? `linear-gradient(${mix(fallbackSurface, 0.48)}, ${mix(fallbackSurface, 0.48)})`
       : safeArea === 'none'
         ? 'linear-gradient(transparent, transparent)'
-        : 'linear-gradient(to right, rgba(0,0,0,.5), transparent 58%)'
+        : `linear-gradient(90deg, ${mix(fallbackSurface, 0.64)}, ${mix(fallbackSurface, 0.30)})`
 
-  const backgroundImage = theme.art.taskMode === 'off'
+  const taskMode = theme.art.taskMode === 'auto' ? 'ambient' : theme.art.taskMode
+  const taskWash = mix(fallbackSurface, light ? 0.86 : 0.68)
+  const taskBackdrop = taskMode === 'off'
+    ? fallbackSurface
+    : taskMode === 'banner'
+      ? `linear-gradient(to bottom, transparent, ${taskWash})`
+      : `linear-gradient(to bottom, ${mix(fallbackSurface, 0.42)}, ${taskWash})`
+
+  const backgroundImage = taskMode === 'off'
     ? undefined
     : `${safeAreaShade}, url(${theme.previewDataUrl})`
 
@@ -372,7 +384,7 @@ export function CodexPreview({
         ...previewFrameStyle,
         backgroundImage,
         backgroundPosition,
-        backgroundSize: theme.art.taskMode === 'banner' ? '100% 47%' : 'cover',
+        backgroundSize: taskMode === 'banner' ? '100% 47%' : 'cover',
         backgroundRepeat: 'no-repeat',
       }}
       aria-label="Codex 任务页与顶部菜单栏实时预览"
@@ -380,9 +392,23 @@ export function CodexPreview({
       <div
         className={cn(
           "absolute inset-0 -z-10",
-          light ? "bg-white/20" : "bg-black/12",
-        )}
+        light ? "bg-white/20" : "bg-black/12",
+      )}
       />
+
+      {!isHome && (
+        <div
+          className="pointer-events-none absolute z-0"
+          style={{
+            left: `${mainLeft}%`,
+            right: 0,
+            top: `${applicationMenuHeight + headerHeight}%`,
+            bottom: 0,
+            background: taskBackdrop,
+          }}
+          aria-hidden="true"
+        />
+      )}
 
       <nav
         className={cn(

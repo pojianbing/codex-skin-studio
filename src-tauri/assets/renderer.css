@@ -209,6 +209,14 @@ html.codex-skin-studio .composer-surface-chrome {
   box-shadow: var(--skin-composer-shadow) !important;
   backdrop-filter: blur(var(--skin-composer-blur)) saturate(1.06) !important;
 }
+html.codex-skin-studio .skin-home-utility-bar {
+  color: var(--skin-text-primary) !important;
+  border: 0 !important;
+  border-radius: var(--skin-composer-radius) var(--skin-composer-radius) 0 0 !important;
+  background: color-mix(in oklab, var(--skin-composer-color) var(--skin-composer-opacity), transparent) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(var(--skin-composer-blur)) saturate(1.06) !important;
+}
 html.codex-skin-studio .composer-surface-chrome :is(textarea, input)::placeholder,
 html.codex-skin-studio .composer-surface-chrome [data-placeholder]::before {
   color: var(--skin-composer-placeholder) !important;
@@ -259,6 +267,11 @@ html.codex-skin-studio :is(.skin-change-summary-card, .skin-change-summary-compa
   background: color-mix(in oklab, var(--skin-change-summary-color) var(--skin-change-summary-opacity), transparent) !important;
   box-shadow: var(--skin-change-summary-shadow) !important;
   backdrop-filter: blur(var(--skin-change-summary-blur)) saturate(1.04) !important;
+}
+/* Diff rows can carry their own native surface on top of the configurable card. */
+html.codex-skin-studio :is(.skin-change-summary-card, .skin-change-summary-compact)
+  :is([class*="bg-token-dropdown-background"], [class*="bg-token-input-background"], [class*="bg-token-main-surface"]) {
+  background: transparent !important;
 }
 html.codex-skin-studio .skin-code-block-surface pre,
 html.codex-skin-studio .skin-code-block-surface [class*="bg-token-text-code-block-background"] {
