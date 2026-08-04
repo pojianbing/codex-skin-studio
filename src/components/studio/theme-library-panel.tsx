@@ -1,4 +1,4 @@
-import { Check, Download, ImagePlus, Video } from 'lucide-react'
+import { Box, Check, Download, ImagePlus, Video } from 'lucide-react'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -178,16 +178,17 @@ export function ThemeLibraryPanel({
                     <b className="truncate text-sm font-medium text-card-foreground">{theme.name}</b>
                     <div className="mt-2 flex items-center gap-1.5">
                       <span className={cn(
-                        'rounded-sm border px-1.5 py-0.5 text-[9px] font-medium',
+                        'theme-card-meta flex items-center gap-1 text-[10px] font-medium',
                         theme.builtIn 
-                          ? 'border-border bg-muted text-muted-foreground'
-                          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                          ? 'text-muted-foreground'
+                          : 'text-emerald-700 dark:text-emerald-400'
                       )}>
+                        <Box size={11} strokeWidth={1.8} />
                         {theme.builtIn ? '内置' : '自定义'}
                       </span>
                       <span className="font-mono text-[10px] text-muted-foreground">v{theme.version}</span>
                       {theme.backgroundKind === 'video' && (
-                        <span className="rounded-sm border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-medium text-sky-700 dark:text-sky-300">视频</span>
+                        <span className="theme-card-meta flex items-center gap-1 text-[10px] font-medium text-sky-700 dark:text-sky-300"><Video size={11} strokeWidth={1.8} />视频</span>
                       )}
                     </div>
                   </span>
@@ -200,10 +201,10 @@ export function ThemeLibraryPanel({
                   aria-label="导入图片或视频背景"
                   onClick={() => void onImportWallpaper()}
                 >
-                  <span className="theme-card-import-media">
+                  <span className="theme-card-import-icon">
                     <ImagePlus size={21} />
                   </span>
-                  <span className="theme-card-import-body">
+                  <span className="theme-card-import-copy">
                     <strong>导入图片或视频背景</strong>
                     <small>支持图片与 MP4 视频</small>
                   </span>

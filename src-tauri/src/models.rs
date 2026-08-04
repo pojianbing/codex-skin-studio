@@ -237,6 +237,44 @@ impl Default for SurfaceConfig {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DiagramConfig {
+    pub visible: bool,
+    pub background: String,
+    pub opacity: f64,
+    pub blur: u32,
+    pub border_opacity: f64,
+    pub shadow: String,
+    pub radius: u32,
+    pub padding: u32,
+    pub node_background: String,
+    pub node_border: String,
+    pub node_text: String,
+    pub connector: String,
+    pub emphasis: String,
+}
+
+impl Default for DiagramConfig {
+    fn default() -> Self {
+        Self {
+            visible: true,
+            background: "auto".into(),
+            opacity: 0.88,
+            blur: 8,
+            border_opacity: 0.35,
+            shadow: "none".into(),
+            radius: 12,
+            padding: 16,
+            node_background: "auto".into(),
+            node_border: "auto".into(),
+            node_text: "auto".into(),
+            connector: "auto".into(),
+            emphasis: "auto".into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RowConfig {
     pub visible: bool,
     pub background: String,
@@ -393,6 +431,8 @@ pub struct UiConfig {
     pub code_block: SurfaceConfig,
     pub activity_card: SurfaceConfig,
     #[serde(default)]
+    pub diagram: DiagramConfig,
+    #[serde(default)]
     pub home_welcome: HomeWelcomeConfig,
     #[serde(default = "default_home_suggestions")]
     pub home_suggestions: SurfaceConfig,
@@ -444,6 +484,7 @@ impl Default for UiConfig {
                 border_opacity: 0.3,
                 ..SurfaceConfig::default()
             },
+            diagram: DiagramConfig::default(),
             home_welcome: HomeWelcomeConfig::default(),
             home_suggestions: default_home_suggestions(),
             overlays: SurfaceConfig {

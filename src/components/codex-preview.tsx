@@ -1,6 +1,7 @@
 import { type CSSProperties, type MouseEvent, useState } from 'react'
 import {
   ArrowUp,
+  ArrowRight,
   Bug,
   Check,
   ChevronDown,
@@ -33,6 +34,15 @@ type SurfaceStyle = {
   borderOpacity: number
   shadow: Shadow
   radius: number
+}
+
+type DiagramStyle = SurfaceStyle & {
+  padding: number
+  nodeBackground: string
+  nodeBorder: string
+  nodeText: string
+  connector: string
+  emphasis: string
 }
 
 type RowStyle = {
@@ -82,6 +92,7 @@ type PreviewTheme = {
     userBubble: SurfaceStyle
     codeBlock: SurfaceStyle
     activityCard: SurfaceStyle
+    diagram: DiagramStyle
     homeWelcome: {
       iconVisible: boolean
       titleVisible: boolean
@@ -308,6 +319,12 @@ export function CodexPreview({
   const tableBorder = resolveColor(theme.ui.richText.tableBorder, borderColor)
   const tableColor = resolveColor(theme.ui.richText.tableBackground, fallbackSurface)
   const linkColor = resolveColor(theme.ui.richText.linkColor, theme.accent)
+  const diagramSurface = resolveColor(theme.ui.diagram.background, light ? '#0f172a' : '#090b10')
+  const diagramNode = resolveColor(theme.ui.diagram.nodeBackground, light ? '#ffffff' : '#252a30')
+  const diagramBorder = resolveColor(theme.ui.diagram.nodeBorder, borderColor)
+  const diagramText = resolveColor(theme.ui.diagram.nodeText, mainText)
+  const diagramConnector = resolveColor(theme.ui.diagram.connector, borderColor)
+  const diagramEmphasis = resolveColor(theme.ui.diagram.emphasis, theme.accent)
   const composerColor = resolveColor(theme.composer.background, light ? '#f8fafc' : '#121620')
   const composerPlaceholder = resolveColor(theme.composer.placeholderColor, mutedText)
   const composerControl = resolveColor(theme.composer.controlColor, theme.accent)
@@ -326,6 +343,7 @@ export function CodexPreview({
     ),
     borderRadius: `${theme.ui.diff.radius}px`,
   })
+  const diagramSteps = ['视频探索', '媒体探测', '语音识别', '机器翻译', '人工审核']
   const backgroundPosition = `${percent(theme.art.focusX)}% ${percent(theme.art.focusY)}%`
   const safeAreaShade = safeArea === 'right'
     ? `linear-gradient(270deg, ${mix(fallbackSurface, 0.72)}, ${mix(fallbackSurface, 0.26)})`
@@ -366,6 +384,7 @@ export function CodexPreview({
     activeElement === element && 'preview-target--active',
   )
   const targetEvents = (element: PreviewElementId) => ({
+    'data-preview-element': element,
     onClick: (event: MouseEvent<HTMLElement>) => {
       event.stopPropagation()
       onSelectElement(element)
@@ -601,6 +620,44 @@ export function CodexPreview({
             >
               把所有界面元素加入实时预览
             </div>
+
+            {theme.ui.diagram.visible && (
+              <div
+                className={cn("relative z-30 overflow-hidden border", targetClass('diagram'))}
+                style={{
+                  ...surfaceStyle(theme.ui.diagram, diagramSurface, borderColor),
+                  padding: `${Math.max(1.5, theme.ui.diagram.padding * 0.22)}px`,
+                  color: diagramText,
+                }}
+                {...targetEvents('diagram')}
+              >
+                <div className="mb-[3px] flex items-center gap-[3px] text-[5px] font-semibold opacity-75">
+                  <GitBranch size={7} style={{ color: diagramEmphasis }} />
+                  <span>视频内容生产流程</span>
+                </div>
+                <div className="flex min-w-0 items-center gap-[2px]">
+                  {diagramSteps.map((step, index) => (
+                    <div key={step} className="flex min-w-0 flex-1 items-center gap-[2px]">
+                      <div
+                        className="min-w-0 flex-1 truncate border px-[2px] py-[2px] text-center text-[4px] font-semibold leading-none"
+                        style={{
+                          background: mix(diagramNode, index === diagramSteps.length - 1 ? 0.96 : 0.84),
+                          borderColor: index === diagramSteps.length - 1 ? diagramEmphasis : diagramBorder,
+                          color: diagramText,
+                        }}
+                      >
+                        {step}
+                      </div>
+                      {index < diagramSteps.length - 1 && <ArrowRight size={6} strokeWidth={1.8} style={{ color: diagramConnector }} />}
+                    </div>
+                  ))}
+                  <div className="flex flex-none flex-col gap-[2px]">
+                    <div className="border px-[2px] py-[2px] text-[3.5px] font-semibold leading-none" style={{ background: mix(diagramNode, 0.68), borderColor: diagramBorder, color: diagramText }}>发布到学习端</div>
+                    <div className="border px-[2px] py-[2px] text-[3.5px] font-semibold leading-none" style={{ background: mix(diagramNode, 0.68), borderColor: diagramBorder, color: diagramText }}>异步生成视频版</div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div
               className={cn("space-y-[3px] leading-[1.35]", targetClass('richText'))}

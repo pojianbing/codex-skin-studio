@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { browserPreviewDashboard, isBrowserPreview } from '@/lib/browser-preview'
 import { type ElementTab, type PreviewElementId, previewElementMeta } from '@/lib/preview-elements'
 import {
   type ApplyPlan,
@@ -39,7 +40,7 @@ import {
 
 export function SkinStudioApp() {
   const [activeView, setActiveView] = useState<'library' | 'store'>('library')
-  const [dashboard, setDashboard] = useState<Dashboard>(fallbackDashboard)
+  const [dashboard, setDashboard] = useState<Dashboard>(isBrowserPreview ? browserPreviewDashboard : fallbackDashboard)
   const [selectedId, setSelectedId] = useState<string>()
   const [themeFilter, setThemeFilter] = useState<ThemeFilter>('all')
   const [working, setWorking] = useState<string>()
@@ -180,6 +181,14 @@ export function SkinStudioApp() {
 
 
   const refresh = async () => {
+    if (isBrowserPreview) {
+      setDashboard(browserPreviewDashboard)
+      setSelectedId((current) => current ?? browserPreviewDashboard.activeThemeId)
+      return
+    }
+
+    if (typeof window !== 'undefined' && !('__TAURI_INTERNALS__' in window)) return
+
     try {
       const next = await invoke<Dashboard>('get_dashboard')
       setDashboard(next)
@@ -191,6 +200,7 @@ export function SkinStudioApp() {
 
   useEffect(() => {
     void refresh()
+    if (isBrowserPreview) return
     const interval = window.setInterval(() => void refresh(), 5000)
     return () => window.clearInterval(interval)
   }, [])
@@ -314,6 +324,7 @@ export function SkinStudioApp() {
       ...current,
       themes: current.themes.map((theme) => (theme.id === next.id ? next : theme)),
     }))
+    if (isBrowserPreview) return
     try {
       await invoke('update_theme', {
         themeId: next.id, appearance: next.appearance, art: next.art,
@@ -437,7 +448,6 @@ export function SkinStudioApp() {
         {/* Topbar */}
         <header className="studio-topbar flex min-h-[68px] flex-none flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-6 py-3 max-[640px]:px-3">
           <div className="studio-page-heading">
-            <div className="studio-eyebrow"><span className="studio-live-dot" />LOCAL WORKSPACE</div>
             <h1 className="text-lg font-bold tracking-tight text-zinc-50">主题库</h1>
             <p className="text-xs text-zinc-400 mt-0.5">
               {themeFilter === 'all'

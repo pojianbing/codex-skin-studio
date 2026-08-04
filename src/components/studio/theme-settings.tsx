@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { type ElementTab, type PreviewElementId } from '@/lib/preview-elements'
-import { type RowStyle, type SemanticTokens, type SurfaceStyle } from '@/lib/theme-types'
+import { type DiagramStyle, type RowStyle, type SemanticTokens, type SurfaceStyle } from '@/lib/theme-types'
 
 const sliderValue = (value: number | readonly number[]) => (
   typeof value === 'number' ? value : value[0]
@@ -160,6 +160,34 @@ export function ConfigSection({ element, title, children, open, active, onOpenCh
 export function SurfaceStyleEditor({ value, autoColor, onChange }: { value: SurfaceStyle, autoColor: string, onChange: (value: SurfaceStyle) => void }) {
   const patch = (next: Partial<SurfaceStyle>) => onChange({ ...value, ...next })
   return <><ToggleSetting label="显示" checked={value.visible} onChange={(visible) => patch({ visible })} />{value.visible && <><ColorSetting label="背景色" value={value.background} autoColor={autoColor} onChange={(background) => patch({ background })} /><SliderSetting label="不透明度" value={value.opacity} min={0} max={1} step={0.01} unit="%" onChange={(opacity) => patch({ opacity })} /><SliderSetting label="背景模糊" value={value.blur} min={0} max={32} step={1} unit="px" onChange={(blur) => patch({ blur })} /><SliderSetting label="边框强度" value={value.borderOpacity} min={0} max={1} step={0.01} unit="%" onChange={(borderOpacity) => patch({ borderOpacity })} /><SliderSetting label="圆角" value={value.radius} min={0} max={32} step={1} unit="px" onChange={(radius) => patch({ radius })} /><ShadowSetting value={value.shadow} onChange={(shadow) => patch({ shadow })} /></>}</>
+}
+
+export function DiagramStyleEditor({ value, surfaceAutoColor, nodeAutoColor, borderAutoColor, textAutoColor, accentAutoColor, onChange }: {
+  value: DiagramStyle
+  surfaceAutoColor: string
+  nodeAutoColor: string
+  borderAutoColor: string
+  textAutoColor: string
+  accentAutoColor: string
+  onChange: (value: DiagramStyle) => void
+}) {
+  const patch = (next: Partial<DiagramStyle>) => onChange({ ...value, ...next })
+  return <>
+    <SurfaceStyleEditor
+      value={value}
+      autoColor={surfaceAutoColor}
+      onChange={(next) => onChange({ ...value, ...next })}
+    />
+    {value.visible && <>
+      <div className="h-px bg-zinc-800" />
+      <ColorSetting label="节点背景色" value={value.nodeBackground} autoColor={nodeAutoColor} onChange={(nodeBackground) => patch({ nodeBackground })} />
+      <ColorSetting label="节点边框色" value={value.nodeBorder} autoColor={borderAutoColor} onChange={(nodeBorder) => patch({ nodeBorder })} />
+      <ColorSetting label="节点文字色" value={value.nodeText} autoColor={textAutoColor} onChange={(nodeText) => patch({ nodeText })} />
+      <ColorSetting label="连线颜色" value={value.connector} autoColor={borderAutoColor} onChange={(connector) => patch({ connector })} />
+      <ColorSetting label="强调颜色" value={value.emphasis} autoColor={accentAutoColor} onChange={(emphasis) => patch({ emphasis })} />
+      <SliderSetting label="内容内边距" value={value.padding} min={4} max={40} step={1} unit="px" onChange={(padding) => patch({ padding })} />
+    </>}
+  </>
 }
 
 export function ElementTabSelector({ value, onChange }: { value: ElementTab, onChange: (tab: ElementTab) => void }) {

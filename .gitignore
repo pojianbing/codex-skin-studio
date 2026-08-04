@@ -33,3 +33,4 @@ output/
 src-tauri/tauri.release.conf.json
 artifacts/
 package.json
+.playwright-mcp/

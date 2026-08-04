@@ -22,6 +22,7 @@ import {
 import {
   ColorSetting,
   ConfigSection,
+  DiagramStyleEditor,
   ElementTabSelector,
   OverlayStyleEditor,
   RowStyleEditor,
@@ -612,6 +613,18 @@ export function ThemeInspector({
                             value={selected.ui.activityCard}
                             autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
                             onChange={(value) => void updateUi('activityCard', value)}
+                          />
+                        </ConfigSection>
+
+                        <ConfigSection title="可视化输出" {...configSectionProps('diagram')}>
+                          <DiagramStyleEditor
+                            value={selected.ui.diagram}
+                            surfaceAutoColor={resolvedAppearance === 'light' ? '#0f172a' : '#090b10'}
+                            nodeAutoColor={resolvedAppearance === 'light' ? '#ffffff' : '#252a30'}
+                            borderAutoColor={resolvedAppearance === 'light' ? '#94a3b8' : '#64748b'}
+                            textAutoColor={resolvedAppearance === 'light' ? '#0f172a' : '#f4f4f5'}
+                            accentAutoColor={selected.accent}
+                            onChange={(value) => void updateUi('diagram', value)}
                           />
                         </ConfigSection>
 

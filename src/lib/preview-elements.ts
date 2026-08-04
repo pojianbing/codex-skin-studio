@@ -11,6 +11,7 @@ export const previewElementMeta = {
   userBubble: { tab: 'components', label: '用户消息气泡' },
   codeBlock: { tab: 'components', label: '代码块' },
   activityCard: { tab: 'components', label: '工具活动卡片' },
+  diagram: { tab: 'components', label: '可视化输出' },
   overlays: { tab: 'components', label: '弹层与菜单' },
   levelSlider: { tab: 'components', label: '级别滑块' },
   threadRows: { tab: 'components', label: '任务列表行' },

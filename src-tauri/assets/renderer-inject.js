@@ -58,8 +58,6 @@
   const pendingNodes = new Set();
   const levelSliderBindings = new Map();
   const flatMenuStates = new Map();
-  const processedNodes = new WeakMap();
-
   const clamp = (value, minimum, maximum, fallback) => {
     const number = Number(value);
     return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
@@ -74,35 +72,75 @@
     soft: '0 10px 28px color-mix(in oklab, #101411 20%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 38%, transparent)',
     strong: '0 18px 48px color-mix(in oklab, #080b0a 36%, transparent), 0 3px 10px color-mix(in oklab, #080b0a 18%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--skin-line) 58%, transparent)',
   };
-  const runOnce = (node, key, action) => {
-    if (!node) return;
-    let keys = processedNodes.get(node);
-    if (!keys) {
-      keys = new Set();
-      processedNodes.set(node, keys);
-    }
-    if (keys.has(key)) return;
-    keys.add(key);
-    action(node);
-  };
   const applyConfigurableSurface = (node, className, config, defaults) => {
     if (!node) return;
-    runOnce(node, className, () => {
-      const value = config || {};
-      const color = /^#[0-9a-f]{6}$/i.test(value.background || '')
-        ? value.background
-        : defaults.color;
-      node.classList.add('skin-configurable-surface', className);
-      node.classList.toggle('skin-configurable-hidden', value.visible === false);
-      node.style.setProperty('--skin-region-color', color);
-      node.style.setProperty('--skin-region-opacity', `${Math.round(clamp(value.opacity, 0, 1, defaults.opacity) * 100)}%`);
-      node.style.setProperty('--skin-region-border-opacity', `${Math.round(clamp(value.borderOpacity, 0, 1, defaults.borderOpacity) * 100)}%`);
-      node.style.setProperty('--skin-region-blur', `${Math.round(clamp(value.blur, 0, 32, defaults.blur))}px`);
-      node.style.setProperty('--skin-region-radius', `${Math.round(clamp(value.radius, 0, 32, defaults.radius))}px`);
-      node.style.setProperty(
-        '--skin-region-shadow',
-        configurableSurfaceShadows[value.shadow] || configurableSurfaceShadows[defaults.shadow],
-      );
+    const value = config || {};
+    const color = /^#[0-9a-f]{6}$/i.test(value.background || '')
+      ? value.background
+      : defaults.color;
+    node.classList.add('skin-configurable-surface', className);
+    node.classList.toggle('skin-configurable-hidden', value.visible === false);
+    node.style.setProperty('--skin-region-color', color);
+    node.style.setProperty('--skin-region-opacity', `${Math.round(clamp(value.opacity, 0, 1, defaults.opacity) * 100)}%`);
+    node.style.setProperty('--skin-region-border-opacity', `${Math.round(clamp(value.borderOpacity, 0, 1, defaults.borderOpacity) * 100)}%`);
+    node.style.setProperty('--skin-region-blur', `${Math.round(clamp(value.blur, 0, 32, defaults.blur))}px`);
+    node.style.setProperty('--skin-region-radius', `${Math.round(clamp(value.radius, 0, 32, defaults.radius))}px`);
+    node.style.setProperty(
+      '--skin-region-shadow',
+      configurableSurfaceShadows[value.shadow] || configurableSurfaceShadows[defaults.shadow],
+    );
+  };
+  const diagramMarkerSelector = [
+    '[data-codex-diagram]', '[data-diagram]', '[data-mermaid]',
+    '[class~="mermaid"]', '[class*="mermaid"]',
+    'svg[id^="mermaid-"]', 'svg[id^="flowchart-"]',
+  ].join(', ');
+  const diagramDefaults = {
+    color: 'var(--skin-surface)', opacity: 0.88, borderOpacity: 0.35,
+    blur: 8, radius: 12, shadow: 'none',
+  };
+  const isDiagramSvg = (svg) => {
+    if (!(svg instanceof SVGElement)) return false;
+    const identity = [
+      svg.id || '',
+      typeof svg.className === 'string' ? svg.className : svg.className?.baseVal || '',
+      svg.getAttribute('aria-label') || '',
+    ].join(' ');
+    if (/mermaid|flowchart|diagram|graph/i.test(identity)) return true;
+    return svg.querySelectorAll('text, .nodeLabel, foreignObject').length >= 2
+      && svg.querySelectorAll('rect, polygon, .node').length >= 2
+      && svg.querySelectorAll('path, line, polyline, marker').length >= 2;
+  };
+  const diagramSurfaceFor = (svg) => {
+    const explicit = svg.closest(diagramMarkerSelector);
+    const assistant = svg.closest('[data-content-search-unit-key$=":assistant"]');
+    if (!assistant) return explicit && !explicit.matches('svg') ? explicit : null;
+    let candidate = explicit && !explicit.matches('svg') ? explicit : svg.parentElement;
+    let best = candidate || svg;
+    let depth = 0;
+    while (candidate && candidate !== assistant && depth < 4) {
+      if (candidate.children.length === 1 && candidate.firstElementChild?.contains(svg)) best = candidate;
+      candidate = candidate.parentElement;
+      depth += 1;
+    }
+    return best;
+  };
+  const applyDiagramSurfaces = (scope, config) => {
+    const surfaces = new Set();
+    const assistants = relatedMatches(scope, '[data-content-search-unit-key$=":assistant"]');
+    for (const assistant of assistants) {
+      assistant.querySelectorAll(diagramMarkerSelector).forEach((candidate) => {
+        const svg = candidate.matches('svg') ? candidate : candidate.querySelector('svg');
+        if (candidate.matches('[data-codex-diagram], [data-diagram], [data-mermaid], [class~="mermaid"], [class*="mermaid"]') || (svg && isDiagramSvg(svg))) {
+          surfaces.add(candidate.matches('svg') ? diagramSurfaceFor(svg) : candidate);
+        }
+      });
+      assistant.querySelectorAll('svg').forEach((svg) => {
+        if (isDiagramSvg(svg)) surfaces.add(diagramSurfaceFor(svg));
+      });
+    }
+    surfaces.forEach((surface) => {
+      applyConfigurableSurface(surface, 'skin-diagram-surface', config, diagramDefaults);
     });
   };
   const headerSurfaceDefaults = {
@@ -538,6 +576,7 @@
         blur: 4, radius: 12, shadow: 'none',
       });
     }
+    applyDiagramSurfaces(scope, ui.diagram || {});
     for (const suggestions of relatedMatches(scope, '[class~="group/home-suggestions"]')) {
       suggestions.classList.toggle('skin-home-suggestions-hidden', ui.homeSuggestions?.visible === false);
     }
@@ -795,6 +834,7 @@
         blur: 4, radius: 12, shadow: 'none',
       });
     }
+    applyDiagramSurfaces(document, ui.diagram || {});
     const homeSuggestions = document.querySelector('[class~="group/home-suggestions"]');
     homeSuggestions?.classList.toggle('skin-home-suggestions-hidden', ui.homeSuggestions?.visible === false);
     for (const suggestion of document.querySelectorAll('[class~="group/home-suggestions"] button')) {
@@ -895,6 +935,13 @@
     root.style.setProperty('--skin-table-opacity', `${Math.round(clamp(richText.tableOpacity, 0, 1, 0.4) * 100)}%`);
     root.style.setProperty('--skin-table-radius', `${Math.round(clamp(richText.tableRadius, 0, 24, 8))}px`);
     root.style.setProperty('--skin-image-radius', `${Math.round(clamp(richText.imageRadius, 0, 32, 8))}px`);
+    const diagram = ui.diagram || {};
+    root.style.setProperty('--skin-diagram-padding', `${Math.round(clamp(diagram.padding, 4, 40, 16))}px`);
+    root.style.setProperty('--skin-diagram-node-color', /^#[0-9a-f]{6}$/i.test(diagram.nodeBackground || '') ? diagram.nodeBackground : 'var(--skin-surface)');
+    root.style.setProperty('--skin-diagram-node-border', /^#[0-9a-f]{6}$/i.test(diagram.nodeBorder || '') ? diagram.nodeBorder : 'var(--skin-line)');
+    root.style.setProperty('--skin-diagram-node-text', /^#[0-9a-f]{6}$/i.test(diagram.nodeText || '') ? diagram.nodeText : 'var(--skin-text-primary)');
+    root.style.setProperty('--skin-diagram-connector', /^#[0-9a-f]{6}$/i.test(diagram.connector || '') ? diagram.connector : 'var(--skin-line)');
+    root.style.setProperty('--skin-diagram-emphasis', /^#[0-9a-f]{6}$/i.test(diagram.emphasis || '') ? diagram.emphasis : 'var(--skin-accent)');
     const home = document.querySelector('[role="main"]:has([data-testid="home-icon"])');
     for (const candidate of document.querySelectorAll('[role="main"]')) {
       candidate.classList.toggle('skin-home', candidate === home);
@@ -994,6 +1041,8 @@
       '--skin-inline-code-radius', '--skin-quote-accent', '--skin-quote-color',
       '--skin-quote-opacity', '--skin-table-border', '--skin-table-color',
       '--skin-table-opacity', '--skin-table-radius', '--skin-image-radius',
+      '--skin-diagram-padding', '--skin-diagram-node-color', '--skin-diagram-node-border',
+      '--skin-diagram-node-text', '--skin-diagram-connector', '--skin-diagram-emphasis',
       '--skin-level-color-0', '--skin-level-color-1', '--skin-level-color-2',
       '--skin-level-color-3', '--skin-level-color-4', '--skin-level-thumb-color',
     ]) root.style.removeProperty(property);
@@ -1017,6 +1066,7 @@
         'skin-configurable-surface', 'skin-configurable-hidden', 'skin-sidebar-surface',
         'skin-header-surface', 'skin-application-menu-surface', 'skin-user-bubble-surface',
         'skin-code-block-surface', 'skin-activity-card-surface', 'skin-home-suggestion-surface', 'skin-overlay-surface',
+        'skin-diagram-surface',
       );
       for (const property of configurableSurfaceProperties) node.style.removeProperty(property);
     });

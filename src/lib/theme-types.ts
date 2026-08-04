@@ -91,6 +91,22 @@ export type RichTextStyle = {
   imageRadius: number
 }
 
+export type DiagramStyle = {
+  visible: boolean
+  background: string
+  opacity: number
+  blur: number
+  borderOpacity: number
+  shadow: 'none' | 'soft' | 'strong'
+  radius: number
+  padding: number
+  nodeBackground: string
+  nodeBorder: string
+  nodeText: string
+  connector: string
+  emphasis: string
+}
+
 export type HomeWelcomeStyle = {
   iconVisible: boolean
   titleVisible: boolean
@@ -126,6 +142,7 @@ export type UiConfig = {
   diff: DiffStyle
   content: ContentLayoutStyle
   richText: RichTextStyle
+  diagram: DiagramStyle
 }
 
 export type ThemeRecord = {

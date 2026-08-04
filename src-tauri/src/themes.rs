@@ -298,6 +298,35 @@ fn validate_ui(ui: &UiConfig) -> Result<()> {
         }
     }
 
+    let diagram = &ui.diagram;
+    if diagram.background != "auto" && !valid_hex_color(&diagram.background) {
+        return Err(StudioError::from("可视化输出背景色必须为自动或十六进制颜色"));
+    }
+    if !(0.0..=1.0).contains(&diagram.opacity)
+        || !(0.0..=1.0).contains(&diagram.border_opacity)
+        || diagram.blur > 32
+        || diagram.radius > 32
+        || !(4..=40).contains(&diagram.padding)
+    {
+        return Err(StudioError::from("可视化输出样式参数超出范围"));
+    }
+    if !["none", "soft", "strong"].contains(&diagram.shadow.as_str()) {
+        return Err(StudioError::from("可视化输出阴影设置无效"));
+    }
+    for (label, color) in [
+        ("可视化节点背景", &diagram.node_background),
+        ("可视化节点边框", &diagram.node_border),
+        ("可视化节点文字", &diagram.node_text),
+        ("可视化连线", &diagram.connector),
+        ("可视化强调色", &diagram.emphasis),
+    ] {
+        if color != "auto" && !valid_hex_color(color) {
+            return Err(StudioError::from(format!(
+                "{label}颜色必须为自动或十六进制颜色"
+            )));
+        }
+    }
+
     for (label, rows) in [
         ("任务列表", &ui.thread_rows),
         ("环境面板项目", &ui.summary_rows),
@@ -1188,6 +1217,18 @@ fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
     ui.activity_card.border_opacity = border_opacity - 0.04;
     ui.activity_card.shadow = theme.shadow.into();
     ui.activity_card.radius = theme.radius;
+    ui.diagram.background = theme.code.into();
+    ui.diagram.opacity = if light { 0.92 } else { 0.94 };
+    ui.diagram.blur = theme.blur.saturating_sub(4);
+    ui.diagram.border_opacity = border_opacity;
+    ui.diagram.shadow = theme.shadow.into();
+    ui.diagram.radius = theme.radius.min(16);
+    ui.diagram.padding = if theme.radius >= 14 { 16 } else { 12 };
+    ui.diagram.node_background = theme.raised.into();
+    ui.diagram.node_border = theme.line.into();
+    ui.diagram.node_text = "auto".into();
+    ui.diagram.connector = theme.line.into();
+    ui.diagram.emphasis = theme.accent.into();
     ui.home_suggestions.background = theme.raised.into();
     ui.home_suggestions.opacity = raised_opacity;
     ui.home_suggestions.blur = theme.blur.saturating_sub(2);

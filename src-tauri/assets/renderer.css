@@ -77,6 +77,12 @@
   --skin-table-opacity: 40%;
   --skin-table-radius: 8px;
   --skin-image-radius: 8px;
+  --skin-diagram-padding: 16px;
+  --skin-diagram-node-color: var(--skin-surface);
+  --skin-diagram-node-border: var(--skin-line);
+  --skin-diagram-node-text: var(--skin-text-primary);
+  --skin-diagram-connector: var(--skin-line);
+  --skin-diagram-emphasis: var(--skin-accent);
   --skin-level-color-0: #22c55e;
   --skin-level-color-1: #339cff;
   --skin-level-color-2: #8b5cf6;
@@ -372,6 +378,57 @@ html.codex-skin-studio [data-content-search-unit-key$=":assistant"] :is(table, t
 }
 html.codex-skin-studio [data-content-search-unit-key$=":assistant"] img {
   border-radius: var(--skin-image-radius) !important;
+}
+html.codex-skin-studio .skin-diagram-surface {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: var(--skin-diagram-padding) !important;
+  color: var(--skin-diagram-node-text) !important;
+}
+html.codex-skin-studio .skin-diagram-surface :is(svg, canvas) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html.codex-skin-studio .skin-diagram-surface :is(div, pre, figure):has(> svg) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html.codex-skin-studio .skin-diagram-surface svg > rect {
+  fill: transparent !important;
+  stroke: none !important;
+}
+html.codex-skin-studio .skin-diagram-surface svg :is(rect.background, rect[class*="background"], rect[id*="background"], rect[data-background], rect.canvas) {
+  fill: transparent !important;
+  stroke: none !important;
+}
+html.codex-skin-studio .skin-diagram-surface :is(.node rect, .node polygon, .node path, .cluster rect, .flowchart-label rect) {
+  fill: var(--skin-diagram-node-color) !important;
+  stroke: var(--skin-diagram-node-border) !important;
+}
+html.codex-skin-studio .skin-diagram-surface :is(.nodeLabel, .label, .edgeLabel, text, foreignObject div) {
+  color: var(--skin-diagram-node-text) !important;
+  fill: var(--skin-diagram-node-text) !important;
+}
+html.codex-skin-studio .skin-diagram-surface :is(.edgePath .path, .flowchart-link, .edge-thickness-normal, .edge-pattern-solid, line, polyline) {
+  stroke: var(--skin-diagram-connector) !important;
+}
+html.codex-skin-studio .skin-diagram-surface :is(marker path, .arrowheadPath, .marker) {
+  fill: var(--skin-diagram-connector) !important;
+  stroke: var(--skin-diagram-connector) !important;
+}
+html.codex-skin-studio .skin-diagram-surface :is(.edgeLabel .labelBkg, .labelBkg, .edgeLabel rect) {
+  fill: var(--skin-diagram-node-color) !important;
+  stroke: var(--skin-diagram-node-border) !important;
+}
+html.codex-skin-studio .skin-diagram-surface :is(.node.emphasis rect, .node.emphasis polygon, .node.emphasis path, [data-emphasis="true"]) {
+  stroke: var(--skin-diagram-emphasis) !important;
 }
 html.codex-skin-studio .ProseMirror { color: var(--skin-text) !important; caret-color: var(--skin-accent) !important; }
 html.codex-skin-studio aside.app-shell-left-panel button:not([data-app-action-sidebar-thread-row]):hover,
