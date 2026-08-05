@@ -1,5 +1,4 @@
 mod cdp;
-mod codex_config;
 mod engine;
 mod error;
 mod models;
@@ -8,7 +7,6 @@ mod storage;
 mod store;
 mod themes;
 
-use codex_config::{ConfigureCodexModelsRequest, ConfigureCodexModelsResult, CodexModelsStatus};
 use engine::AppRuntime;
 use models::{
     ApplyPlan, ArtConfig, ChangeSummaryConfig, ComposerConfig, Dashboard, EnvironmentConfig,
@@ -276,22 +274,6 @@ fn set_launch_codex_on_open(enabled: bool) -> std::result::Result<bool, String> 
     settings.launch_codex_on_open = enabled;
     storage::write_settings(&settings).map_err(|error| error.to_string())?;
     Ok(settings.launch_codex_on_open)
-}
-
-#[tauri::command]
-fn get_codex_models_status() -> std::result::Result<CodexModelsStatus, String> {
-    codex_config::status().map_err(|error| error.to_string())
-}
-
-#[tauri::command]
-async fn configure_codex_models(
-    request: ConfigureCodexModelsRequest,
-) -> std::result::Result<ConfigureCodexModelsResult, String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        codex_config::configure(request).map_err(|error| error.to_string())
-    })
-    .await
-    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -648,8 +630,6 @@ pub fn run() {
             get_apply_plan,
             set_autostart,
             set_launch_codex_on_open,
-            get_codex_models_status,
-            configure_codex_models,
             set_model_picker_layout,
             import_wallpaper,
             import_theme_bundle,
