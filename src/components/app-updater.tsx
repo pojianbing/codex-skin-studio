@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils'
 
 type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'ready'
 
-const fallbackVersion = '0.4.0'
+const fallbackVersion = '0.4.1'
 
 function formatUpdateDate(value?: string) {
   if (!value) return '刚刚发布'
