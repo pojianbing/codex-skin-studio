@@ -35,7 +35,7 @@
   <sub>主题库、Codex 实时预览与可逐项调整的编辑面板。</sub>
 </p>
 
-> 本项目不是 OpenAI 官方产品。它不会修改 Codex 的应用包、`app.asar` 或代码签名；只有在用户明确使用「模型接入」并确认后，才会写入用户级 Codex 配置，并先创建备份。
+> 本项目不是 OpenAI 官方产品，也不会修改 Codex 的应用包、`app.asar`、代码签名或 `config.toml`。
 
 ## 为什么使用它
 
@@ -46,7 +46,6 @@ Codex Skin Studio 将主题保留在本机。选择内置主题、导入一张�
 - **带上完整配置分享**：导入或导出单文件 `.codex-theme` 包，保留背景图片和所有主题参数。
 - **本地主题商店**：从经过签名验证的主题目录中浏览、安装或更新主题。
 - **可逆的应用过程**：暂停皮肤或恢复官方外观时，应用会移除实时注入的 DOM、停止守护并以普通模式重启 Codex。
-- **可选的模型接入**：在 Codex 模型目录中追加 DeepSeek 模型，支持保留 GPT 的混合 catalog 或使用 DeepSeek 独立 provider。
 - **适合长期运行**：支持系统托盘、会话自动恢复，以及可选的登录时后台运行。
 
 内置 2 款主题：竹影天光和旷野。
@@ -87,12 +86,6 @@ Codex Skin Studio 将主题保留在本机。选择内置主题、导入一张�
 
 在应用中选择「恢复官方主题」。Skin Studio 会清理已注入的内容、停止 watcher、关闭已验证的 Codex 进程，并正常重新启动 Codex。也可使用「暂停皮肤」临时关闭主题而保留当前会话。
 
-### 4. 接入 DeepSeek
-
-打开工具栏的「模型接入」。混合模式会保留当前 GPT catalog，并追加 `deepseek-v4-flash`；可选加入 `deepseek-v4-pro`。混合模式要求当前 Responses provider 能按请求中的 `model` 字段路由到 GPT 或 DeepSeek 上游。
-
-独立模式使用官方 DeepSeek Responses provider。先在系统环境变量中设置 `DEEPSEEK_API_KEY`，再应用配置；Skin Studio 只写入环境变量名，不会读取或保存 API Key。配置和模型目录会在写入前生成带时间戳的备份，修改后需要完全重启 Codex。
-
 ## 主题工作流
 
 ### 从壁纸开始
@@ -124,7 +117,7 @@ Skin Studio 通过绑定到 `127.0.0.1` 的 Chrome DevTools Protocol (CDP) 将�
 
 - 应用只会对已验证的官方 Codex 进程建立主题会话，并验证 Microsoft Store 包。
 - CDP 只监听回环地址，但同一用户账户下的本地进程仍可能访问调试端口。主题会话运行时，请不要执行不可信的本机程序。
-- 主题操作不会修改 Codex 配置。模型接入是独立的显式操作，只写入用户级 `config.toml` 和模型目录，并生成备份；恢复官方主题不会删除这些模型配置。
+- 当前版本不会修改 Codex 的 `config.toml`。恢复官方主题不会留下持久化补丁。
 - 关闭主窗口默认会最小化到系统托盘；选择「退出后台」才会退出 Skin Studio。启用登录时后台运行后，活动主题会在下次登录后恢复。
 - Codex Desktop 的内部 DOM 可能随版本变化。若官方更新导致界面异常，请先恢复官方主题并在 Issue 中附上版本与复现信息。
 
