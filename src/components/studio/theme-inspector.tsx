@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils'
 import { type ElementTab, type PreviewElementId } from '@/lib/preview-elements'
 import {
   type ArtConfig,
-  type LevelSliderConfig,
   type ThemeFilter,
   type ThemeRecord,
   type ThemeUpdate,
@@ -32,8 +31,6 @@ import {
   SurfaceStyleEditor,
   ToggleSetting,
 } from '@/components/studio/theme-settings'
-
-const levelSliderLabels = ['低', '标准', '高', '超高', '极高'] as const
 
 type ConfigSectionProps = Omit<ComponentProps<typeof ConfigSection>, 'title' | 'children'>
 
@@ -634,48 +631,6 @@ export function ThemeInspector({
                             autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#18181b'}
                             onChange={(value) => void updateUi('overlays', value)}
                           />
-                        </ConfigSection>
-
-                        <ConfigSection title="级别滑块" {...configSectionProps('levelSlider')}>
-                          <ToggleSetting
-                            label="自定义轨道"
-                            checked={selected.levelSlider.enabled}
-                            onChange={(enabled) => void updateSelected({
-                              levelSlider: { ...selected.levelSlider, enabled },
-                            })}
-                          />
-                          {selected.levelSlider.enabled && (
-                            <>
-                              <div className="h-px bg-zinc-800" />
-                              {levelSliderLabels.map((label, index) => (
-                                <ColorSetting
-                                  key={label}
-                                  label={`级别 ${index + 1} · ${label}`}
-                                  value={selected.levelSlider.levelColors[index]}
-                                  autoColor={selected.levelSlider.levelColors[index]}
-                                  allowAuto={false}
-                                  onChange={(color) => {
-                                    const levelColors = selected.levelSlider.levelColors.map(
-                                      (current, currentIndex) => currentIndex === index ? color : current,
-                                    ) as LevelSliderConfig['levelColors']
-                                    void updateSelected({
-                                      levelSlider: { ...selected.levelSlider, levelColors },
-                                    })
-                                  }}
-                                />
-                              ))}
-                              <div className="h-px bg-zinc-800" />
-                              <ColorSetting
-                                label="拖块颜色"
-                                value={selected.levelSlider.thumbColor}
-                                autoColor="#ffffff"
-                                allowAuto={false}
-                                onChange={(thumbColor) => void updateSelected({
-                                  levelSlider: { ...selected.levelSlider, thumbColor },
-                                })}
-                              />
-                            </>
-                          )}
                         </ConfigSection>
 
                         <ConfigSection title="任务列表行" {...configSectionProps('threadRows')}>

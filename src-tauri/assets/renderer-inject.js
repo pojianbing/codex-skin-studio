@@ -45,18 +45,16 @@
   const classes = [
     'codex-skin-studio', 'skin-theme-light', 'skin-theme-dark', 'skin-safe-left',
     'skin-safe-right', 'skin-safe-center', 'skin-safe-none', 'skin-task-ambient',
-    'skin-task-banner', 'skin-task-off', 'skin-scrollbars-hidden', 'skin-level-slider-custom',
+    'skin-task-banner', 'skin-task-off', 'skin-scrollbars-hidden',
     'skin-background-video', 'skin-model-picker-flat',
   ];
   let observer;
   let appearanceObserver;
-  let sliderObserver;
   let healthTimer;
   let scheduled;
   let flatMenuResizeHandler;
   let videoLayer;
   const pendingNodes = new Set();
-  const levelSliderBindings = new Map();
   const flatMenuStates = new Map();
   const clamp = (value, minimum, maximum, fallback) => {
     const number = Number(value);
@@ -165,36 +163,6 @@
       headerSurfaceDefaults,
     );
     return applicationMenu;
-  };
-
-  const updateLevelSlider = (slider) => {
-    const ticks = [...slider.querySelectorAll('[class*="_Tick_"]')];
-    slider.querySelector('[class*="_Track_"]')?.classList.add('skin-level-slider-track');
-    slider.querySelector('[class*="_Range_"]')?.classList.add('skin-level-slider-range');
-    slider.querySelector('[class*="_Thumb_"]')?.classList.add('skin-level-slider-thumb');
-
-    let selectedIndex = -1;
-    ticks.forEach((tick, index) => {
-      tick.classList.add('skin-level-slider-tick');
-      if (tick.getAttribute('data-selected') === 'true') selectedIndex = index;
-    });
-
-    const activeIndex = Math.max(0, Math.min(4, selectedIndex));
-    slider.classList.add('skin-level-slider');
-    slider.style.setProperty('--skin-level-active-color', `var(--skin-level-color-${activeIndex})`);
-
-    if (!levelSliderBindings.has(slider)) {
-      const refresh = () => requestAnimationFrame(() => updateLevelSlider(slider));
-      for (const event of ['click', 'change', 'input', 'keydown', 'pointermove', 'pointerup']) {
-        slider.addEventListener(event, refresh, { passive: true });
-      }
-      levelSliderBindings.set(slider, refresh);
-      sliderObserver?.observe(slider, {
-        attributes: true,
-        subtree: true,
-        attributeFilter: ['data-selected', 'data-max', 'data-pointer-down'],
-      });
-    }
   };
 
   const isVisible = (node) => {
@@ -621,11 +589,6 @@
       row.classList.add('skin-diff-row');
       row.classList.toggle('skin-diff-row-hidden', diff.visible === false);
     }
-    if (theme.levelSlider?.enabled !== false) {
-      for (const slider of relatedMatches(scope, '[data-model-picker-power-slider]')) {
-        updateLevelSlider(slider);
-      }
-    }
     syncFlatMenus();
     for (const conversation of relatedMatches(scope, '[data-thread-find-target="conversation"]')) {
       conversation.firstElementChild?.firstElementChild?.classList.add('skin-message-stack');
@@ -673,20 +636,6 @@
     root.style.setProperty('--skin-art-position', `${Math.round(theme.art.focusX * 100)}% ${Math.round(theme.art.focusY * 100)}%`);
     root.style.setProperty('--skin-accent', theme.palette.accent || '#3b82f6');
     const resolvedColor = (value, fallback) => /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
-    const levelSlider = theme.levelSlider || {};
-    const levelSliderEnabled = levelSlider.enabled !== false;
-    root.classList.toggle('skin-level-slider-custom', levelSliderEnabled);
-    const levelColorFallbacks = ['#22c55e', '#339cff', '#8b5cf6', '#f59e0b', '#ef4444'];
-    for (let index = 0; index < levelColorFallbacks.length; index += 1) {
-      root.style.setProperty(
-        `--skin-level-color-${index}`,
-        resolvedColor(levelSlider.levelColors?.[index], levelColorFallbacks[index]),
-      );
-    }
-    root.style.setProperty(
-      '--skin-level-thumb-color',
-      resolvedColor(levelSlider.thumbColor, '#ffffff'),
-    );
     const tokens = theme.tokens || {};
     root.style.setProperty('--skin-text-primary', resolvedColor(tokens.textPrimary, 'var(--skin-text)'));
     root.style.setProperty('--skin-text-secondary', resolvedColor(tokens.textSecondary, 'var(--skin-muted-text)'));
@@ -909,11 +858,6 @@
       row.classList.toggle('skin-diff-row-hidden', diff.visible === false);
     }
 
-    if (levelSliderEnabled) {
-      for (const slider of document.querySelectorAll('[data-model-picker-power-slider]')) {
-        updateLevelSlider(slider);
-      }
-    }
     syncFlatMenus();
 
     const content = ui.content || {};
@@ -1012,7 +956,6 @@
     clearInterval(healthTimer);
     observer?.disconnect();
     appearanceObserver?.disconnect();
-    sliderObserver?.disconnect();
     [...flatMenuStates.values()].forEach(cleanupFlatMenu);
     if (flatMenuResizeHandler) window.removeEventListener('resize', flatMenuResizeHandler);
     document.getElementById('codex-skin-studio-style')?.remove();
@@ -1046,8 +989,6 @@
       '--skin-table-opacity', '--skin-table-radius', '--skin-image-radius',
       '--skin-diagram-padding', '--skin-diagram-node-color', '--skin-diagram-node-border',
       '--skin-diagram-node-text', '--skin-diagram-connector', '--skin-diagram-emphasis',
-      '--skin-level-color-0', '--skin-level-color-1', '--skin-level-color-2',
-      '--skin-level-color-3', '--skin-level-color-4', '--skin-level-thumb-color',
     ]) root.style.removeProperty(property);
     document.querySelectorAll('.skin-home').forEach((node) => node.classList.remove('skin-home'));
     document.querySelectorAll('.skin-task').forEach((node) => node.classList.remove('skin-task'));
@@ -1079,20 +1020,6 @@
     document.querySelectorAll('.skin-diff-row').forEach((node) => node.classList.remove('skin-diff-row', 'skin-diff-row-hidden'));
     document.querySelectorAll('.skin-message-stack').forEach((node) => node.classList.remove('skin-message-stack'));
     document.querySelectorAll('.skin-composer-control').forEach((node) => node.classList.remove('skin-composer-control', 'skin-composer-primary-action'));
-    for (const [slider, refresh] of levelSliderBindings) {
-      for (const event of ['click', 'change', 'input', 'keydown', 'pointermove', 'pointerup']) {
-        slider.removeEventListener(event, refresh);
-      }
-      slider.classList.remove('skin-level-slider');
-      slider.style.removeProperty('--skin-level-active-color');
-      slider.querySelectorAll('[class*="_Tick_"]').forEach((tick) => {
-        tick.classList.remove('skin-level-slider-tick');
-      });
-      slider.querySelector('[class*="_Track_"]')?.classList.remove('skin-level-slider-track');
-      slider.querySelector('[class*="_Range_"]')?.classList.remove('skin-level-slider-range');
-      slider.querySelector('[class*="_Thumb_"]')?.classList.remove('skin-level-slider-thumb');
-    }
-    levelSliderBindings.clear();
     videoLayer?.pause();
     videoLayer?.remove();
     const asset = window[MEDIA_STATE]?.assets?.[assetId];
@@ -1146,16 +1073,6 @@
       attributeFilter: ['class', 'data-theme', 'data-appearance'],
     });
   }
-  sliderObserver = new MutationObserver((records) => {
-    const sliders = new Set();
-    for (const record of records) {
-      const slider = record.target instanceof Element
-        ? record.target.closest('[data-model-picker-power-slider]')
-        : null;
-      if (slider) sliders.add(slider);
-    }
-    sliders.forEach(updateLevelSlider);
-  });
   flatMenuResizeHandler = () => requestAnimationFrame(refreshFlatSubmenus);
   window.addEventListener('resize', flatMenuResizeHandler, { passive: true });
   healthTimer = setInterval(healthCheck, 30000);

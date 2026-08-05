@@ -13,7 +13,6 @@ export const previewElementMeta = {
   activityCard: { tab: 'components', label: '工具活动卡片' },
   diagram: { tab: 'components', label: '可视化输出' },
   overlays: { tab: 'components', label: '弹层与菜单' },
-  levelSlider: { tab: 'components', label: '级别滑块' },
   threadRows: { tab: 'components', label: '任务列表行' },
   homeWelcome: { tab: 'components', label: '主页欢迎内容' },
   homeSuggestions: { tab: 'components', label: '主页建议卡片' },
