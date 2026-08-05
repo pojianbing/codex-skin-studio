@@ -9,7 +9,7 @@ use url::Url;
 
 const MEDIA_STATE: &str = "__CODEX_SKIN_STUDIO_MEDIA__";
 const MEDIA_CHUNK_BYTES: usize = 1024 * 1024;
-const CODEX_RENDERER_PROBE: &str = "Boolean(document.querySelector('main[data-app-shell-main-surface], main.main-surface') && document.querySelector('aside.app-shell-left-panel'))";
+const CODEX_RENDERER_PROBE: &str = "Boolean((document.querySelector('main[data-app-shell-main-surface], main.main-surface') && document.querySelector('aside.app-shell-left-panel')) || (document.documentElement.classList.contains('compact-window') && document.querySelector('[data-codex-composer-root] [class*=_ComposerLayoutRoot_]')))";
 const RENDERER_HEALTH_CHECK: &str = "Boolean(window.__CODEX_SKIN_STUDIO_STATE__?.revision && window.__CODEX_SKIN_STUDIO_STATE__?.ensure?.() === true && document.getElementById('codex-skin-studio-style') && document.documentElement.classList.contains('codex-skin-studio'))";
 
 #[derive(Clone)]
@@ -374,10 +374,13 @@ mod tests {
     }
 
     #[test]
-    fn renderer_probe_supports_current_and_legacy_shell_markers() {
+    fn renderer_probe_supports_main_and_compact_shell_markers() {
         assert!(CODEX_RENDERER_PROBE.contains("data-app-shell-main-surface"));
         assert!(CODEX_RENDERER_PROBE.contains("main.main-surface"));
         assert!(CODEX_RENDERER_PROBE.contains("aside.app-shell-left-panel"));
+        assert!(CODEX_RENDERER_PROBE.contains("compact-window"));
+        assert!(CODEX_RENDERER_PROBE.contains("data-codex-composer-root"));
+        assert!(CODEX_RENDERER_PROBE.contains("_ComposerLayoutRoot_"));
     }
 
     #[test]

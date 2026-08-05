@@ -544,9 +544,17 @@ mod tests {
         assert!(RENDERER.contains("[role=\"menubar\"]"));
         assert!(RENDERER.contains("application-menu-trigger-"));
         assert!(RENDERER.contains("group/application-menu-top-bar"));
+        assert!(RENDERER.contains("compact-window"));
+        assert!(RENDERER.contains("data-codex-composer-root"));
         assert!(RENDERER.contains("skin-main-surface"));
+        assert!(RENDERER.contains("skin-compact-home-shell"));
+        assert!(RENDERER.contains("skin-compact-home-underlay"));
+        assert!(RENDERER.contains("skin-composer-body"));
         assert!(RENDERER.contains("skin-application-menu-surface"));
         assert!(CSS.contains(".skin-main-surface"));
+        assert!(CSS.contains(".skin-compact-home-shell"));
+        assert!(CSS.contains(".skin-compact-home-underlay"));
+        assert!(CSS.contains(".skin-composer-body"));
         assert!(!CSS.contains("main.main-surface"));
     }
 

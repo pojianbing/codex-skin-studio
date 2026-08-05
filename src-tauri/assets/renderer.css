@@ -213,6 +213,11 @@ html.codex-skin-studio .skin-main-surface [role="main"] {
   color: var(--skin-text) !important;
   background: transparent !important;
 }
+html.codex-skin-studio :is(.skin-compact-home-shell, .skin-compact-home-underlay) {
+  color: var(--skin-text-primary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
 html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]) {
   color: var(--skin-text-primary) !important;
   border-color: color-mix(in oklab, var(--skin-border) var(--skin-composer-border-opacity), transparent) !important;
@@ -220,6 +225,12 @@ html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoo
   background: color-mix(in oklab, var(--skin-composer-color) var(--skin-composer-opacity), transparent) !important;
   box-shadow: var(--skin-composer-shadow) !important;
   backdrop-filter: blur(var(--skin-composer-blur)) saturate(1.06) !important;
+}
+html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"])
+  :is(.skin-composer-body, [class*="_ComposerLayoutBody_"]) {
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 html.codex-skin-studio .skin-home-utility-bar {
   color: var(--skin-text-primary) !important;

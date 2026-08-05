@@ -6,6 +6,13 @@
   const mediaAsset = mediaStore?.assets?.[assetId];
   const modelPickerLayout = preferences?.modelPickerLayout === 'flat' ? 'flat' : 'native';
   const mainSurfaceSelector = 'main[data-app-shell-main-surface], main.main-surface';
+  const findCompactHomeShell = () => {
+    if (!document.documentElement?.classList.contains('compact-window')) return null;
+    const composerRoot = document.querySelector('[data-codex-composer-root]');
+    const shell = composerRoot?.closest('[class*="_homeShell_"]')
+      || composerRoot?.parentElement?.parentElement;
+    return shell?.querySelector('[class*="_ComposerLayoutRoot_"]') ? shell : null;
+  };
   const appHeaderSelector = [
     'main[data-app-shell-main-surface] > header[data-app-shell-application-menu-bar]',
     'main.main-surface > header.app-header-tint',
@@ -16,7 +23,8 @@
     ':scope > header[data-app-shell-application-menu-bar], :scope > header.app-header-tint',
   );
   const applicationMenuIsRequired = () => (
-    document.documentElement?.getAttribute('data-codex-window-chrome') === 'application-menu'
+    !document.documentElement?.classList.contains('compact-window')
+    && document.documentElement?.getAttribute('data-codex-window-chrome') === 'application-menu'
   );
   const findApplicationMenuSurface = () => {
     if (applicationMenuIsRequired()) {
@@ -449,10 +457,13 @@
       title.classList.toggle('skin-home-welcome-title-hidden', homeWelcome.titleVisible === false);
     }
     findMainSurface()?.classList.toggle('skin-home-shell', Boolean(home));
+    const compactHomeShell = findCompactHomeShell();
+    compactHomeShell?.classList.add('skin-compact-home-shell');
+    compactHomeShell?.querySelector('[class*="_shellUnderlay_"]')?.classList.add('skin-compact-home-underlay');
   };
 
   const fileChangeFadeSelector = 'div[class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="-bottom-1"][class~="h-7"][class~="bg-gradient-to-t"][class~="from-token-main-surface-primary"][class~="to-transparent"]';
-  const homeUtilityBarSelector = '[class*="_homeUtilityBar_"]';
+  const homeUtilityBarSelector = '[class*="_homeUtilityBar_"], [class*="_HomeUtilityBar_"]';
   const composerSurfaceSelector = '.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]';
 
   const processIncrementalScope = (scope) => {
@@ -463,6 +474,7 @@
     const ui = theme.ui || {};
 
     for (const composerSurface of relatedMatches(scope, composerSurfaceSelector)) {
+      composerSurface.querySelector('[class*="_ComposerLayoutBody_"]')?.classList.add('skin-composer-body');
       const controls = composerSurface.querySelectorAll('button, [role="button"]');
       controls.forEach((control) => control.classList.add('skin-composer-control'));
       const primaryAction = [...controls].find((control) => {
@@ -596,10 +608,15 @@
   };
 
   const ensure = () => {
-    const shell = findMainSurface();
+    const mainShell = findMainSurface();
+    const compactHomeShell = findCompactHomeShell();
     const sidebar = document.querySelector('aside.app-shell-left-panel');
-    if (!shell || !sidebar) return false;
-    shell.classList.add('skin-main-surface');
+    const hasMainShell = Boolean(mainShell && sidebar);
+    const hasCompactHomeShell = Boolean(!mainShell && compactHomeShell);
+    if (!hasMainShell && !hasCompactHomeShell) return false;
+    mainShell?.classList.add('skin-main-surface');
+    compactHomeShell?.classList.add('skin-compact-home-shell');
+    compactHomeShell?.querySelector('[class*="_shellUnderlay_"]')?.classList.add('skin-compact-home-underlay');
     let style = document.getElementById('codex-skin-studio-style');
     if (!style) {
       style = document.createElement('style');
@@ -670,6 +687,7 @@
     root.style.setProperty('--skin-composer-action-text', resolvedColor(composer.primaryActionText, 'var(--skin-text-inverse)'));
     const composerSurfaces = document.querySelectorAll(composerSurfaceSelector);
     for (const composerSurface of composerSurfaces) {
+      composerSurface.querySelector('[class*="_ComposerLayoutBody_"]')?.classList.add('skin-composer-body');
       const controls = composerSurface.querySelectorAll('button, [role="button"]');
       controls.forEach((control) => control.classList.add('skin-composer-control'));
       const primaryAction = [...controls].find((control) => {
@@ -754,7 +772,7 @@
       color: 'var(--skin-sidebar)', opacity: 0.66, borderOpacity: 0.25,
       blur: 8, radius: 0, shadow: 'none',
     });
-    const taskHeader = findAppHeader(shell);
+    const taskHeader = findAppHeader(mainShell);
     applyConfigurableSurface(
       taskHeader,
       'skin-header-surface',
@@ -913,18 +931,26 @@
     for (const title of welcomeTitles) {
       title.classList.toggle('skin-home-welcome-title-hidden', homeWelcome.titleVisible === false);
     }
-    shell.classList.toggle('skin-home-shell', Boolean(home));
+    mainShell?.classList.toggle('skin-home-shell', Boolean(home));
+    compactHomeShell?.classList.add('skin-compact-home-shell');
+    compactHomeShell?.querySelector('[class*="_shellUnderlay_"]')?.classList.add('skin-compact-home-underlay');
     return !applicationMenuIsRequired()
       || Boolean(applicationMenu?.classList.contains('skin-application-menu-surface'));
   };
 
   const healthCheck = () => {
-    const shell = findMainSurface();
+    const mainShell = findMainSurface();
+    const compactHomeShell = findCompactHomeShell();
+    const shellHealthy = Boolean(
+      (mainShell?.classList.contains('skin-main-surface')
+        && document.querySelector('aside.app-shell-left-panel'))
+      || compactHomeShell?.classList.contains('skin-compact-home-shell'),
+    );
     const style = document.getElementById('codex-skin-studio-style');
     const applicationMenu = findApplicationMenuSurface();
     const applicationMenuIsHealthy = !applicationMenuIsRequired()
       || applicationMenu?.classList.contains('skin-application-menu-surface');
-    if (!shell?.classList.contains('skin-main-surface')
+    if (!shellHealthy
       || !style
       || style.textContent !== cssText
       || !root.classList.contains('codex-skin-studio')
@@ -994,11 +1020,14 @@
     document.querySelectorAll('.skin-task').forEach((node) => node.classList.remove('skin-task'));
     document.querySelectorAll('.skin-main-surface').forEach((node) => node.classList.remove('skin-main-surface'));
     document.querySelectorAll('.skin-home-shell').forEach((node) => node.classList.remove('skin-home-shell'));
+    document.querySelectorAll('.skin-compact-home-shell').forEach((node) => node.classList.remove('skin-compact-home-shell'));
+    document.querySelectorAll('.skin-compact-home-underlay').forEach((node) => node.classList.remove('skin-compact-home-underlay'));
     document.querySelectorAll('.skin-home-welcome-icon-hidden').forEach((node) => node.classList.remove('skin-home-welcome-icon-hidden'));
     document.querySelectorAll('.skin-home-welcome-title-hidden').forEach((node) => node.classList.remove('skin-home-welcome-title-hidden'));
     document.querySelectorAll('.skin-composer-footer-backdrop').forEach((node) => node.classList.remove('skin-composer-footer-backdrop'));
     document.querySelectorAll('.skin-composer-file-change-backdrop').forEach((node) => node.classList.remove('skin-composer-file-change-backdrop'));
     document.querySelectorAll('.skin-home-utility-bar').forEach((node) => node.classList.remove('skin-home-utility-bar'));
+    document.querySelectorAll('.skin-composer-body').forEach((node) => node.classList.remove('skin-composer-body'));
     document.querySelectorAll('.skin-environment-panel-hidden').forEach((node) => node.classList.remove('skin-environment-panel-hidden'));
     document.querySelectorAll('.skin-environment-panel-surface').forEach((node) => node.classList.remove('skin-environment-panel-surface'));
     document.querySelectorAll('.skin-change-summary-hidden').forEach((node) => node.classList.remove('skin-change-summary-hidden'));
