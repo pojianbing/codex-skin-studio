@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import {
-  Download, ImagePlus, Library, LoaderCircle, Pause, Play,
+  Bot, Download, ImagePlus, Library, LoaderCircle, Pause, Play,
   RotateCcw, ShieldAlert, ShieldCheck, Trash2, Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import { ThemeStore } from '@/components/theme-store'
 import { ThemeDnaEasterEgg } from '@/components/theme-dna-easter-egg'
 import { ThemeInspector } from '@/components/studio/theme-inspector'
 import { ThemeLibraryPanel } from '@/components/studio/theme-library-panel'
+import { CodexModelDialog } from '@/components/studio/codex-model-dialog'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -28,6 +29,7 @@ import { browserPreviewDashboard, isBrowserPreview } from '@/lib/browser-preview
 import { type ElementTab, type PreviewElementId, previewElementMeta } from '@/lib/preview-elements'
 import {
   type ApplyPlan,
+  type ConfigureCodexModelsResult,
   type Dashboard,
   type ThemeFilter,
   type ThemeRecord,
@@ -54,6 +56,7 @@ export function SkinStudioApp() {
   const [selectedElement, setSelectedElement] = useState<PreviewElementId | null>(null)
   const [pendingScrollElement, setPendingScrollElement] = useState<PreviewElementId | null>(null)
   const [isThemeDnaOpen, setIsThemeDnaOpen] = useState(false)
+  const [codexModelDialogOpen, setCodexModelDialogOpen] = useState(false)
   const configSectionRefs = useRef(new Map<PreviewElementId, HTMLDetailsElement>())
   const brandClickRef = useRef({ count: 0, startedAt: 0 })
   const [showPreview, setShowPreview] = useState(() => {
@@ -355,6 +358,12 @@ export function SkinStudioApp() {
     await refresh()
   }
 
+  const handleCodexModelsApplied = (result: ConfigureCodexModelsResult) => {
+    toast.success(
+      `${result.deepseekModelCount} 个 DeepSeek 模型已加入目录；请重启 Codex 生效`,
+    )
+  }
+
   const updateUi = <Key extends keyof UiConfig,>(key: Key, value: UiConfig[Key]) => {
     if (!selected) return Promise.resolve()
     return updateSelected({ ui: { ...selected.ui, [key]: value } })
@@ -474,6 +483,17 @@ export function SkinStudioApp() {
               />
               <span className="studio-toolbar-copy">启动时打开 Codex</span>
             </label>
+            <Button
+              variant="outline"
+              size="sm"
+              title="配置 Codex 模型"
+              onClick={() => setCodexModelDialogOpen(true)}
+              disabled={Boolean(working) || isBrowserPreview}
+              className="cursor-pointer"
+            >
+              <Bot size={15} />
+              <span className="studio-toolbar-copy">模型接入</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -614,6 +634,12 @@ export function SkinStudioApp() {
 
       {/* Sonner Toaster component */}
       <Toaster position="top-right" />
+
+      <CodexModelDialog
+        open={codexModelDialogOpen}
+        onOpenChange={setCodexModelDialogOpen}
+        onApplied={handleCodexModelsApplied}
+      />
 
       {/* Confirm Restart Dialog */}
       <Dialog open={confirmRestart} onOpenChange={setConfirmRestart}>

@@ -35,7 +35,7 @@
   <sub>Theme library, live Codex preview, and an editor for individual UI elements.</sub>
 </p>
 
-> Codex Skin Studio is not an OpenAI product. It does not modify the Codex application bundle, `app.asar`, code signatures, or `config.toml`.
+> Codex Skin Studio is not an OpenAI product. It does not modify the Codex application bundle, `app.asar`, or code signatures. Only the explicit Model Integration action writes user-level Codex configuration, and it creates backups first.
 
 ## Why Codex Skin Studio
 
@@ -46,6 +46,7 @@ Codex Skin Studio keeps themes local to your machine. Start with a built-in them
 - **Share the full configuration**: Import or export a single `.codex-theme` file containing the wallpaper and every theme setting.
 - **Use a local theme store**: Browse, install, and update themes from a signed catalog.
 - **Keep changes reversible**: Pause the current skin or restore the official appearance. Skin Studio removes injected DOM, stops its watcher, and relaunches Codex in normal mode.
+- **Optional model integration**: Add DeepSeek models to the Codex catalog while keeping GPT models, or configure DeepSeek as a standalone provider.
 - **Run it in the background**: System tray support, session recovery, and optional launch-at-login support are built in.
 
 Two themes are included: Bamboo Skylight and Wilderness.
@@ -86,6 +87,12 @@ The first time Skin Studio takes over a normally running Codex instance, it need
 
 Choose **Restore Official Theme** in the app. Skin Studio cleans up injected content, stops its watcher, closes the verified Codex process, and restarts Codex normally. **Pause Skin** is also available when you want to temporarily disable the theme while keeping the session.
 
+### 4. Add DeepSeek models
+
+Open **Model Integration** in the toolbar. Mixed mode keeps the current GPT catalog and adds `deepseek-v4-flash`, with an optional `deepseek-v4-pro` entry. The current Responses provider must route requests to GPT or DeepSeek based on the request's `model` field.
+
+Standalone mode uses the official DeepSeek Responses provider. Set `DEEPSEEK_API_KEY` in the system environment before applying the configuration. Skin Studio writes only the environment variable name and never reads or stores the API key. The Codex config and model catalog are backed up before writing, and Codex must be fully restarted afterward.
+
 ## Theme Workflows
 
 ### Start with a wallpaper
@@ -117,7 +124,7 @@ Skin Studio uses the Chrome DevTools Protocol (CDP), bound to `127.0.0.1`, to in
 
 - A themed session is only created for a verified official Codex process. Windows verifies the Microsoft Store package, while macOS verifies the official app signature and OpenAI team identifier.
 - CDP listens only on the loopback interface, but local processes under the same user account may still access the debugging port. Do not run untrusted local programs while a themed session is active.
-- The current release does not modify Codex `config.toml`. Restoring the official theme leaves no persistent patch behind.
+- Theme operations do not modify Codex configuration. Model Integration is a separate explicit action that writes only the user-level `config.toml` and model catalog with backups; restoring the official theme does not remove those model settings.
 - Closing the main window hides Skin Studio in the system tray by default; choose **Quit Background Service** to exit it. When launch at login is enabled, an active theme is restored after the next login.
 - Codex Desktop's internal DOM may change between versions. If an official update causes visual issues, restore the official theme first and open an issue with the app version and reproduction steps.
 

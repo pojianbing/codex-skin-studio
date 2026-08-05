@@ -1,6 +1,42 @@
 export type EngineMode = 'official' | 'active' | 'paused' | 'error'
 export type ModelPickerLayout = 'native' | 'flat'
 
+export type CodexModelMode = 'mixed' | 'deepseek'
+
+export type CodexModelsStatus = {
+  configPath: string
+  configExists: boolean
+  catalogPath?: string
+  catalogExists: boolean
+  currentModel?: string
+  currentProvider?: string
+  gptModelCount: number
+  deepseekModelCount: number
+  deepseekFlashEnabled: boolean
+  deepseekProEnabled: boolean
+}
+
+export type ConfigureCodexModelsRequest = {
+  mode: CodexModelMode
+  includePro: boolean
+  apiKeyEnv: string
+  useCurrentProvider: boolean
+  routerProviderId: string
+  routerBaseUrl: string
+  selectedModel: string
+}
+
+export type ConfigureCodexModelsResult = {
+  mode: CodexModelMode
+  configPath: string
+  catalogPath: string
+  backupConfigPath?: string
+  backupCatalogPath?: string
+  gptModelCount: number
+  deepseekModelCount: number
+  selectedModel: string
+}
+
 export type ArtConfig = {
   focusX: number
   focusY: number
