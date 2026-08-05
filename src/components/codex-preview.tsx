@@ -359,7 +359,7 @@ export function CodexPreview({
     ? fallbackSurface
     : taskMode === 'banner'
       ? `linear-gradient(to bottom, transparent, ${taskWash})`
-      : `linear-gradient(to bottom, ${mix(fallbackSurface, 0.42)}, ${taskWash})`
+      : 'transparent'
 
   const backgroundImage = taskMode === 'off'
     ? undefined

@@ -18,6 +18,7 @@
   --skin-warning: #f59e0b;
   --skin-danger: #ef4444;
   --skin-wash: color-mix(in oklab, var(--skin-surface) 86%, transparent);
+  --skin-task-safe-overlay: linear-gradient(transparent, transparent);
   --skin-composer-color: var(--skin-surface);
   --skin-composer-opacity: 20%;
   --skin-composer-border-opacity: 1%;
@@ -191,14 +192,26 @@ html.codex-skin-studio .skin-main-surface {
 html.codex-skin-studio.skin-safe-left .skin-main-surface {
   background: linear-gradient(90deg, color-mix(in oklab, var(--skin-surface) 64%, transparent), color-mix(in oklab, var(--skin-surface) 30%, transparent)) !important;
 }
+html.codex-skin-studio.skin-safe-left {
+  --skin-task-safe-overlay: linear-gradient(90deg, color-mix(in oklab, var(--skin-surface) 64%, transparent), color-mix(in oklab, var(--skin-surface) 30%, transparent));
+}
 html.codex-skin-studio.skin-safe-right .skin-main-surface {
   background: linear-gradient(270deg, color-mix(in oklab, var(--skin-surface) 72%, transparent), color-mix(in oklab, var(--skin-surface) 26%, transparent)) !important;
+}
+html.codex-skin-studio.skin-safe-right {
+  --skin-task-safe-overlay: linear-gradient(270deg, color-mix(in oklab, var(--skin-surface) 72%, transparent), color-mix(in oklab, var(--skin-surface) 26%, transparent));
 }
 html.codex-skin-studio.skin-safe-center .skin-main-surface {
   background: color-mix(in oklab, var(--skin-surface) 48%, transparent) !important;
 }
+html.codex-skin-studio.skin-safe-center {
+  --skin-task-safe-overlay: linear-gradient(color-mix(in oklab, var(--skin-surface) 48%, transparent), color-mix(in oklab, var(--skin-surface) 48%, transparent));
+}
 html.codex-skin-studio.skin-safe-none .skin-main-surface {
   background: transparent !important;
+}
+html.codex-skin-studio.skin-safe-none {
+  --skin-task-safe-overlay: linear-gradient(transparent, transparent);
 }
 html.codex-skin-studio .skin-main-surface > .skin-header-surface {
   color: var(--skin-text) !important;
@@ -207,7 +220,7 @@ html.codex-skin-studio .skin-main-surface [role="main"] {
   color: var(--skin-text) !important;
   background: transparent !important;
 }
-html.codex-skin-studio .composer-surface-chrome {
+html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]) {
   color: var(--skin-text-primary) !important;
   border-color: color-mix(in oklab, var(--skin-border) var(--skin-composer-border-opacity), transparent) !important;
   border-radius: var(--skin-composer-radius) !important;
@@ -223,15 +236,15 @@ html.codex-skin-studio .skin-home-utility-bar {
   box-shadow: none !important;
   backdrop-filter: blur(var(--skin-composer-blur)) saturate(1.06) !important;
 }
-html.codex-skin-studio .composer-surface-chrome :is(textarea, input)::placeholder,
-html.codex-skin-studio .composer-surface-chrome [data-placeholder]::before {
+html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]) :is(textarea, input)::placeholder,
+html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]) [data-placeholder]::before {
   color: var(--skin-composer-placeholder) !important;
 }
-html.codex-skin-studio .composer-surface-chrome .skin-composer-control {
+html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]) .skin-composer-control {
   border-radius: var(--skin-composer-control-radius) !important;
   background: color-mix(in oklab, var(--skin-composer-control-color) var(--skin-composer-control-opacity), transparent) !important;
 }
-html.codex-skin-studio .composer-surface-chrome .skin-composer-primary-action {
+html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]) .skin-composer-primary-action {
   color: var(--skin-composer-action-text) !important;
   background: var(--skin-composer-action-color) !important;
 }
@@ -446,17 +459,18 @@ html.codex-skin-studio .skin-home .group\/home-suggestions button:hover {
   transform: translateY(-2px);
   border-color: color-mix(in oklab, var(--skin-accent) 42%, var(--skin-border)) !important;
 }
-html.codex-skin-studio .skin-task { position: relative; isolation: isolate; background: transparent !important; }
+html.codex-skin-studio .skin-task { position: relative; isolation: isolate; }
 html.codex-skin-studio .skin-task::before {
   content: ""; position: absolute; z-index: -1; inset: 0; pointer-events: none;
-  background: linear-gradient(to bottom, color-mix(in oklab, var(--skin-surface) 42%, transparent), var(--skin-wash));
+  background: transparent;
 }
 html.codex-skin-studio.skin-task-banner .skin-task::before {
-  background-image: linear-gradient(to bottom, transparent, var(--skin-wash)), var(--skin-art);
-  background-size: 100% 46vh, 100% auto; background-repeat: no-repeat; background-position: center top;
+  background-image: var(--skin-task-safe-overlay), linear-gradient(to bottom, transparent, var(--skin-wash)), var(--skin-art);
+  background-size: 100% 100%, 100% 46vh, 100% auto; background-repeat: no-repeat; background-position: center top;
 }
 html.codex-skin-studio.skin-background-video.skin-task-banner .skin-task::before {
-  background-image: linear-gradient(to bottom, transparent, var(--skin-wash));
+  background-image: var(--skin-task-safe-overlay), linear-gradient(to bottom, transparent, var(--skin-wash));
+  background-size: 100% 100%, 100% 46vh; background-repeat: no-repeat; background-position: center top;
 }
 html.codex-skin-studio.skin-task-off .skin-task::before { background: var(--skin-surface); }
 html.codex-skin-studio [data-message-author-role], html.codex-skin-studio article { color: var(--skin-text); }

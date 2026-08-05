@@ -455,8 +455,9 @@
   };
 
   const refreshHome = () => {
-    const home = document.querySelector('[role="main"]:has([data-testid="home-icon"])');
-    for (const candidate of document.querySelectorAll('[role="main"]')) {
+    const mainSurfaces = [...document.querySelectorAll(mainSurfaceSelector)];
+    const home = mainSurfaces.find((candidate) => candidate.querySelector('[data-testid="home-icon"]'));
+    for (const candidate of mainSurfaces) {
       candidate.classList.toggle('skin-home', candidate === home);
       candidate.classList.toggle('skin-task', candidate !== home);
     }
@@ -484,6 +485,7 @@
 
   const fileChangeFadeSelector = 'div[class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="-bottom-1"][class~="h-7"][class~="bg-gradient-to-t"][class~="from-token-main-surface-primary"][class~="to-transparent"]';
   const homeUtilityBarSelector = '[class*="_homeUtilityBar_"]';
+  const composerSurfaceSelector = '.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]';
 
   const processIncrementalScope = (scope) => {
     if (!scope?.querySelectorAll && !(scope instanceof Element)) return;
@@ -492,7 +494,7 @@
     const changeSummary = theme.changeSummary || {};
     const ui = theme.ui || {};
 
-    for (const composerSurface of relatedMatches(scope, '.composer-surface-chrome')) {
+    for (const composerSurface of relatedMatches(scope, composerSurfaceSelector)) {
       const controls = composerSurface.querySelectorAll('button, [role="button"]');
       controls.forEach((control) => control.classList.add('skin-composer-control'));
       const primaryAction = [...controls].find((control) => {
@@ -505,9 +507,9 @@
       utilityBar.classList.add('skin-home-utility-bar');
     }
     for (const footer of relatedMatches(scope, '[data-thread-scroll-footer="true"]')) {
-      const hasComposer = Boolean(footer.querySelector('.composer-surface-chrome'));
+      const hasComposer = Boolean(footer.querySelector(composerSurfaceSelector));
       for (const layer of footer.children) {
-        if (layer.querySelector('.composer-surface-chrome')) continue;
+        if (layer.querySelector(composerSurfaceSelector)) continue;
         layer.classList.toggle(
           'skin-composer-footer-backdrop',
           hasComposer && composer.showFooterBackdrop !== true,
@@ -717,7 +719,7 @@
     root.style.setProperty('--skin-composer-control-radius', `${Math.round(clamp(composer.controlRadius, 0, 24, 8))}px`);
     root.style.setProperty('--skin-composer-action-color', resolvedColor(composer.primaryActionColor, 'var(--skin-accent)'));
     root.style.setProperty('--skin-composer-action-text', resolvedColor(composer.primaryActionText, 'var(--skin-text-inverse)'));
-    const composerSurfaces = document.querySelectorAll('.composer-surface-chrome');
+    const composerSurfaces = document.querySelectorAll(composerSurfaceSelector);
     for (const composerSurface of composerSurfaces) {
       const controls = composerSurface.querySelectorAll('button, [role="button"]');
       controls.forEach((control) => control.classList.add('skin-composer-control'));
@@ -731,9 +733,9 @@
       utilityBar.classList.add('skin-home-utility-bar');
     }
     for (const footer of document.querySelectorAll('[data-thread-scroll-footer="true"]')) {
-      const hasComposer = Boolean(footer.querySelector('.composer-surface-chrome'));
+      const hasComposer = Boolean(footer.querySelector(composerSurfaceSelector));
       for (const layer of footer.children) {
-        if (layer.querySelector('.composer-surface-chrome')) continue;
+        if (layer.querySelector(composerSurfaceSelector)) continue;
         layer.classList.toggle(
           'skin-composer-footer-backdrop',
           hasComposer && composer.showFooterBackdrop !== true,
@@ -942,8 +944,9 @@
     root.style.setProperty('--skin-diagram-node-text', /^#[0-9a-f]{6}$/i.test(diagram.nodeText || '') ? diagram.nodeText : 'var(--skin-text-primary)');
     root.style.setProperty('--skin-diagram-connector', /^#[0-9a-f]{6}$/i.test(diagram.connector || '') ? diagram.connector : 'var(--skin-line)');
     root.style.setProperty('--skin-diagram-emphasis', /^#[0-9a-f]{6}$/i.test(diagram.emphasis || '') ? diagram.emphasis : 'var(--skin-accent)');
-    const home = document.querySelector('[role="main"]:has([data-testid="home-icon"])');
-    for (const candidate of document.querySelectorAll('[role="main"]')) {
+    const mainSurfaces = [...document.querySelectorAll(mainSurfaceSelector)];
+    const home = mainSurfaces.find((candidate) => candidate.querySelector('[data-testid="home-icon"]'));
+    for (const candidate of mainSurfaces) {
       candidate.classList.toggle('skin-home', candidate === home);
       candidate.classList.toggle('skin-task', candidate !== home);
     }
