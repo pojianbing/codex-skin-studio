@@ -218,6 +218,30 @@ html.codex-skin-studio :is(.skin-compact-home-shell, .skin-compact-home-underlay
   background: transparent !important;
   box-shadow: none !important;
 }
+html.codex-skin-studio .skin-page-search-surface {
+  border-width: 0 0 1px !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html.codex-skin-studio .skin-page-search-surface::after {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--skin-region-color) 30%, transparent),
+    transparent
+  ) !important;
+}
+html.codex-skin-studio .skin-page-search-input-surface {
+  color: var(--skin-text-primary) !important;
+  border-radius: var(--skin-region-radius) !important;
+}
+html.codex-skin-studio .skin-page-search-input-surface input {
+  color: var(--skin-text-primary) !important;
+  caret-color: var(--skin-accent) !important;
+}
+html.codex-skin-studio .skin-page-search-input-surface input::placeholder {
+  color: var(--skin-text-muted) !important;
+  opacity: 1 !important;
+}
 html.codex-skin-studio :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]) {
   color: var(--skin-text-primary) !important;
   border-color: color-mix(in oklab, var(--skin-border) var(--skin-composer-border-opacity), transparent) !important;

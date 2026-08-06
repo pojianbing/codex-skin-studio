@@ -555,6 +555,17 @@ export function ThemeInspector({
                           />
                         </ConfigSection>
 
+                        <ConfigSection title="页面搜索区域" {...configSectionProps('pageSearch')}>
+                          <OverlayStyleEditor
+                            value={selected.ui.pageSearch}
+                            autoColor={resolvedAppearance === 'light' ? '#f8fafc' : '#121620'}
+                            onChange={(value) => void updateUi('pageSearch', value)}
+                          />
+                          <p className="text-[11px] leading-relaxed text-zinc-500">
+                            插件与已安排页面共用此搜索区域；圆角只应用于搜索框，顶部搜索带保持与页面边缘对齐。
+                          </p>
+                        </ConfigSection>
+
                         <ConfigSection title="正文布局" {...configSectionProps('content')}>
                           <SliderSetting
                             label="内容宽度"

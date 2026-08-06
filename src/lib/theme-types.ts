@@ -133,6 +133,7 @@ export type UiConfig = {
   activityCard: SurfaceStyle
   homeWelcome: HomeWelcomeStyle
   homeSuggestions: SurfaceStyle
+  pageSearch: SurfaceStyle
   overlays: SurfaceStyle
   threadRows: RowStyle
   summaryRows: RowStyle

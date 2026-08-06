@@ -32,7 +32,7 @@ const MAX_THEME_BUNDLE_BYTES: u64 = MAX_VIDEO_BYTES + 256 * 1024;
 const MAX_THEME_BUNDLE_MANIFEST_BYTES: u64 = 128 * 1024;
 const MAX_THEME_BUNDLE_UNCOMPRESSED_BYTES: u64 = MAX_VIDEO_BYTES + MAX_THEME_BUNDLE_MANIFEST_BYTES;
 const MAX_THUMBNAIL_BYTES: usize = 2 * 1024 * 1024;
-const BUILTIN_THEME_VERSION: &str = "1.3.4";
+const BUILTIN_THEME_VERSION: &str = "1.3.5";
 const BAMBOO_SKYLIGHT: &[u8] = include_bytes!("../assets/preset-bamboo-skylight.jpg");
 const WILDERNESS: &[u8] = include_bytes!("../assets/preset-wilderness.mp4");
 const RETIRED_BUILTIN_THEME_IDS: &[&str] = &[
@@ -277,6 +277,7 @@ fn validate_ui(ui: &UiConfig) -> Result<()> {
         ("代码块", &ui.code_block),
         ("活动卡片", &ui.activity_card),
         ("主页建议卡片", &ui.home_suggestions),
+        ("页面搜索区域", &ui.page_search),
         ("弹层与菜单", &ui.overlays),
     ] {
         if surface.background != "auto" && !valid_hex_color(&surface.background) {
@@ -1199,6 +1200,12 @@ fn apply_component_theme(manifest: &mut ThemeManifest) -> Result<()> {
     ui.header.opacity = (theme.panel_opacity - 0.20).max(0.48);
     ui.header.blur = theme.blur;
     ui.header.border_opacity = border_opacity - 0.14;
+    ui.page_search.background = theme.surface.into();
+    ui.page_search.opacity = theme.panel_opacity.max(0.72);
+    ui.page_search.blur = theme.blur;
+    ui.page_search.border_opacity = border_opacity;
+    ui.page_search.shadow = theme.shadow.into();
+    ui.page_search.radius = theme.radius + 4;
     ui.user_bubble.background = theme.raised.into();
     ui.user_bubble.opacity = theme.panel_opacity;
     ui.user_bubble.blur = theme.blur.saturating_sub(4);
@@ -1854,6 +1861,7 @@ mod tests {
             assert_eq!(manifest.version, BUILTIN_THEME_VERSION);
             assert_eq!(manifest.appearance, appearance);
             assert_ne!(manifest.ui.sidebar.background, "auto");
+            assert_ne!(manifest.ui.page_search.background, "auto");
             assert_ne!(manifest.ui.code_block.background, "auto");
             assert_ne!(manifest.ui.rich_text.link_color, "auto");
         }
@@ -1885,6 +1893,11 @@ mod tests {
             .and_then(serde_json::Value::as_object_mut)
             .expect("ui should be an object")
             .remove("overlays");
+        legacy
+            .pointer_mut("/ui")
+            .and_then(serde_json::Value::as_object_mut)
+            .expect("ui should be an object")
+            .remove("pageSearch");
         let composer = legacy
             .pointer_mut("/composer")
             .and_then(serde_json::Value::as_object_mut)
@@ -1907,6 +1920,7 @@ mod tests {
         assert_eq!(restored.composer.radius, 16);
         assert_eq!(restored.composer.control_radius, 8);
         assert_eq!(restored.ui.overlays.radius, 12);
+        assert_eq!(restored.ui.page_search.radius, 16);
         assert_eq!(restored.tokens.focus_ring, "auto");
     }
 

@@ -7,6 +7,7 @@ export const previewElementMeta = {
   changeSummary: { tab: 'shell', label: '变更摘要' },
   sidebar: { tab: 'shell', label: '左侧边栏' },
   header: { tab: 'shell', label: '顶部标题栏' },
+  pageSearch: { tab: 'shell', label: '页面搜索区域' },
   content: { tab: 'shell', label: '正文布局' },
   userBubble: { tab: 'components', label: '用户消息气泡' },
   codeBlock: { tab: 'components', label: '代码块' },

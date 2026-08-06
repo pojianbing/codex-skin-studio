@@ -1,4 +1,4 @@
-import { type CSSProperties, type MouseEvent, useState } from 'react'
+import { type CSSProperties, type MouseEvent, useEffect, useState } from 'react'
 import {
   ArrowUp,
   ArrowRight,
@@ -15,6 +15,7 @@ import {
   Hammer,
   Monitor,
   Plus,
+  Plug,
   RefreshCw,
   Search,
   SquareTerminal,
@@ -93,6 +94,7 @@ type PreviewTheme = {
       titleVisible: boolean
     }
     homeSuggestions: SurfaceStyle
+    pageSearch: SurfaceStyle
     overlays: SurfaceStyle
     threadRows: RowStyle
     summaryRows: RowStyle
@@ -277,8 +279,13 @@ export function CodexPreview({
   activeElement,
   onSelectElement,
 }: CodexPreviewProps) {
-  const [scene, setScene] = useState<'task' | 'home'>('task')
+  const [scene, setScene] = useState<'task' | 'home' | 'search'>('task')
   const isHome = scene === 'home'
+  const isSearch = scene === 'search'
+  const isTask = !isHome && !isSearch
+  useEffect(() => {
+    if (activeElement === 'pageSearch') setScene('search')
+  }, [activeElement])
   const light = appearance === 'light'
   const fallbackSurface = light
     ? `color-mix(in oklab, #fff 92%, ${theme.accent})`
@@ -297,12 +304,14 @@ export function CodexPreview({
   const inverseText = resolveColor(theme.tokens.textInverse, light ? '#ffffff' : '#101318')
   const mainLeft = theme.ui.sidebar.visible ? 21 : 0
   const applicationMenuHeight = 5
-  const headerHeight = theme.ui.header.visible ? 5 : 0
-  const environmentRight = isHome ? 4 : (theme.environment.visible ? 28 : 4)
+  const headerHeight = isTask && theme.ui.header.visible ? 5 : 0
+  const environmentRight = isTask && theme.environment.visible ? 28 : 4
   const widthRatio = Math.max(0, Math.min(1, (theme.ui.content.maxWidth - 560) / 640))
   const availableWidth = 100 - mainLeft - environmentRight
   const desiredWidth = isHome
     ? 52
+    : isSearch
+      ? 68
     : (theme.environment.visible ? 31 + widthRatio * 12 : 38 + widthRatio * 18)
   const contentWidth = Math.min(desiredWidth, availableWidth - 5)
   const contentLeft = mainLeft + Math.max(3, (availableWidth - contentWidth) / 2)
@@ -405,7 +414,7 @@ export function CodexPreview({
       )}
       />
 
-      {!isHome && (
+      {isTask && (
         <div
           className="pointer-events-none absolute z-0"
           style={{
@@ -466,7 +475,8 @@ export function CodexPreview({
         <div className="space-y-[2px] border-b border-current/10 pb-[5px]">
           <PreviewRow icon={<Plus size={7} />} label="新建任务" />
           <PreviewRow icon={<GitBranch size={7} />} label="拉取请求" />
-          <PreviewRow icon={<CircleDot size={7} />} label="已安排" />
+          <PreviewRow icon={<CircleDot size={7} />} label="已安排" onClick={() => setScene('search')} />
+          <PreviewRow icon={<Plug size={7} />} label="插件" onClick={() => setScene('search')} />
         </div>
         <div className="mt-[5px] text-[5px] font-semibold uppercase opacity-50">项目</div>
         <div className="mt-[2px] space-y-[2px]">
@@ -491,8 +501,8 @@ export function CodexPreview({
           />
           <PreviewRow
             label="配置 Codex 界面"
-            active={!isHome}
-            style={isHome ? rowStyle(theme.ui.threadRows, theme.accent, 'normal') : rowStyle(theme.ui.threadRows, theme.accent, 'selected')}
+            active={isTask}
+            style={isTask ? rowStyle(theme.ui.threadRows, theme.accent, 'selected') : rowStyle(theme.ui.threadRows, theme.accent, 'normal')}
             className={targetClass('threadRows')}
             onClick={(e) => {
               setScene('task')
@@ -516,7 +526,7 @@ export function CodexPreview({
         </div>
       </section>
 
-      <header
+      {isTask && <header
         className={cn(
           "absolute right-0 top-0 z-10 flex items-center justify-between border px-[8px]",
           targetClass('header'),
@@ -539,7 +549,7 @@ export function CodexPreview({
           <GitBranch size={7} />
           <span className="h-[7px] w-[7px] rounded-full border border-current" />
         </div>
-      </header>
+      </header>}
 
       <main
         className={cn("absolute z-0 overflow-hidden", targetClass('content'))}
@@ -597,6 +607,50 @@ export function CodexPreview({
                 })}
               </div>
             )}
+          </div>
+        ) : isSearch ? (
+          <div className="flex h-full flex-col pt-[5px] select-none">
+            <div className="px-[8px]">
+              <h2 className="m-0 text-[10px] font-semibold leading-tight">插件</h2>
+              <p className="mt-[3px] text-[5.5px]" style={{ color: secondaryText }}>
+                在你常用的工具中与 ChatGPT 协作
+              </p>
+            </div>
+            <div
+              className={cn("mt-[9px] border px-[8px] py-[6px]", targetClass('pageSearch'))}
+              style={{
+                ...surfaceStyle(theme.ui.pageSearch, fallbackSurface, borderColor),
+                borderRadius: 0,
+                boxShadow: 'none',
+              }}
+              {...targetEvents('pageSearch')}
+            >
+              <div
+                className="mx-auto flex h-[18px] w-[76%] items-center gap-[4px] border px-[6px]"
+                style={{
+                  ...surfaceStyle(theme.ui.pageSearch, fallbackSurface, borderColor),
+                  display: 'flex',
+                  background: mix(
+                    resolveColor(theme.ui.pageSearch.background, fallbackSurface),
+                    Math.min(1, theme.ui.pageSearch.opacity + 0.12),
+                  ),
+                  borderRadius: `${Math.max(4, theme.ui.pageSearch.radius * 0.46)}px`,
+                }}
+              >
+                <Search size={7} style={{ color: secondaryText }} />
+                <span className="text-[5.5px]" style={{ color: mutedText }}>搜索插件</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-[6px] px-[8px] pt-[9px]">
+              {['浏览器', '设计工具', '项目管理', '数据服务'].map((label) => (
+                <div key={label} className="flex h-[28px] items-center gap-[5px] border border-current/10 px-[6px]">
+                  <span className="flex h-[12px] w-[12px] items-center justify-center rounded-[3px] bg-black/20">
+                    <Plug size={7} style={{ color: theme.accent }} />
+                  </span>
+                  <span className="text-[5.5px] font-medium">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="flex h-full flex-col overflow-hidden" style={{ gap: `${messageGap}px` }}>
@@ -734,7 +788,7 @@ export function CodexPreview({
         )}
       </main>
 
-      {!isHome && (
+      {isTask && (
         <aside
           className={cn(
             "absolute right-[2.5%] z-20 flex w-[23%] flex-col border p-[5px]",
@@ -777,7 +831,7 @@ export function CodexPreview({
         </aside>
       )}
 
-      {!isHome && (
+      {isTask && (
         <section
           className={cn("absolute z-20 overflow-hidden border", targetClass('changeSummary'))}
           style={{
@@ -837,7 +891,7 @@ export function CodexPreview({
         </section>
       )}
 
-      {!isHome && (
+      {isTask && (
         <div
           className="pointer-events-none absolute bottom-0 z-10 h-[22%]"
           style={{
@@ -851,7 +905,7 @@ export function CodexPreview({
         />
       )}
 
-      {!isHome && (
+      {isTask && (
         <div
           className={cn(
             "absolute z-30 flex h-[16%] items-center border px-[7px]",
@@ -902,7 +956,7 @@ export function CodexPreview({
         </div>
       )}
 
-      {!isHome && (
+      {isTask && (
         <div
           className={cn(
             "absolute z-30 flex flex-col items-center gap-[3px]",
@@ -923,7 +977,7 @@ export function CodexPreview({
         </div>
       )}
 
-      {!isHome && (
+      {isTask && (
         <div
           className={cn(
             "absolute bottom-[19%] right-[2px] top-[12%] z-40 flex justify-center",
@@ -966,6 +1020,15 @@ export function CodexPreview({
           )}
         >
           欢迎主页
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setScene('search'); }}
+          className={cn(
+            "px-[6px] py-[2.5px] rounded-full transition-all duration-300 cursor-pointer",
+            scene === 'search' ? "bg-white text-zinc-950 shadow-sm" : "text-zinc-400 hover:text-white"
+          )}
+        >
+          搜索页面
         </button>
       </div>
     </div>

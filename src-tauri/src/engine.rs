@@ -551,6 +551,10 @@ mod tests {
         assert!(RENDERER.contains("skin-compact-home-underlay"));
         assert!(RENDERER.contains("skin-composer-body"));
         assert!(RENDERER.contains("skin-application-menu-surface"));
+        assert!(RENDERER.contains("scheduled-page-search"));
+        assert!(RENDERER.contains("plugins-page-search"));
+        assert!(RENDERER.contains("skin-page-search-surface"));
+        assert!(CSS.contains(".skin-page-search-surface"));
         assert!(CSS.contains(".skin-main-surface"));
         assert!(CSS.contains(".skin-compact-home-shell"));
         assert!(CSS.contains(".skin-compact-home-underlay"));

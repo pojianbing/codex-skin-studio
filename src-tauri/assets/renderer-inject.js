@@ -153,6 +153,11 @@
     color: 'var(--skin-surface)', opacity: 0.42, borderOpacity: 0.25,
     blur: 8, radius: 0, shadow: 'none',
   };
+  const pageSearchInputSelector = '#scheduled-page-search, #plugins-page-search';
+  const pageSearchDefaults = {
+    color: 'var(--skin-surface)', opacity: 0.76, borderOpacity: 0.28,
+    blur: 10, radius: 16, shadow: 'none',
+  };
   const applyApplicationMenuSurface = () => {
     const applicationMenu = findApplicationMenuSurface();
     applyConfigurableSurface(
@@ -171,6 +176,22 @@
       headerSurfaceDefaults,
     );
     return applicationMenu;
+  };
+  const applyPageSearchSurfaces = (scope) => {
+    const config = { ...(theme.ui?.pageSearch || {}), visible: true };
+    for (const input of relatedMatches(scope, pageSearchInputSelector)) {
+      const field = input.parentElement;
+      const region = input.closest('[class~="sticky"]');
+      applyConfigurableSurface(region, 'skin-page-search-surface', config, pageSearchDefaults);
+      applyConfigurableSurface(field, 'skin-page-search-input-surface', {
+        ...config,
+        opacity: clamp(config.opacity, 0, 1, pageSearchDefaults.opacity) + 0.12,
+      }, {
+        ...pageSearchDefaults,
+        opacity: 0.84,
+        radius: 16,
+      });
+    }
   };
 
   const isVisible = (node) => {
@@ -536,6 +557,7 @@
       applyConfigurableSurface(header, 'skin-header-surface', ui.header, headerSurfaceDefaults);
     }
     applyApplicationMenuSurface();
+    applyPageSearchSurfaces(scope);
     for (const bubble of relatedMatches(scope, '[data-user-message-bubble="true"]')) {
       applyConfigurableSurface(bubble, 'skin-user-bubble-surface', ui.userBubble, {
         color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.25,
@@ -780,6 +802,7 @@
       headerSurfaceDefaults,
     );
     const applicationMenu = applyApplicationMenuSurface();
+    applyPageSearchSurfaces(document);
     for (const bubble of document.querySelectorAll('[data-user-message-bubble="true"]')) {
       applyConfigurableSurface(bubble, 'skin-user-bubble-surface', ui.userBubble, {
         color: 'var(--skin-surface)', opacity: 0.2, borderOpacity: 0.25,
@@ -1039,7 +1062,7 @@
         'skin-configurable-surface', 'skin-configurable-hidden', 'skin-sidebar-surface',
         'skin-header-surface', 'skin-application-menu-surface', 'skin-user-bubble-surface',
         'skin-code-block-surface', 'skin-activity-card-surface', 'skin-home-suggestion-surface', 'skin-overlay-surface',
-        'skin-diagram-surface',
+        'skin-diagram-surface', 'skin-page-search-surface', 'skin-page-search-input-surface',
       );
       for (const property of configurableSurfaceProperties) node.style.removeProperty(property);
     });

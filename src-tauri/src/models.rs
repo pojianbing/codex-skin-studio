@@ -436,6 +436,8 @@ pub struct UiConfig {
     pub home_welcome: HomeWelcomeConfig,
     #[serde(default = "default_home_suggestions")]
     pub home_suggestions: SurfaceConfig,
+    #[serde(default = "default_page_search")]
+    pub page_search: SurfaceConfig,
     #[serde(default)]
     pub overlays: SurfaceConfig,
     pub thread_rows: RowConfig,
@@ -487,6 +489,7 @@ impl Default for UiConfig {
             diagram: DiagramConfig::default(),
             home_welcome: HomeWelcomeConfig::default(),
             home_suggestions: default_home_suggestions(),
+            page_search: default_page_search(),
             overlays: SurfaceConfig {
                 opacity: 0.92,
                 blur: 14,
@@ -522,6 +525,17 @@ fn default_home_suggestions() -> SurfaceConfig {
         border_opacity: 0.16,
         shadow: "none".into(),
         radius: 4,
+        ..SurfaceConfig::default()
+    }
+}
+
+fn default_page_search() -> SurfaceConfig {
+    SurfaceConfig {
+        opacity: 0.76,
+        blur: 10,
+        border_opacity: 0.28,
+        shadow: "none".into(),
+        radius: 16,
         ..SurfaceConfig::default()
     }
 }
@@ -659,6 +673,8 @@ mod tests {
         assert_eq!(ui.home_suggestions.opacity, 0.2);
         assert_eq!(ui.home_suggestions.border_opacity, 0.16);
         assert_eq!(ui.home_suggestions.radius, 4);
+        assert_eq!(ui.page_search.opacity, 0.76);
+        assert_eq!(ui.page_search.radius, 16);
         assert!(ui.home_welcome.icon_visible);
         assert!(ui.home_welcome.title_visible);
         assert_eq!(ui.diff.background, "#ffffff");

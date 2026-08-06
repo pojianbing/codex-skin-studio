@@ -38,7 +38,7 @@ const diagram = (): DiagramStyle => ({
 const previewTheme: ThemeRecord = {
   id: 'preview-bamboo-skylight',
   name: '竹影天光',
-  version: '1.3.4',
+  version: '1.3.5',
   appearance: 'dark',
   accent: '#9ab96a',
   levelSlider: {
@@ -93,6 +93,11 @@ const previewTheme: ThemeRecord = {
       titleVisible: true,
     },
     homeSuggestions: surface(),
+    pageSearch: {
+      ...surface(),
+      opacity: 0.76,
+      radius: 16,
+    },
     overlays: surface(),
     threadRows: rows(),
     summaryRows: rows(),
