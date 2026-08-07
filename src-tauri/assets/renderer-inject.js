@@ -96,6 +96,22 @@
       configurableSurfaceShadows[value.shadow] || configurableSurfaceShadows[defaults.shadow],
     );
   };
+  const environmentPanelSurfaceFor = (panel) => {
+    // New Codex builds keep the PIP obstacle as an empty sibling of the visible panel.
+    const sectionActions = panel?.parentElement?.querySelector(
+      '[data-slot="thread-summary-panel-section-actions"]',
+    );
+    const section = sectionActions?.closest('section');
+    return section?.parentElement?.parentElement
+      || panel?.firstElementChild?.firstElementChild
+      || null;
+  };
+  const applyEnvironmentPanel = (panel, environment) => {
+    const surface = environmentPanelSurfaceFor(panel);
+    if (!surface) return;
+    surface.classList.toggle('skin-environment-panel-hidden', environment.visible === false);
+    surface.classList.add('skin-environment-panel-surface');
+  };
   const diagramMarkerSelector = [
     '[data-codex-diagram]', '[data-diagram]', '[data-mermaid]',
     '[class~="mermaid"]', '[class*="mermaid"]',
@@ -522,8 +538,7 @@
     }
 
     for (const panel of relatedMatches(scope, '[data-pip-obstacle="thread-summary-panel"]')) {
-      panel.classList.toggle('skin-environment-panel-hidden', environment.visible === false);
-      panel.firstElementChild?.firstElementChild?.classList.add('skin-environment-panel-surface');
+      applyEnvironmentPanel(panel, environment);
     }
     for (const header of relatedMatches(scope, '[class~="group/turn-diff-header"]')) {
       const card = header.parentElement;
@@ -750,8 +765,7 @@
     root.style.setProperty('--skin-environment-radius', `${Math.round(clamp(environment.radius, 8, 32, 24))}px`);
     root.style.setProperty('--skin-environment-shadow', environmentShadows[environment.shadow] || environmentShadows.none);
     for (const panel of document.querySelectorAll('[data-pip-obstacle="thread-summary-panel"]')) {
-      panel.classList.toggle('skin-environment-panel-hidden', environment.visible === false);
-      panel.firstElementChild?.firstElementChild?.classList.add('skin-environment-panel-surface');
+      applyEnvironmentPanel(panel, environment);
     }
     const changeSummary = theme.changeSummary || {};
     const changeSummaryColor = /^#[0-9a-f]{6}$/i.test(changeSummary.background || '')

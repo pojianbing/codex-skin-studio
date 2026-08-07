@@ -551,6 +551,8 @@ mod tests {
         assert!(RENDERER.contains("skin-compact-home-underlay"));
         assert!(RENDERER.contains("skin-composer-body"));
         assert!(RENDERER.contains("skin-application-menu-surface"));
+        assert!(RENDERER.contains("thread-summary-panel-section-actions"));
+        assert!(RENDERER.contains("environmentPanelSurfaceFor"));
         assert!(RENDERER.contains("scheduled-page-search"));
         assert!(RENDERER.contains("plugins-page-search"));
         assert!(RENDERER.contains("skin-page-search-surface"));
