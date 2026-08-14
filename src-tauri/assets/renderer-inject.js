@@ -102,7 +102,12 @@
       '[data-slot="thread-summary-panel-section-actions"]',
     );
     const section = sectionActions?.closest('section');
-    return section?.parentElement?.parentElement
+    const content = section?.parentElement?.parentElement;
+    const nativeSurface = content?.closest(
+      '[class*="bg-surface-elevated"], [class*="bg-background-primary"], [class*="elevation-"]',
+    );
+    return nativeSurface
+      || content
       || panel?.firstElementChild?.firstElementChild
       || null;
   };
@@ -499,9 +504,58 @@
     compactHomeShell?.querySelector('[class*="_shellUnderlay_"]')?.classList.add('skin-compact-home-underlay');
   };
 
-  const fileChangeFadeSelector = 'div[class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="-bottom-1"][class~="h-7"][class~="bg-gradient-to-t"][class~="from-token-main-surface-primary"][class~="to-transparent"]';
+  // Codex has changed the height/position utility classes for this layer a few
+  // times. Keep the stable visual markers so the transient footer fade is
+  // still owned by the composer setting after an app update.
+  const fileChangeFadeSelector = [
+    'div[class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class*="bg-gradient-to-t"]',
+    'div[class~="pointer-events-none"][class~="absolute"][class*="from-token-main-surface-primary"][class*="to-transparent"]',
+  ].join(', ');
+  const changeSummaryCompactSelector = 'div.rounded-3xl.border[class*="bg-token-input-background"]';
+  const diffRowSelector = [
+    '.thread-diff-virtualized',
+    '[class~="group/turn-diff-file-row"]',
+  ].join(', ');
   const homeUtilityBarSelector = '[class*="_homeUtilityBar_"], [class*="_HomeUtilityBar_"]';
   const composerSurfaceSelector = '.composer-surface-chrome, [class*="_ComposerLayoutRoot_"]';
+
+  const isCompactChangeSummary = (summary) => {
+    if (!summary?.classList) return false;
+    const classes = summary.classList;
+    return classes.contains('flex')
+      && classes.contains('w-max')
+      && classes.contains('max-w-full')
+      && classes.contains('min-w-0')
+      && classes.contains('items-center')
+      && classes.contains('gap-2')
+      && classes.contains('px-3')
+      && classes.contains('py-1.5')
+      && classes.contains('backdrop-blur-sm');
+  };
+
+  const applyChangeSummarySurface = (summary, changeSummary) => {
+    if (!isCompactChangeSummary(summary)) return;
+    summary.classList.add('skin-change-summary-compact');
+    summary.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
+    summary.classList.toggle('skin-change-summary-shadow-reset', changeSummary.shadow === 'none');
+    // The compact summary can be wrapped by a native shadow-bearing surface.
+    // Reset that wrapper too when the user explicitly disables the shadow.
+    summary.parentElement?.classList.toggle(
+      'skin-change-summary-shadow-reset',
+      changeSummary.shadow === 'none',
+    );
+  };
+
+  const applyChangeSummaryCard = (card, changeSummary) => {
+    if (!card) return;
+    card.classList.add('skin-change-summary-card');
+    card.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
+    card.classList.toggle('skin-change-summary-shadow-reset', changeSummary.shadow === 'none');
+    card.parentElement?.classList.toggle(
+      'skin-change-summary-shadow-reset',
+      changeSummary.shadow === 'none',
+    );
+  };
 
   const processIncrementalScope = (scope) => {
     if (!scope?.querySelectorAll && !(scope instanceof Element)) return;
@@ -541,25 +595,10 @@
       applyEnvironmentPanel(panel, environment);
     }
     for (const header of relatedMatches(scope, '[class~="group/turn-diff-header"]')) {
-      const card = header.parentElement;
-      card?.classList.add('skin-change-summary-card');
-      card?.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
+      applyChangeSummaryCard(header.parentElement, changeSummary);
     }
-    for (const summary of relatedMatches(scope, 'div.rounded-3xl.border[class~="bg-token-input-background/70"]')) {
-      const compact = summary.classList.contains('flex')
-        && summary.classList.contains('w-max')
-        && summary.classList.contains('max-w-full')
-        && summary.classList.contains('min-w-0')
-        && summary.classList.contains('items-center')
-        && summary.classList.contains('gap-2')
-        && summary.classList.contains('px-3')
-        && summary.classList.contains('py-1.5')
-        && summary.classList.contains('text-token-foreground')
-        && summary.classList.contains('backdrop-blur-sm');
-      if (compact) {
-        summary.classList.add('skin-change-summary-compact');
-        summary.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
-      }
+    for (const summary of relatedMatches(scope, changeSummaryCompactSelector)) {
+      applyChangeSummarySurface(summary, changeSummary);
     }
 
     for (const sidebar of relatedMatches(scope, 'aside.app-shell-left-panel')) {
@@ -634,7 +673,7 @@
       rail.classList.add('skin-navigation-rail');
     }
     const diff = ui.diff || {};
-    for (const row of relatedMatches(scope, '.thread-diff-virtualized')) {
+    for (const row of relatedMatches(scope, diffRowSelector)) {
       row.classList.add('skin-diff-row');
       row.classList.toggle('skin-diff-row-hidden', diff.visible === false);
     }
@@ -783,25 +822,10 @@
     root.style.setProperty('--skin-change-summary-radius', `${Math.round(clamp(changeSummary.radius, 8, 32, 12))}px`);
     root.style.setProperty('--skin-change-summary-shadow', changeSummaryShadows[changeSummary.shadow] || changeSummaryShadows.none);
     for (const header of document.querySelectorAll('[class~="group/turn-diff-header"]')) {
-      const card = header.parentElement;
-      card?.classList.add('skin-change-summary-card');
-      card?.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
+      applyChangeSummaryCard(header.parentElement, changeSummary);
     }
-    for (const summary of document.querySelectorAll('div.rounded-3xl.border[class~="bg-token-input-background/70"]')) {
-      const isCompactChangeSummary = summary.classList.contains('flex')
-        && summary.classList.contains('w-max')
-        && summary.classList.contains('max-w-full')
-        && summary.classList.contains('min-w-0')
-        && summary.classList.contains('items-center')
-        && summary.classList.contains('gap-2')
-        && summary.classList.contains('px-3')
-        && summary.classList.contains('py-1.5')
-        && summary.classList.contains('text-token-foreground')
-        && summary.classList.contains('backdrop-blur-sm');
-      if (isCompactChangeSummary) {
-        summary.classList.add('skin-change-summary-compact');
-        summary.classList.toggle('skin-change-summary-hidden', changeSummary.visible === false);
-      }
+    for (const summary of document.querySelectorAll(changeSummaryCompactSelector)) {
+      applyChangeSummarySurface(summary, changeSummary);
     }
     const ui = theme.ui || {};
     applyConfigurableSurface(sidebar, 'skin-sidebar-surface', ui.sidebar, {
@@ -908,7 +932,7 @@
     root.style.setProperty('--skin-diff-added', /^#[0-9a-f]{6}$/i.test(diff.addedColor || '') ? diff.addedColor : '#22c55e');
     root.style.setProperty('--skin-diff-deleted', /^#[0-9a-f]{6}$/i.test(diff.deletedColor || '') ? diff.deletedColor : '#ef4444');
     root.style.setProperty('--skin-diff-radius', `${Math.round(clamp(diff.radius, 0, 24, 1))}px`);
-    for (const row of document.querySelectorAll('.thread-diff-virtualized')) {
+    for (const row of document.querySelectorAll(diffRowSelector)) {
       row.classList.add('skin-diff-row');
       row.classList.toggle('skin-diff-row-hidden', diff.visible === false);
     }
@@ -1070,6 +1094,7 @@
     document.querySelectorAll('.skin-change-summary-hidden').forEach((node) => node.classList.remove('skin-change-summary-hidden'));
     document.querySelectorAll('.skin-change-summary-card').forEach((node) => node.classList.remove('skin-change-summary-card'));
     document.querySelectorAll('.skin-change-summary-compact').forEach((node) => node.classList.remove('skin-change-summary-compact'));
+    document.querySelectorAll('.skin-change-summary-shadow-reset').forEach((node) => node.classList.remove('skin-change-summary-shadow-reset'));
     document.querySelectorAll('.skin-home-suggestions-hidden').forEach((node) => node.classList.remove('skin-home-suggestions-hidden'));
     document.querySelectorAll('.skin-configurable-surface').forEach((node) => {
       node.classList.remove(

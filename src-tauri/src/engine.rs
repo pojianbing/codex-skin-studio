@@ -553,6 +553,11 @@ mod tests {
         assert!(RENDERER.contains("skin-application-menu-surface"));
         assert!(RENDERER.contains("thread-summary-panel-section-actions"));
         assert!(RENDERER.contains("environmentPanelSurfaceFor"));
+        assert!(RENDERER.contains("nativeSurface"));
+        assert!(RENDERER.contains("changeSummaryCompactSelector"));
+        assert!(RENDERER.contains("diffRowSelector"));
+        assert!(RENDERER.contains("group/turn-diff-file-row"));
+        assert!(RENDERER.contains("skin-change-summary-shadow-reset"));
         assert!(RENDERER.contains("scheduled-page-search"));
         assert!(RENDERER.contains("plugins-page-search"));
         assert!(RENDERER.contains("skin-page-search-surface"));
@@ -561,6 +566,11 @@ mod tests {
         assert!(CSS.contains(".skin-compact-home-shell"));
         assert!(CSS.contains(".skin-compact-home-underlay"));
         assert!(CSS.contains(".skin-composer-body"));
+        assert!(CSS.contains(".skin-environment-panel-surface"));
+        assert!(CSS.contains(".skin-environment-panel-surface header::before"));
+        assert!(CSS.contains(".skin-environment-panel-surface section::after"));
+        assert!(CSS.contains(".skin-change-summary-shadow-reset"));
+        assert!(CSS.contains(".skin-diff-row button"));
         assert!(!CSS.contains("main.main-surface"));
     }
 

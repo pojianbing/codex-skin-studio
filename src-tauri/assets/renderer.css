@@ -301,8 +301,13 @@ html.codex-skin-studio .skin-environment-panel-surface {
 html.codex-skin-studio.skin-background-video .skin-environment-panel-surface {
   backdrop-filter: none !important;
 }
-html.codex-skin-studio .skin-environment-panel-surface header {
+html.codex-skin-studio .skin-environment-panel-surface section,
+html.codex-skin-studio .skin-environment-panel-surface header,
+html.codex-skin-studio .skin-environment-panel-surface header::before {
   background: transparent !important;
+}
+html.codex-skin-studio .skin-environment-panel-surface section::after {
+  background: color-mix(in oklab, var(--skin-line) var(--skin-environment-border-opacity), transparent) !important;
 }
 html.codex-skin-studio .skin-change-summary-hidden {
   display: none !important;
@@ -319,6 +324,13 @@ html.codex-skin-studio :is(.skin-change-summary-card, .skin-change-summary-compa
 html.codex-skin-studio :is(.skin-change-summary-card, .skin-change-summary-compact)
   :is([class*="bg-token-dropdown-background"], [class*="bg-token-input-background"], [class*="bg-token-main-surface"]) {
   background: transparent !important;
+}
+/* A compact change summary may be wrapped by a native elevated container.
+   Keep the explicit "关闭" shadow choice authoritative for both layers. */
+html.codex-skin-studio .skin-change-summary-shadow-reset,
+html.codex-skin-studio .skin-change-summary-shadow-reset::before,
+html.codex-skin-studio .skin-change-summary-shadow-reset::after {
+  box-shadow: none !important;
 }
 html.codex-skin-studio .skin-code-block-surface pre,
 html.codex-skin-studio .skin-code-block-surface [class*="bg-token-text-code-block-background"] {
